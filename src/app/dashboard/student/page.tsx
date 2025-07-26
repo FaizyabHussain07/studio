@@ -5,22 +5,25 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowRight, BookText, FileText } from "lucide-react";
+import { ArrowRight, BookText, FileText, CheckCircle2, Circle } from "lucide-react";
 import { useState, useEffect } from "react";
-import { getCourses, getAssignments, getStudentCourses } from "@/lib/services";
+import { getStudentCoursesWithProgress, getStudentAssignmentsWithStatus } from "@/lib/services";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
+import Image from "next/image";
 
 export default function StudentDashboardPage() {
   const [courses, setCourses] = useState([]);
   const [assignments, setAssignments] = useState([]);
-  const [quizzes, setQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
+      if (!currentUser) {
+        setLoading(false);
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -31,16 +34,16 @@ export default function StudentDashboardPage() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const studentCourses = await getStudentCourses(user.uid);
-        const coursesWithProgress = studentCourses.map(c => ({...c, progress: Math.floor(Math.random() * 100)}));
-        setCourses(coursesWithProgress);
+        const studentCourses = await getStudentCoursesWithProgress(user.uid);
+        setCourses(studentCourses);
 
-        const assignmentsData = await getAssignments();
-        // In a real app, you would filter assignments based on student's courses
-        setAssignments(assignmentsData.slice(0, 2));
+        const studentAssignments = await getStudentAssignmentsWithStatus(user.uid);
+        const upcomingAssignments = studentAssignments
+            .filter(a => a.status === 'Pending')
+            .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
+            .slice(0, 3);
+        setAssignments(upcomingAssignments);
         
-        setQuizzes([]);
-
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -51,7 +54,7 @@ export default function StudentDashboardPage() {
   }, [user]);
 
   if (loading) {
-    return <div>Loading dashboard...</div>;
+    return <div className="text-center p-8">Loading dashboard...</div>;
   }
 
   return (
@@ -62,30 +65,51 @@ export default function StudentDashboardPage() {
       </div>
 
       <section>
-        <h2 className="text-2xl font-bold font-headline mb-4">My Courses</h2>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {courses.map(course => (
-            <Card key={course.id}>
-              <CardHeader>
-                <CardTitle>{course.name}</CardTitle>
-                <CardDescription>{course.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Progress value={course.progress} className="h-2" />
-                <p className="text-sm text-muted-foreground mt-2">{course.progress}% complete</p>
-              </CardContent>
-              <CardFooter>
-                <Button asChild variant="outline" className="w-full">
-                  <Link href={`/dashboard/student/courses/${course.id}`}>
-                    Continue Learning <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
+        <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold font-headline">My Courses</h2>
+            <Button variant="link" asChild><Link href="/dashboard/student/courses">View All</Link></Button>
         </div>
-        {courses.length === 0 && (
-          <p className="text-muted-foreground">You are not enrolled in any courses yet.</p>
+        
+        {courses.length > 0 ? (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {courses.map(course => (
+              <Card key={course.id} className="flex flex-col">
+                <CardHeader className="p-0">
+                  <Image
+                    src="https://placehold.co/600x400.png"
+                    width={600}
+                    height={400}
+                    alt={course.name}
+                    className="rounded-t-lg object-cover aspect-video"
+                    data-ai-hint="learning online course"
+                  />
+                </CardHeader>
+                <CardContent className="p-6 flex-grow">
+                  <CardTitle className="font-headline text-xl mb-2">{course.name}</CardTitle>
+                  <CardDescription>{course.description}</CardDescription>
+                </CardContent>
+                <CardFooter className="p-6 pt-0 flex-col items-start gap-2 border-t mt-auto">
+                    <div className="w-full">
+                        <div className="flex justify-between text-sm text-muted-foreground mb-1">
+                            <span>Progress</span>
+                            <span>{course.progress}%</span>
+                        </div>
+                        <Progress value={course.progress} className="h-2" />
+                    </div>
+                  <Button asChild variant="default" className="w-full mt-2">
+                    <Link href={`/dashboard/student/courses/${course.id}`}>
+                      Go to Course <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Card className="text-center p-8">
+            <CardTitle>No Courses Yet</CardTitle>
+            <CardDescription>You are not enrolled in any courses. Please contact your administrator.</CardDescription>
+          </Card>
         )}
       </section>
 
@@ -97,29 +121,31 @@ export default function StudentDashboardPage() {
           </TabsList>
           <TabsContent value="assignments">
             <Card>
-              <CardContent className="p-6 space-y-4">
-                {assignments.length > 0 ? assignments.map(assignment => (
-                  <div key={assignment.id} className="flex items-center justify-between p-4 rounded-md border">
-                    <div className="flex items-center gap-4">
-                      <FileText className="h-6 w-6 text-primary" />
-                      <div>
-                        <h3 className="font-semibold">{assignment.title}</h3>
-                        <p className="text-sm text-muted-foreground">Due: {assignment.dueDate}</p>
+              <CardContent className="p-0">
+                <ul className="divide-y">
+                  {assignments.length > 0 ? assignments.map(assignment => (
+                    <li key={assignment.id} className="flex items-center justify-between p-4 hover:bg-secondary/50">
+                      <div className="flex items-center gap-4">
+                        <FileText className="h-6 w-6 text-primary" />
+                        <div>
+                          <h3 className="font-semibold">{assignment.title}</h3>
+                          <p className="text-sm text-muted-foreground">Due: {assignment.dueDate} | Course: {assignment.courseName}</p>
+                        </div>
                       </div>
-                    </div>
-                    <Button asChild variant="secondary" size="sm">
-                       <Link href={`/dashboard/student/assignments/${assignment.id}`}>View</Link>
-                    </Button>
-                  </div>
-                )) : (
-                  <p className="text-center text-muted-foreground">No upcoming assignments.</p>
-                )}
+                      <Button asChild variant="secondary" size="sm">
+                         <Link href={`/dashboard/student/assignments/${assignment.id}`}>View</Link>
+                      </Button>
+                    </li>
+                  )) : (
+                    <p className="text-center text-muted-foreground p-6">No upcoming assignments. You're all caught up!</p>
+                  )}
+                </ul>
               </CardContent>
             </Card>
           </TabsContent>
           <TabsContent value="quizzes">
             <Card>
-              <CardContent className="p-6 space-y-4">
+              <CardContent className="p-6">
                  <p className="text-center text-muted-foreground">No quizzes available yet.</p>
               </CardContent>
             </Card>

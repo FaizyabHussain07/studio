@@ -4,61 +4,58 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Users, BookCopy, CheckSquare } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import { getUsers, getCourses, getAssignments } from "@/lib/services"; // Assuming a getSubmissions function exists
+import { getStudentUsers, getCourses, getSubmissions } from "@/lib/services";
+import { onSnapshot, collection, query, where } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+
 
 export default function AdminDashboardPage() {
-  const [stats, setStats] = useState([
-    { title: "Total Students", value: "0", icon: Users },
-    { title: "Total Courses", value: "0", icon: BookCopy },
-    { title: "Total Submissions", value: "0", icon: CheckSquare },
-  ]);
+  const [stats, setStats] = useState({
+    students: { title: "Total Students", value: "0", icon: Users },
+    courses: { title: "Total Courses", value: "0", icon: BookCopy },
+    submissions: { title: "Total Submissions", value: "0", icon: CheckSquare },
+  });
   const [recentSubmissions, setRecentSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      setLoading(true);
-      try {
-        const [users, courses, assignments] = await Promise.all([
-          getUsers(),
-          getCourses(),
-          getAssignments(), // In a real app, this should be getSubmissions()
-        ]);
+    setLoading(true);
 
-        const studentCount = users.filter(u => u.role === 'student').length;
-        const courseCount = courses.length;
-        // Placeholder for submission count
-        const submissionCount = assignments.length; 
+    const qStudents = query(collection(db, "users"), where("role", "==", "student"));
+    const unsubStudents = onSnapshot(qStudents, (snapshot) => {
+      setStats(prev => ({ ...prev, students: {...prev.students, value: snapshot.size.toString()} }));
+      setLoading(false);
+    });
+    
+    const qCourses = collection(db, "courses");
+    const unsubCourses = onSnapshot(qCourses, (snapshot) => {
+      setStats(prev => ({ ...prev, courses: {...prev.courses, value: snapshot.size.toString()} }));
+    });
 
-        setStats([
-          { title: "Total Students", value: studentCount.toString(), icon: Users },
-          { title: "Total Courses", value: courseCount.toString(), icon: BookCopy },
-          { title: "Total Submissions", value: submissionCount.toString(), icon: CheckSquare },
-        ]);
+    const qSubmissions = collection(db, "submissions");
+    const unsubSubmissions = onSnapshot(qSubmissions, async (snapshot) => {
+      setStats(prev => ({ ...prev, submissions: {...prev.submissions, value: snapshot.size.toString()} }));
+       const submissionsData = await getSubmissions(5); // Get 5 most recent
+       setRecentSubmissions(submissionsData);
+    });
 
-        // Placeholder for recent submissions
-        // setRecentSubmissions(...) 
-
-      } catch (error) {
-        console.error("Error fetching dashboard data:", error);
-      } finally {
-        setLoading(false);
-      }
+    return () => {
+      unsubStudents();
+      unsubCourses();
+      unsubSubmissions();
     };
-    fetchDashboardData();
   }, []);
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold font-headline">Admin Dashboard</h1>
-        <p className="text-muted-foreground">Manage your students, courses, and content.</p>
+        <p className="text-muted-foreground">A real-time overview of your learning platform.</p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {stats.map((stat, index) => (
+        {Object.values(stats).map((stat, index) => (
           <Card key={index}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
@@ -76,8 +73,36 @@ export default function AdminDashboardPage() {
           <CardTitle>Recent Submissions</CardTitle>
         </CardHeader>
         <CardContent>
-           {/* Recent submissions table will be implemented once submission logic is complete */}
-          <p className="text-center text-muted-foreground">No recent submissions to display.</p>
+           {loading ? (
+             <p className="text-center text-muted-foreground">Loading submissions...</p>
+           ) : recentSubmissions.length === 0 ? (
+             <p className="text-center text-muted-foreground">No recent submissions to display.</p>
+           ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Student</TableHead>
+                    <TableHead>Assignment</TableHead>
+                    <TableHead>Course</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {recentSubmissions.map(sub => (
+                    <TableRow key={sub.id}>
+                      <TableCell className="font-medium">{sub.studentName}</TableCell>
+                      <TableCell>{sub.assignmentTitle}</TableCell>
+                      <TableCell>{sub.courseName}</TableCell>
+                      <TableCell>{sub.submissionDate}</TableCell>
+                      <TableCell><Badge variant="outline">{sub.status}</Badge></TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+           )}
         </CardContent>
       </Card>
     </div>

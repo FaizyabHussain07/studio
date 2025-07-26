@@ -11,13 +11,16 @@ import { auth } from '@/lib/firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { createUser } from '@/lib/services';
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 export default function SignUpPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setLoading(true);
     const formData = new FormData(event.currentTarget);
     const name = formData.get('name') as string;
     const email = formData.get('email') as string;
@@ -30,16 +33,24 @@ export default function SignUpPage() {
       await updateProfile(user, { displayName: name });
 
       const role = email === 'syedfaizyabhussain07@gmail.com' ? 'admin' : 'student';
+      
+      const joinedDate = new Date();
 
       await createUser({
         uid: user.uid,
         name,
         email,
         role,
-        joined: new Date().toISOString().split('T')[0], // This is fine in an event handler
+        joined: joinedDate.toLocaleDateString('en-CA'), // YYYY-MM-DD format
         courses: [],
+        photoURL: user.photoURL
       });
       
+      toast({
+        title: "Account Created!",
+        description: "Welcome! Redirecting you to your dashboard...",
+      });
+
       if (role === 'admin') {
         router.push('/dashboard/admin');
       } else {
@@ -50,9 +61,11 @@ export default function SignUpPage() {
       console.error("Failed to sign up:", error);
       toast({
         title: "Sign-up Failed",
-        description: "This email might already be in use. Please try another one.",
+        description: error.message || "This email might already be in use. Please try another one.",
         variant: "destructive",
       });
+    } finally {
+        setLoading(false);
     }
   };
 
@@ -71,18 +84,18 @@ export default function SignUpPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name</Label>
-                <Input id="name" name="name" placeholder="Syed Faizyab Hussain" required />
+                <Input id="name" name="name" placeholder="Syed Faizyab Hussain" required disabled={loading}/>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" name="email" type="email" placeholder="m@example.com" required />
+                <Input id="email" name="email" type="email" placeholder="m@example.com" required disabled={loading}/>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input id="password" name="password" type="password" required />
+                <Input id="password" name="password" type="password" required minLength={6} disabled={loading}/>
               </div>
-              <Button type="submit" className="w-full" style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }}>
-                Sign Up
+              <Button type="submit" className="w-full" style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }} disabled={loading}>
+                {loading ? 'Creating Account...' : 'Sign Up'}
               </Button>
             </form>
           </CardContent>

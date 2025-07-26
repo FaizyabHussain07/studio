@@ -9,26 +9,38 @@ import { MoreHorizontal, PlusCircle, Search } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect } from 'react';
-import { getAssignments, getCourses, getSubmissionsByAssignment, getUsers } from "@/lib/services";
+import { getAssignments, getCourses, getSubmissionsByAssignment, getStudentUsers } from "@/lib/services";
 
 export default function ManageAssignmentsPage() {
   const [assignments, setAssignments] = useState([]);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [studentCount, setStudentCount] = useState(0);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [assignmentsData, coursesData, usersData] = await Promise.all([
-            getAssignments(),
-            getCourses(),
-            getUsers()
-        ]);
-        
-        const studentCount = usersData.filter(u => u.role === 'student').length;
+    const fetchInitialData = async () => {
+        try {
+            const coursesData = await getCourses();
+            setCourses(coursesData);
+            const students = await getStudentUsers();
+            setStudentCount(students.length);
+        } catch (error) {
+            console.error("Error fetching initial data:", error);
+        }
+    };
+    fetchInitialData();
+  }, []);
 
+  useEffect(() => {
+    if (studentCount === 0) return; 
+
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const assignmentsData = await getAssignments();
+        
         const assignmentsWithDetails = await Promise.all(assignmentsData.map(async (assignment) => {
-          const course = coursesData.find(c => c.id === assignment.courseId);
+          const course = courses.find(c => c.id === assignment.courseId);
           const submissions = await getSubmissionsByAssignment(assignment.id);
           return {
             ...assignment,
@@ -38,15 +50,17 @@ export default function ManageAssignmentsPage() {
         }));
         
         setAssignments(assignmentsWithDetails);
-        setCourses(coursesData);
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error("Error fetching assignments:", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
-  }, []);
+
+    if (courses.length > 0) {
+        fetchData();
+    }
+  }, [courses, studentCount]);
 
   return (
     <div className="space-y-8">
@@ -57,14 +71,14 @@ export default function ManageAssignmentsPage() {
 
       <Card>
         <CardHeader>
-           <div className="flex items-center justify-between gap-4">
-             <div className="flex items-center gap-2 w-full max-w-lg">
-                <div className="relative flex-grow">
+           <div className="flex items-center justify-between gap-4 flex-wrap">
+             <div className="flex items-center gap-2 w-full sm:w-auto">
+                <div className="relative flex-grow sm:flex-grow-0">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Search assignments..." className="pl-8" />
+                    <Input placeholder="Search assignments..." className="pl-8 w-full sm:w-auto" />
                 </div>
                 <Select>
-                  <SelectTrigger className="w-[180px]">
+                  <SelectTrigger className="w-full sm:w-[180px]">
                     <SelectValue placeholder="Filter by course" />
                   </SelectTrigger>
                   <SelectContent>
@@ -82,49 +96,53 @@ export default function ManageAssignmentsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Course</TableHead>
-                <TableHead>Due Date</TableHead>
-                <TableHead>Submissions</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow><TableCell colSpan={5} className="text-center">Loading assignments...</TableCell></TableRow>
-              ) : (
-                assignments.map((assignment) => (
-                  <TableRow key={assignment.id}>
-                    <TableCell className="font-medium">{assignment.title}</TableCell>
-                    <TableCell>{assignment.courseName}</TableCell>
-                    <TableCell>{assignment.dueDate}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{assignment.submissionsCount}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem>Edit</DropdownMenuItem>
-                          <DropdownMenuItem>View Submissions</DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Title</TableHead>
+                  <TableHead>Course</TableHead>
+                  <TableHead>Due Date</TableHead>
+                  <TableHead>Submissions</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableRow><TableCell colSpan={5} className="text-center">Loading assignments...</TableCell></TableRow>
+                ) : assignments.length === 0 ? (
+                  <TableRow><TableCell colSpan={5} className="text-center">No assignments found.</TableCell></TableRow>
+                ) : (
+                  assignments.map((assignment) => (
+                    <TableRow key={assignment.id}>
+                      <TableCell className="font-medium">{assignment.title}</TableCell>
+                      <TableCell>{assignment.courseName}</TableCell>
+                      <TableCell>{assignment.dueDate}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">{assignment.submissionsCount}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <span className="sr-only">Open menu</span>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem>Edit</DropdownMenuItem>
+                            <DropdownMenuItem>View Submissions</DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>
