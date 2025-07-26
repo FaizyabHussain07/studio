@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -12,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, onSnapshot } from "firebase/firestore";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function AssignmentDetailPage({ params }: { params: { id:string } }) {
   const [assignmentData, setAssignmentData] = useState(null);
@@ -20,6 +22,7 @@ export default function AssignmentDetailPage({ params }: { params: { id:string }
   const [user, setUser] = useState(null);
   const [submission, setSubmission] = useState(null);
   const [file, setFile] = useState(null);
+  const [textSubmission, setTextSubmission] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const { toast } = useToast();
@@ -54,6 +57,9 @@ export default function AssignmentDetailPage({ params }: { params: { id:string }
     // Listen for real-time updates on submission
     const unsubSubmission = getStudentSubmissionForAssignment(user.uid, params.id, (sub) => {
         setSubmission(sub);
+        if (sub?.textSubmission) {
+            setTextSubmission(sub.textSubmission);
+        }
     });
 
     return () => unsubSubmission();
@@ -67,15 +73,23 @@ export default function AssignmentDetailPage({ params }: { params: { id:string }
   }
 
   const handleSubmission = async () => {
-    if (!user || !assignmentData || !file) return;
+    if (!user || !assignmentData || (!file && !textSubmission)) {
+        toast({ title: "Submission empty", description: "Please provide a file or text to submit.", variant: "destructive" });
+        return;
+    }
 
     setIsSubmitting(true);
     setUploadProgress(0);
 
     try {
-      const fileUrl = await uploadFile(file, (progress) => {
-        setUploadProgress(progress);
-      });
+      let fileUrl = null;
+      let fileName = null;
+      if (file) {
+          fileUrl = await uploadFile(file, (progress) => {
+            setUploadProgress(progress);
+          });
+          fileName = file.name;
+      }
 
       await createSubmission({
           assignmentId: assignmentData.id,
@@ -83,10 +97,11 @@ export default function AssignmentDetailPage({ params }: { params: { id:string }
           submissionDate: new Date().toISOString(),
           status: 'Submitted',
           fileUrl: fileUrl,
-          fileName: file.name
+          fileName: fileName,
+          textSubmission: textSubmission
       });
       toast({ title: "Success", description: "Assignment submitted successfully!" });
-      // Real-time listener will update the submission state, no need to manually set it.
+      // Real-time listener will update the submission state
     } catch(error) {
         console.error("Submission failed", error);
         toast({ title: "Error", description: "Failed to submit assignment.", variant: "destructive" });
@@ -130,7 +145,6 @@ export default function AssignmentDetailPage({ params }: { params: { id:string }
                     <p className="text-muted-foreground whitespace-pre-wrap">{assignmentData.instructions}</p>
                 </CardContent>
             </Card>
-
             <Card>
                 <CardHeader>
                     <CardTitle>Attachments</CardTitle>
@@ -156,22 +170,39 @@ export default function AssignmentDetailPage({ params }: { params: { id:string }
                 <CardContent className="space-y-4">
                   {status !== 'Pending' ? (
                       <div>
-                          <p className="text-muted-foreground mb-2">You have already submitted this assignment.</p>
-                          <div className="border rounded-lg p-3 flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                  <File className="h-5 w-5"/>
-                                  <a href={submission.fileUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-medium hover:underline">{submission.fileName}</a>
-                              </div>
-                          </div>
+                          <p className="text-muted-foreground mb-4">You have already submitted this assignment.</p>
+                           {submission.textSubmission && (
+                                <div className="mb-4">
+                                    <h4 className="font-semibold mb-2">Your Text Submission:</h4>
+                                    <p className="text-sm text-muted-foreground bg-secondary p-3 rounded-md whitespace-pre-wrap">{submission.textSubmission}</p>
+                                </div>
+                           )}
+                          {submission.fileUrl && (
+                            <div>
+                               <h4 className="font-semibold mb-2">Your Submitted File:</h4>
+                                <div className="border rounded-lg p-3 flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                      <File className="h-5 w-5"/>
+                                      <a href={submission.fileUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-medium hover:underline">{submission.fileName}</a>
+                                  </div>
+                                </div>
+                            </div>
+                          )}
                       </div>
                   ) : (
                     <>
+                      <Textarea 
+                        placeholder="Type your response here..."
+                        value={textSubmission}
+                        onChange={(e) => setTextSubmission(e.target.value)}
+                        disabled={isSubmitting}
+                      />
                       <div className="relative border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center text-center">
                           <Upload className="h-10 w-10 text-muted-foreground mb-2"/>
                           <p className="text-muted-foreground">Drag & drop or</p>
                           <Button variant="link" className="p-0 h-auto">
                               <label htmlFor="file-upload" className="cursor-pointer">
-                                  click to browse
+                                  click to browse for a file
                               </label>
                           </Button>
                           <input id="file-upload" type="file" className="sr-only" onChange={handleFileChange} disabled={isSubmitting}/>
@@ -187,13 +218,13 @@ export default function AssignmentDetailPage({ params }: { params: { id:string }
                             </Button>
                           </div>
                       )}
-                      {isSubmitting && (
+                      {isSubmitting && file && (
                           <div className="space-y-2">
                               <Progress value={uploadProgress} />
                               <p className="text-sm text-muted-foreground text-center">{Math.round(uploadProgress)}% uploaded...</p>
                           </div>
                       )}
-                      <Button className="w-full" style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }} onClick={handleSubmission} disabled={!file || isSubmitting}>
+                      <Button className="w-full" style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }} onClick={handleSubmission} disabled={isSubmitting}>
                           {isSubmitting ? 'Submitting...' : 'Submit Assignment'}
                       </Button>
                     </>
@@ -205,3 +236,4 @@ export default function AssignmentDetailPage({ params }: { params: { id:string }
     </div>
   );
 }
+

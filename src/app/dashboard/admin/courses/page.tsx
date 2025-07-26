@@ -8,12 +8,12 @@ import { MoreVertical, PlusCircle, Search, Users, FileText } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { getAssignmentsByCourse, getStudentUsers, deleteCourse } from "@/lib/services";
+import { getAssignmentsByCourse, deleteCourse } from "@/lib/services";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { CourseForm } from "@/components/forms/course-form";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { onSnapshot, collection } from "firebase/firestore";
+import { onSnapshot, collection, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 export default function ManageCoursesPage() {
@@ -25,18 +25,16 @@ export default function ManageCoursesPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    const fetchStudents = async () => {
-        const studentData = await getStudentUsers();
+    // Listen for real-time updates on students
+    const qStudents = query(collection(db, "users"), where("role", "==", "student"));
+    const unsubStudents = onSnapshot(qStudents, (snapshot) => {
+        const studentData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setStudents(studentData);
-    };
-    fetchStudents();
-
-    const unsubStudents = onSnapshot(collection(db, 'users'), (snapshot) => {
-        setStudents(snapshot.docs.map(doc => ({id: doc.id, ...doc.data()})));
     });
 
-    setLoading(true);
-    const unsubscribe = onSnapshot(collection(db, 'courses'), async (snapshot) => {
+    // Listen for real-time updates on courses
+    const unsubCourses = onSnapshot(collection(db, 'courses'), async (snapshot) => {
+        setLoading(true);
         const courseData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         const coursesWithDetails = await Promise.all(
           courseData.map(async (course) => {
@@ -53,7 +51,7 @@ export default function ManageCoursesPage() {
     });
 
     return () => {
-        unsubscribe();
+        unsubCourses();
         unsubStudents();
     };
   }, []);

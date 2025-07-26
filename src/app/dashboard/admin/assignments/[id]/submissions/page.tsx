@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
@@ -5,13 +6,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowLeft, Download } from "lucide-react";
+import { ArrowLeft, Download, MessageSquare } from "lucide-react";
 import { useState, useEffect } from "react";
-import { getAssignment, getSubmissionsByAssignment, getUser, getCourse, updateSubmissionStatus } from "@/lib/services";
+import { getAssignment, getCourse, updateSubmissionStatus } from "@/lib/services";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { onSnapshot, query, collection, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { getUser } from "@/lib/services";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 export default function ViewSubmissionsPage({ params }: { params: { id: string }}) {
   const [assignment, setAssignment] = useState(null);
@@ -102,7 +105,7 @@ export default function ViewSubmissionsPage({ params }: { params: { id: string }
       <Card>
         <CardHeader>
            <CardTitle>All Submissions ({submissions.length})</CardTitle>
-           <CardDescription>Review the files submitted by students and update their status.</CardDescription>
+           <CardDescription>Review the files and text submitted by students and update their status.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -112,7 +115,7 @@ export default function ViewSubmissionsPage({ params }: { params: { id: string }
                   <TableHead>Student</TableHead>
                   <TableHead>Submission Date</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Attachment</TableHead>
+                  <TableHead>Submissions</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -132,16 +135,38 @@ export default function ViewSubmissionsPage({ params }: { params: { id: string }
                       <TableCell>
                          <Badge variant={sub.status === 'Graded' ? 'default' : 'secondary'}>{sub.status}</Badge>
                       </TableCell>
-                       <TableCell>
-                        {sub.fileUrl ? (
+                       <TableCell className="flex items-center gap-2">
+                        {sub.fileUrl && (
                            <Button variant="outline" size="sm" asChild>
                                <a href={sub.fileUrl} target="_blank" rel="noopener noreferrer">
                                    <Download className="mr-2 h-4 w-4"/>
                                    View File
                                </a>
                            </Button>
-                        ) : (
-                            <span className="text-muted-foreground">No file</span>
+                        )}
+                        {sub.textSubmission && (
+                            <Dialog>
+                                <DialogTrigger asChild>
+                                    <Button variant="outline" size="sm">
+                                        <MessageSquare className="mr-2 h-4 w-4"/>
+                                        View Text
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>Text Submission from {sub.studentName}</DialogTitle>
+                                        <DialogDescription>
+                                            The student submitted the following text alongside their file.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="mt-4 p-4 bg-secondary rounded-md whitespace-pre-wrap">
+                                        {sub.textSubmission}
+                                    </div>
+                                </DialogContent>
+                            </Dialog>
+                        )}
+                        {!sub.fileUrl && !sub.textSubmission && (
+                             <span className="text-muted-foreground">No submission</span>
                         )}
                        </TableCell>
                       <TableCell className="text-right">

@@ -1,4 +1,5 @@
 
+
 import { db } from './firebase';
 import { collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, query, where, documentId, orderBy, limit, writeBatch, setDoc, onSnapshot, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
@@ -7,6 +8,10 @@ const storage = getStorage();
 
 export const uploadFile = (file, onProgress) => {
   return new Promise((resolve, reject) => {
+    if (!file) {
+      reject(new Error("No file provided"));
+      return;
+    }
     const storageRef = ref(storage, `submissions/${new Date().getTime()}_${file.name}`);
     const uploadTask = uploadBytesResumable(storageRef, file);
 
@@ -154,9 +159,14 @@ export const getStudentCourses = async (studentId) => {
   if (!user || !user.courses || user.courses.length === 0) {
     return [];
   }
+  const courseIds = user.courses;
+  
+  if (courseIds.length === 0) return [];
+  
   const courses = [];
-  for (let i = 0; i < user.courses.length; i+= 30) {
-      const chunk = user.courses.slice(i, i + 30);
+  // Firestore 'in' query supports a maximum of 30 elements.
+  for (let i = 0; i < courseIds.length; i += 30) {
+      const chunk = courseIds.slice(i, i + 30);
       if (chunk.length > 0) {
         const coursesQuery = query(collection(db, 'courses'), where(documentId(), 'in', chunk));
         const snapshot = await getDocs(coursesQuery);

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
@@ -7,10 +8,11 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { useState, useEffect } from "react";
-import { getStudentCoursesWithProgress } from "@/lib/services";
-import { auth } from "@/lib/firebase";
+import { getStudentCoursesWithProgress, getStudentAssignmentsWithStatus, getStudentCourses } from "@/lib/services";
+import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import Image from "next/image";
+import { collection, onSnapshot, query, where, documentId } from "firebase/firestore";
 
 export default function StudentCoursesPage() {
   const [courses, setCourses] = useState([]);
@@ -30,18 +32,25 @@ export default function StudentCoursesPage() {
   useEffect(() => {
     if (!user) return;
 
-    const fetchCourses = async () => {
+    // Listen to changes in the user document to get course IDs
+    const unsubUser = onSnapshot(doc(db, "users", user.uid), async (userDoc) => {
       setLoading(true);
-      try {
-        const studentCourses = await getStudentCoursesWithProgress(user.uid);
-        setCourses(studentCourses);
-      } catch (error) {
-        console.error("Error fetching courses:", error);
-      } finally {
+      const userData = userDoc.data();
+      const courseIds = userData?.courses || [];
+
+      if (courseIds.length === 0) {
+        setCourses([]);
         setLoading(false);
+        return;
       }
-    };
-    fetchCourses();
+      
+      const studentCourses = await getStudentCoursesWithProgress(user.uid);
+      setCourses(studentCourses);
+      setLoading(false);
+
+    });
+
+    return () => unsubUser();
   }, [user]);
 
   if (loading) {
