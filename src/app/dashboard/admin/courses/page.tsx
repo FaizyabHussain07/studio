@@ -34,9 +34,9 @@ export default function ManageCoursesPage() {
     });
 
     const unsubCourses = onSnapshot(collection(db, 'courses'), async (snapshot) => {
-        const courseData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        
         try {
+            const courseData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            
             const coursesWithDetails = await Promise.all(
               courseData.map(async (course) => {
                 const assignments = await getAssignmentsByCourse(course.id);
