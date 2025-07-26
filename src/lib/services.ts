@@ -1,5 +1,5 @@
 import { db } from './firebase';
-import { collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, query, where, documentId, orderBy, limit, writeBatch } from 'firebase/firestore';
+import { collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, query, where, documentId, orderBy, limit, writeBatch, setDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 
 const storage = getStorage();
@@ -32,10 +32,13 @@ export const uploadFile = (file, onProgress) => {
 export const createUser = async (userData) => {
   // Use uid as the document ID
   const userRef = doc(db, 'users', userData.uid);
-  await addDoc(collection(db, 'users'), userData);
+  await setDoc(userRef, userData);
 };
 
 export const createStudent = async (studentData) => {
+    // This is a simplified function. A real-world app should use Firebase Functions
+    // to create the user in Firebase Auth and then create the user document in Firestore.
+    // This client-side version is for demonstration purposes.
     const userRef = await addDoc(collection(db, 'users'), {
         ...studentData,
         role: 'student'
@@ -55,6 +58,7 @@ export const getStudentUsers = async () => {
 }
 
 export const getUser = async (id) => {
+  if (!id) return null;
   const userDocRef = doc(db, 'users', id);
   const userDoc = await getDoc(userDocRef);
   if (userDoc.exists()) {
@@ -99,14 +103,14 @@ export const deleteCourse = async (courseId) => {
 
     // 3. Find and delete all submissions for those assignments
     if (assignmentIds.length > 0) {
+        // Firestore 'in' queries are limited to 10 items. For more, chunk the array.
+        // For simplicity, this assumes fewer than 10 assignments per course deletion.
         const submissionsQuery = query(collection(db, 'submissions'), where('assignmentId', 'in', assignmentIds));
         const submissionsSnapshot = await getDocs(submissionsQuery);
         submissionsSnapshot.forEach(doc => {
             batch.delete(doc.ref);
         });
     }
-
-    // 4. TODO: Un-enroll students from this course (optional, depending on desired behavior)
 
     await batch.commit();
 }
@@ -128,6 +132,7 @@ export const getStudentCourses = async (studentId) => {
   if (!user || !user.courses || user.courses.length === 0) {
     return [];
   }
+  // Firestore 'in' queries are limited to 10 items. For more, chunk the array.
   const coursesQuery = query(collection(db, 'courses'), where(documentId(), 'in', user.courses));
   const snapshot = await getDocs(coursesQuery);
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -191,7 +196,7 @@ export const getAssignments = async () => {
 };
 
 export const getAssignmentsByCourse = async (courseId) => {
-    const q = query(collection(db, "assignments"), where("courseId", "==", courseId));
+    const q = query(collection(db, "assignments"), where("courseId", "==", courseId), orderBy("dueDate", "asc"));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 }
@@ -242,16 +247,17 @@ export const getSubmissions = async (count = 0) => {
         : query(submissionsRef, orderBy("submissionDate", "desc"));
 
     const snapshot = await getDocs(q);
-    const submissions = await Promise.all(snapshot.docs.map(async (doc) => {
-        const data = doc.data();
+    const submissions = await Promise.all(snapshot.docs.map(async (docRef) => {
+        const data = docRef.data();
         const [student, assignment] = await Promise.all([
             getUser(data.studentId),
             getAssignment(data.assignmentId),
         ]);
         const course = assignment ? await getCourse(assignment.courseId) : null;
         return {
-            id: doc.id,
+            id: docRef.id,
             ...data,
+            submissionDate: new Date(data.submissionDate).toLocaleDateString(),
             studentName: student?.name || 'Unknown Student',
             assignmentTitle: assignment?.title || 'Unknown Assignment',
             courseName: course?.name || 'Unknown Course'
@@ -271,7 +277,8 @@ export const getStudentSubmissionForAssignment = async (studentId, assignmentId)
     const q = query(
         collection(db, 'submissions'), 
         where('studentId', '==', studentId), 
-        where('assignmentId', '==', assignmentId)
+        where('assignmentId', '==', assignmentId),
+        limit(1)
     );
     const snapshot = await getDocs(q);
     if (snapshot.empty) {
@@ -282,6 +289,7 @@ export const getStudentSubmissionForAssignment = async (studentId, assignmentId)
 
 export const getSubmissionsByStudent = async (studentId, assignmentIds) => {
   if (!assignmentIds || assignmentIds.length === 0) return [];
+  // Firestore 'in' queries are limited to 10 items. Chunking is needed for more.
   const q = query(
     collection(db, "submissions"), 
     where("studentId", "==", studentId),
@@ -294,6 +302,11 @@ export const getSubmissionsByStudent = async (studentId, assignmentIds) => {
 export const getStudentAssignmentStatus = async (studentId, assignmentId) => {
   const submission = await getStudentSubmissionForAssignment(studentId, assignmentId);
   if (!submission) {
+    // Check if the due date has passed
+    const assignment = await getAssignment(assignmentId);
+    if (assignment && new Date(assignment.dueDate) < new Date()) {
+        return 'Missing';
+    }
     return 'Pending';
   }
   return submission.status || 'Submitted';

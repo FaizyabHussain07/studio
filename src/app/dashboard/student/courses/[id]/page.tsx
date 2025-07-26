@@ -5,9 +5,9 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { FileText, ArrowLeft, CheckCircle2, Circle, Radio } from "lucide-react";
+import { FileText, ArrowLeft, CheckCircle2, XCircle } from "lucide-react";
 import { useState, useEffect } from "react";
-import { getCourse, getAssignmentsByCourse, getSubmissionsByStudent, getStudentAssignmentStatus } from "@/lib/services";
+import { getCourse, getAssignmentsByCourse, getStudentAssignmentStatus } from "@/lib/services";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 
@@ -58,17 +58,19 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
   const getStatusInfo = (status) => {
     switch (status) {
       case 'Graded':
-        return { icon: <CheckCircle2 className="h-6 w-6 text-green-500 flex-shrink-0" />, badge: 'default' };
+        return { icon: <CheckCircle2 className="h-6 w-6 text-green-500 flex-shrink-0" />, badge: 'default', badgeText: 'Graded' };
       case 'Submitted':
-        return { icon: <CheckCircle2 className="h-6 w-6 text-blue-500 flex-shrink-0" />, badge: 'secondary' };
+        return { icon: <CheckCircle2 className="h-6 w-6 text-blue-500 flex-shrink-0" />, badge: 'secondary', badgeText: 'Submitted' };
+      case 'Missing':
+         return { icon: <XCircle className="h-6 w-6 text-red-500 flex-shrink-0" />, badge: 'destructive', badgeText: 'Missing' };
       default:
-        return { icon: <FileText className="h-6 w-6 text-primary flex-shrink-0" />, badge: 'outline' };
+        return { icon: <FileText className="h-6 w-6 text-primary flex-shrink-0" />, badge: 'outline', badgeText: 'Pending' };
     }
   };
 
 
   if (loading || !courseData) {
-    return <div className="flex justify-center items-center h-full">Loading course details...</div>;
+    return <div className="flex justify-center items-center h-full p-8">Loading course details...</div>;
   }
   
   return (
@@ -101,19 +103,19 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
         <CardContent className="p-0">
           <ul className="divide-y">
             {assignments.length > 0 ? assignments.map(assignment => {
-              const { icon, badge } = getStatusInfo(assignment.status);
+              const { icon, badge, badgeText } = getStatusInfo(assignment.status);
               return (
-                <li key={assignment.id} className="flex items-center justify-between p-4 hover:bg-secondary/50 transition-colors">
+                <li key={assignment.id} className="flex items-center justify-between p-4 hover:bg-secondary/50 transition-colors flex-wrap gap-4">
                   <div className="flex items-center gap-4">
                     {icon}
                     <div>
                       <h3 className="font-semibold">{assignment.title}</h3>
-                      <p className="text-sm text-muted-foreground">Due: {assignment.dueDate}</p>
+                      <p className="text-sm text-muted-foreground">Due: {new Date(assignment.dueDate).toLocaleDateString()}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
-                      <Badge variant={badge}>
-                          {assignment.status}
+                      <Badge variant={badge} className="w-24 justify-center">
+                          {badgeText}
                       </Badge>
                       <Button asChild variant="outline" size="sm">
                          <Link href={`/dashboard/student/assignments/${assignment.id}`}>View</Link>
@@ -122,7 +124,7 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
                 </li>
               )
             }) : (
-              <p className="p-4 text-center text-muted-foreground">No assignments have been added to this course yet.</p>
+              <p className="p-6 text-center text-muted-foreground">No assignments have been added to this course yet.</p>
             )}
           </ul>
         </CardContent>
