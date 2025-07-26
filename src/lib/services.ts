@@ -99,14 +99,16 @@ export const deleteCourse = async (courseId) => {
             batch.delete(doc.ref);
         });
 
-        // Split assignmentIds into chunks of 10 for 'in' query limitation
-        for (let i = 0; i < assignmentIds.length; i += 10) {
-            const chunk = assignmentIds.slice(i, i + 10);
-            const submissionsQuery = query(collection(db, 'submissions'), where('assignmentId', 'in', chunk));
-            const submissionsSnapshot = await getDocs(submissionsQuery);
-            submissionsSnapshot.forEach(doc => {
-                batch.delete(doc.ref);
-            });
+        // Split assignmentIds into chunks of 30 for 'in' query limitation
+        for (let i = 0; i < assignmentIds.length; i += 30) {
+            const chunk = assignmentIds.slice(i, i + 30);
+            if (chunk.length > 0) {
+                const submissionsQuery = query(collection(db, 'submissions'), where('assignmentId', 'in', chunk));
+                const submissionsSnapshot = await getDocs(submissionsQuery);
+                submissionsSnapshot.forEach(doc => {
+                    batch.delete(doc.ref);
+                });
+            }
         }
     }
 
@@ -130,10 +132,17 @@ export const getStudentCourses = async (studentId) => {
   if (!user || !user.courses || user.courses.length === 0) {
     return [];
   }
-  // Firestore 'in' queries are limited to 30 items in latest SDK versions. Chunk if needed for older versions.
-  const coursesQuery = query(collection(db, 'courses'), where(documentId(), 'in', user.courses));
-  const snapshot = await getDocs(coursesQuery);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const courses = [];
+  // Firestore 'in' queries are limited to 30 items. Chunk if needed.
+  for (let i = 0; i < user.courses.length; i+= 30) {
+      const chunk = user.courses.slice(i, i + 30);
+      if (chunk.length > 0) {
+        const coursesQuery = query(collection(db, 'courses'), where(documentId(), 'in', chunk));
+        const snapshot = await getDocs(coursesQuery);
+        snapshot.forEach(doc => courses.push({ id: doc.id, ...doc.data() }));
+      }
+  }
+  return courses;
 };
 
 export const getStudentCoursesWithProgress = async (studentId) => {
@@ -205,9 +214,15 @@ export const getStudentAssignmentsWithStatus = async (studentId) => {
     const courseIds = courses.map(c => c.id);
     if(courseIds.length === 0) return [];
 
-    const q = query(collection(db, "assignments"), where("courseId", "in", courseIds));
-    const snapshot = await getDocs(q);
-    const assignments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const assignments = [];
+    for (let i = 0; i < courseIds.length; i += 30) {
+        const chunk = courseIds.slice(i, i + 30);
+        if (chunk.length > 0) {
+            const q = query(collection(db, "assignments"), where("courseId", "in", chunk));
+            const snapshot = await getDocs(q);
+            snapshot.forEach(doc => assignments.push({ id: doc.id, ...doc.data() }));
+        }
+    }
 
     const assignmentsWithStatus = await Promise.all(
         assignments.map(async (assignment) => {
@@ -244,7 +259,8 @@ export const createSubmission = async (submissionData) => {
 }
 
 export const updateSubmissionStatus = async (submissionId, status) => {
-    await updateDoc(doc(db, 'submissions', submissionId), { status });
+    const submissionRef = doc(db, 'submissions', submissionId);
+    await updateDoc(submissionRef, { status });
 }
 
 export const getSubmissions = async (count = 0) => {
@@ -304,15 +320,17 @@ export const getSubmissionsByStudent = async (studentId, assignmentIds) => {
   // Chunking to handle 'in' query limitation (max 30 values)
   for (let i = 0; i < assignmentIds.length; i += 30) {
       const chunk = assignmentIds.slice(i, i + 30);
-      const q = query(
-        collection(db, "submissions"), 
-        where("studentId", "==", studentId),
-        where("assignmentId", "in", chunk)
-      );
-      const snapshot = await getDocs(q);
-      snapshot.forEach(doc => {
-          submissions.push({ id: doc.id, ...doc.data() });
-      });
+      if(chunk.length > 0) {
+        const q = query(
+          collection(db, "submissions"), 
+          where("studentId", "==", studentId),
+          where("assignmentId", "in", chunk)
+        );
+        const snapshot = await getDocs(q);
+        snapshot.forEach(doc => {
+            submissions.push({ id: doc.id, ...doc.data() });
+        });
+      }
   }
   return submissions;
 }

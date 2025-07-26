@@ -30,7 +30,7 @@ export default function AllAssignmentsPage() {
       setLoading(true);
       try {
         const studentAssignments = await getStudentAssignmentsWithStatus(user.uid);
-        const sortedAssignments = studentAssignments.sort((a, b) => new Date(b.dueDate) - new Date(a.dueDate));
+        const sortedAssignments = studentAssignments.sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
         setAssignments(sortedAssignments);
       } catch (error) {
         console.error("Error fetching assignments:", error);
@@ -102,4 +102,3 @@ export default function AllAssignmentsPage() {
     </div>
   );
 }
-
