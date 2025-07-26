@@ -25,38 +25,37 @@ export default function ManageCoursesPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Listen for real-time updates on students
+    setLoading(true);
+
     const qStudents = query(collection(db, "users"), where("role", "==", "student"));
     const unsubStudents = onSnapshot(qStudents, (snapshot) => {
         const studentData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setStudents(studentData);
     });
 
-    // Listen for real-time updates on courses
-    const unsubCourses = onSnapshot(collection(db, 'courses'), (snapshot) => {
-        setLoading(true);
+    const unsubCourses = onSnapshot(collection(db, 'courses'), async (snapshot) => {
         const courseData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         
-        // Using Promise.all to fetch related data for each course
-        Promise.all(
-          courseData.map(async (course) => {
-            const assignments = await getAssignmentsByCourse(course.id);
-            const quizzes = await getQuizzesByCourse(course.id);
-            return { 
-              ...course, 
-              assignmentCount: assignments.length,
-              quizCount: quizzes.length,
-              studentCount: course.studentIds?.length || 0
-            };
-          })
-        ).then(coursesWithDetails => {
+        try {
+            const coursesWithDetails = await Promise.all(
+              courseData.map(async (course) => {
+                const assignments = await getAssignmentsByCourse(course.id);
+                const quizzes = await getQuizzesByCourse(course.id);
+                return { 
+                  ...course, 
+                  assignmentCount: assignments.length,
+                  quizCount: quizzes.length,
+                  studentCount: course.studentIds?.length || 0
+                };
+              })
+            );
             setCourses(coursesWithDetails);
-        }).catch(error => {
+        } catch (error) {
             console.error("Error processing course details:", error);
-            toast({ title: "Error", description: "Could not load course details."});
-        }).finally(() => {
+            toast({ title: "Error", description: "Could not load course details.", variant: "destructive" });
+        } finally {
             setLoading(false);
-        });
+        }
     });
 
     return () => {
