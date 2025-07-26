@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -7,12 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { ArrowLeft, Paperclip, Upload, File, X } from "lucide-react";
 import { useState, useEffect } from "react";
-import { getAssignment, getCourse, createSubmission, getStudentSubmissionForAssignment, uploadFile } from "@/lib/services";
+import { getAssignment, getCourse, createSubmission, getStudentSubmissionForAssignment } from "@/lib/services";
 import { auth, db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
-import { Progress } from "@/components/ui/progress";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, onSnapshot } from "firebase/firestore";
 import { Textarea } from "@/components/ui/textarea";
 
 export default function AssignmentDetailPage({ params }: { params: { id:string } }) {
@@ -24,7 +23,6 @@ export default function AssignmentDetailPage({ params }: { params: { id:string }
   const [file, setFile] = useState(null);
   const [textSubmission, setTextSubmission] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -72,6 +70,15 @@ export default function AssignmentDetailPage({ params }: { params: { id:string }
     }
   }
 
+  const fileToDataUrl = (file) => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+  }
+
   const handleSubmission = async () => {
     if (!user || !assignmentData || (!file && !textSubmission)) {
         toast({ title: "Submission empty", description: "Please provide a file or text to submit.", variant: "destructive" });
@@ -79,15 +86,12 @@ export default function AssignmentDetailPage({ params }: { params: { id:string }
     }
 
     setIsSubmitting(true);
-    setUploadProgress(0);
 
     try {
-      let fileUrl = null;
+      let fileDataUrl = null;
       let fileName = null;
       if (file) {
-          fileUrl = await uploadFile(file, (progress) => {
-            setUploadProgress(progress);
-          });
+          fileDataUrl = await fileToDataUrl(file);
           fileName = file.name;
       }
 
@@ -96,7 +100,7 @@ export default function AssignmentDetailPage({ params }: { params: { id:string }
           studentId: user.uid,
           submissionDate: new Date().toISOString(),
           status: 'Submitted',
-          fileUrl: fileUrl,
+          fileDataUrl: fileDataUrl,
           fileName: fileName,
           textSubmission: textSubmission
       });
@@ -177,13 +181,13 @@ export default function AssignmentDetailPage({ params }: { params: { id:string }
                                     <p className="text-sm text-muted-foreground bg-secondary p-3 rounded-md whitespace-pre-wrap">{submission.textSubmission}</p>
                                 </div>
                            )}
-                          {submission.fileUrl && (
+                          {submission.fileDataUrl && (
                             <div>
                                <h4 className="font-semibold mb-2">Your Submitted File:</h4>
                                 <div className="border rounded-lg p-3 flex items-center justify-between">
                                   <div className="flex items-center gap-2">
                                       <File className="h-5 w-5"/>
-                                      <a href={submission.fileUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-medium hover:underline">{submission.fileName}</a>
+                                      <a href={submission.fileDataUrl} target="_blank" rel="noopener noreferrer" download={submission.fileName} className="text-sm font-medium hover:underline">{submission.fileName}</a>
                                   </div>
                                 </div>
                             </div>
@@ -218,12 +222,6 @@ export default function AssignmentDetailPage({ params }: { params: { id:string }
                             </Button>
                           </div>
                       )}
-                      {isSubmitting && file && (
-                          <div className="space-y-2">
-                              <Progress value={uploadProgress} />
-                              <p className="text-sm text-muted-foreground text-center">{Math.round(uploadProgress)}% uploaded...</p>
-                          </div>
-                      )}
                       <Button className="w-full" style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }} onClick={handleSubmission} disabled={isSubmitting}>
                           {isSubmitting ? 'Submitting...' : 'Submit Assignment'}
                       </Button>
@@ -237,3 +235,4 @@ export default function AssignmentDetailPage({ params }: { params: { id:string }
   );
 }
 
+    

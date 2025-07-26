@@ -2,37 +2,6 @@
 
 import { db } from './firebase';
 import { collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, query, where, documentId, orderBy, limit, writeBatch, setDoc, onSnapshot, arrayUnion, arrayRemove } from 'firebase/firestore';
-import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-
-const storage = getStorage();
-
-export const uploadFile = (file, onProgress) => {
-  return new Promise((resolve, reject) => {
-    if (!file) {
-      reject(new Error("No file provided"));
-      return;
-    }
-    const storageRef = ref(storage, `submissions/${new Date().getTime()}_${file.name}`);
-    const uploadTask = uploadBytesResumable(storageRef, file);
-
-    uploadTask.on('state_changed', 
-      (snapshot) => {
-        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        onProgress(progress);
-      }, 
-      (error) => {
-        console.error("Upload failed:", error);
-        reject(error);
-      }, 
-      () => {
-        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-          resolve(downloadURL);
-        });
-      }
-    );
-  });
-};
-
 
 // User Management
 export const createUser = async (userData) => {
@@ -378,3 +347,5 @@ export const getStudentAssignmentStatus = async (studentId, assignmentId) => {
   }
   return snapshot.docs[0].data().status || 'Submitted';
 }
+
+    

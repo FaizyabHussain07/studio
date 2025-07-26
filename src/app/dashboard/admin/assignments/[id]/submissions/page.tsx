@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
@@ -136,9 +137,9 @@ export default function ViewSubmissionsPage({ params }: { params: { id: string }
                          <Badge variant={sub.status === 'Graded' ? 'default' : 'secondary'}>{sub.status}</Badge>
                       </TableCell>
                        <TableCell className="flex items-center gap-2">
-                        {sub.fileUrl && (
+                        {sub.fileDataUrl && (
                            <Button variant="outline" size="sm" asChild>
-                               <a href={sub.fileUrl} target="_blank" rel="noopener noreferrer">
+                               <a href={sub.fileDataUrl} target="_blank" rel="noopener noreferrer" download={sub.fileName}>
                                    <Download className="mr-2 h-4 w-4"/>
                                    View File
                                </a>
@@ -165,7 +166,7 @@ export default function ViewSubmissionsPage({ params }: { params: { id: string }
                                 </DialogContent>
                             </Dialog>
                         )}
-                        {!sub.fileUrl && !sub.textSubmission && (
+                        {!sub.fileDataUrl && !sub.textSubmission && (
                              <span className="text-muted-foreground">No submission</span>
                         )}
                        </TableCell>
@@ -192,3 +193,5 @@ export default function ViewSubmissionsPage({ params }: { params: { id: string }
     </div>
   );
 }
+
+    
