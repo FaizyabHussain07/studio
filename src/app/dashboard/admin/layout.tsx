@@ -69,7 +69,7 @@ export default function AdminDashboardLayout({
               <SidebarMenuItem key={item.name}>
                 <SidebarMenuButton 
                   asChild
-                  isActive={pathname === item.href || (pathname.startsWith(item.href) && item.href !== '/dashboard/admin')}
+                  isActive={pathname === item.href || (item.href !== '/dashboard/admin' && pathname.startsWith(item.href))}
                 >
                   <Link href={item.href}>
                     <item.icon />
