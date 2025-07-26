@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { onSnapshot, collection, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { getDocs } from "firebase/firestore";
 
 export default function ManageCoursesPage() {
   const [courses, setCourses] = useState([]);
@@ -25,37 +26,58 @@ export default function ManageCoursesPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    setLoading(true);
-
+    // Listener for students
     const qStudents = query(collection(db, "users"), where("role", "==", "student"));
     const unsubStudents = onSnapshot(qStudents, (snapshot) => {
         const studentData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setStudents(studentData);
     });
 
-    const unsubCourses = onSnapshot(collection(db, 'courses'), async (snapshot) => {
-        try {
-            const courseData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            
-            const coursesWithDetails = await Promise.all(
-              courseData.map(async (course) => {
-                const assignments = await getAssignmentsByCourse(course.id);
-                const quizzes = await getQuizzesByCourse(course.id);
-                return { 
-                  ...course, 
-                  assignmentCount: assignments.length,
-                  quizCount: quizzes.length,
-                  studentCount: course.studentIds?.length || 0
-                };
-              })
-            );
-            setCourses(coursesWithDetails);
-        } catch (error) {
-            console.error("Error processing course details:", error);
-            toast({ title: "Error", description: "Could not load course details.", variant: "destructive" });
-        } finally {
-            setLoading(false);
-        }
+    // Combined listener for courses, assignments, and quizzes
+    const unsubCourses = onSnapshot(collection(db, 'courses'), async (coursesSnapshot) => {
+      setLoading(true);
+      try {
+        const courseData = coursesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        // Fetch all assignments and quizzes in parallel once
+        const assignmentsSnapshot = await getDocs(collection(db, 'assignments'));
+        const quizzesSnapshot = await getDocs(collection(db, 'quizzes'));
+        
+        const assignmentsByCourse = {};
+        assignmentsSnapshot.forEach(doc => {
+            const assignment = doc.data();
+            if (!assignmentsByCourse[assignment.courseId]) {
+                assignmentsByCourse[assignment.courseId] = [];
+            }
+            assignmentsByCourse[assignment.courseId].push(assignment);
+        });
+
+        const quizzesByCourse = {};
+        quizzesSnapshot.forEach(doc => {
+            const quiz = doc.data();
+            if (!quizzesByCourse[quiz.courseId]) {
+                quizzesByCourse[quiz.courseId] = [];
+            }
+            quizzesByCourse[quiz.courseId].push(quiz);
+        });
+
+        // Map the counts to the courses
+        const coursesWithDetails = courseData.map(course => {
+          return {
+            ...course,
+            assignmentCount: assignmentsByCourse[course.id]?.length || 0,
+            quizCount: quizzesByCourse[course.id]?.length || 0,
+            studentCount: course.studentIds?.length || 0
+          };
+        });
+
+        setCourses(coursesWithDetails);
+      } catch (error) {
+        console.error("Error processing course details:", error);
+        toast({ title: "Error", description: "Could not load course details.", variant: "destructive" });
+      } finally {
+        setLoading(false);
+      }
     });
 
     return () => {
@@ -200,3 +222,5 @@ export default function ManageCoursesPage() {
     </div>
   );
 }
+
+    
