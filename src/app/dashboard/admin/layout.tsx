@@ -1,3 +1,5 @@
+'use client'
+
 import {
   SidebarProvider,
   Sidebar,
@@ -15,6 +17,11 @@ import { LayoutDashboard, Users, BookCopy, PenSquare, LogOut, Settings } from "l
 import { Logo } from "@/components/logo";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { auth } from "@/lib/firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+
 
 const adminNav = [
   { name: "Dashboard", href: "/dashboard/admin", icon: LayoutDashboard },
@@ -28,6 +35,25 @@ export default function AdminDashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const [user, setUser] = useState(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser && currentUser.email === 'syedfaizyabhussain07@gmail.com') {
+        setUser(currentUser);
+      } else {
+        router.push("/login");
+      }
+    });
+    return () => unsubscribe();
+  }, [router]);
+
+  const handleLogout = async () => {
+    await auth.signOut();
+    router.push('/login');
+  }
+
   return (
     <SidebarProvider>
       <Sidebar>
@@ -53,17 +79,17 @@ export default function AdminDashboardLayout({
               <SidebarMenuItem>
                 <SidebarMenuButton>
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src="https://placehold.co/100x100.png" />
+                    <AvatarImage src={user?.photoURL} />
                     <AvatarFallback>AD</AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col text-left">
-                     <span className="text-sm font-semibold">Syed Faizyab</span>
-                     <span className="text-xs text-muted-foreground">Admin</span>
+                     <span className="text-sm font-semibold">{user?.displayName || 'Admin'}</span>
+                     <span className="text-xs text-muted-foreground">{user?.email}</span>
                   </div>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                 <SidebarMenuButton href="/login" tooltip="Logout">
+                 <SidebarMenuButton onClick={handleLogout} tooltip="Logout">
                     <LogOut />
                     <span>Logout</span>
                  </SidebarMenuButton>

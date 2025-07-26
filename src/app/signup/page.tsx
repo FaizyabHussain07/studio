@@ -8,7 +8,7 @@ import { Logo } from "@/components/logo";
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { createUser } from '@/lib/services';
 import { useToast } from "@/hooks/use-toast";
 
@@ -26,6 +26,9 @@ export default function SignUpPage() {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
+      
+      await updateProfile(user, { displayName: name });
+
       const role = email === 'syedfaizyabhussain07@gmail.com' ? 'admin' : 'student';
 
       await createUser({
@@ -33,7 +36,7 @@ export default function SignUpPage() {
         name,
         email,
         role,
-        joined: new Date().toISOString().split('T')[0],
+        joined: new Date().toISOString().split('T')[0], // This is fine in an event handler
         courses: [],
       });
       

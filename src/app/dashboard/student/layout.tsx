@@ -1,3 +1,5 @@
+'use client'
+
 import {
   SidebarProvider,
   Sidebar,
@@ -15,10 +17,15 @@ import { LayoutDashboard, BookOpen, ClipboardList, Puzzle, LogOut, User } from "
 import { Logo } from "@/components/logo";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { auth } from "@/lib/firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+
 
 const studentNav = [
   { name: "Dashboard", href: "/dashboard/student", icon: LayoutDashboard },
-  { name: "My Courses", href: "#", icon: BookOpen },
+  { name: "My Courses", href: "/dashboard/student", icon: BookOpen },
   { name: "Assignments", href: "#", icon: ClipboardList },
   { name: "Quizzes", href: "#", icon: Puzzle },
 ];
@@ -28,6 +35,25 @@ export default function StudentDashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const [user, setUser] = useState(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+      } else {
+        router.push("/login");
+      }
+    });
+    return () => unsubscribe();
+  }, [router]);
+
+  const handleLogout = async () => {
+    await auth.signOut();
+    router.push('/login');
+  }
+
   return (
     <SidebarProvider>
       <Sidebar>
@@ -53,17 +79,17 @@ export default function StudentDashboardLayout({
               <SidebarMenuItem>
                 <SidebarMenuButton>
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src="https://placehold.co/100x100.png" />
-                    <AvatarFallback>SH</AvatarFallback>
+                    <AvatarImage src={user?.photoURL} />
+                    <AvatarFallback>{user?.displayName?.substring(0,2).toUpperCase() || 'ST'}</AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col text-left">
-                     <span className="text-sm font-semibold">Student User</span>
-                     <span className="text-xs text-muted-foreground">student@example.com</span>
+                     <span className="text-sm font-semibold">{user?.displayName || 'Student User'}</span>
+                     <span className="text-xs text-muted-foreground">{user?.email}</span>
                   </div>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton href="/login" tooltip="Logout">
+                <SidebarMenuButton onClick={handleLogout} tooltip="Logout">
                     <LogOut />
                     <span>Logout</span>
                 </SidebarMenuButton>

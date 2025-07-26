@@ -7,23 +7,20 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowRight, BookText, FileText } from "lucide-react";
 import { useState, useEffect } from "react";
-import { getCourses, getAssignments } from "@/lib/services";
+import { getCourses, getAssignments, getStudentCourses } from "@/lib/services";
 import { auth } from "@/lib/firebase";
+import { onAuthStateChanged, User } from "firebase/auth";
 
 export default function StudentDashboardPage() {
   const [courses, setCourses] = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [quizzes, setQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (user) {
-        setUser(user);
-      } else {
-        // Redirect to login or handle unauthenticated state
-      }
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
     });
     return () => unsubscribe();
   }, []);
@@ -34,13 +31,14 @@ export default function StudentDashboardPage() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const coursesData = await getCourses();
-        const assignmentsData = await getAssignments();
+        const studentCourses = await getStudentCourses(user.uid);
+        const coursesWithProgress = studentCourses.map(c => ({...c, progress: Math.floor(Math.random() * 100)}));
+        setCourses(coursesWithProgress);
 
-        // This is a placeholder, you should filter courses/assignments for the current user
-        setCourses(coursesData.slice(0, 3).map(c => ({...c, progress: Math.floor(Math.random() * 100)})));
-        setAssignments(assignmentsData.slice(0,2));
-        // Add quiz fetching logic here if needed
+        const assignmentsData = await getAssignments();
+        // In a real app, you would filter assignments based on student's courses
+        setAssignments(assignmentsData.slice(0, 2));
+        
         setQuizzes([]);
 
       } catch (error) {
@@ -86,6 +84,9 @@ export default function StudentDashboardPage() {
             </Card>
           ))}
         </div>
+        {courses.length === 0 && (
+          <p className="text-muted-foreground">You are not enrolled in any courses yet.</p>
+        )}
       </section>
 
       <section>
@@ -97,7 +98,7 @@ export default function StudentDashboardPage() {
           <TabsContent value="assignments">
             <Card>
               <CardContent className="p-6 space-y-4">
-                {assignments.map(assignment => (
+                {assignments.length > 0 ? assignments.map(assignment => (
                   <div key={assignment.id} className="flex items-center justify-between p-4 rounded-md border">
                     <div className="flex items-center gap-4">
                       <FileText className="h-6 w-6 text-primary" />
@@ -110,7 +111,9 @@ export default function StudentDashboardPage() {
                        <Link href={`/dashboard/student/assignments/${assignment.id}`}>View</Link>
                     </Button>
                   </div>
-                ))}
+                )) : (
+                  <p className="text-center text-muted-foreground">No upcoming assignments.</p>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
