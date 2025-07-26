@@ -6,7 +6,6 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { auth } from "@/lib/firebase";
@@ -75,15 +74,8 @@ export function StudentForm({ student, onFinished }) {
   };
 
   return (
-    <>
-      <DialogHeader>
-        <DialogTitle>{student ? 'Edit Student' : 'Add New Student'}</DialogTitle>
-        <DialogDescription>
-          {student ? 'Edit the details for this student.' : "Fill in the details below to create a new student account."}
-        </DialogDescription>
-      </DialogHeader>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
           <FormField
             control={form.control}
             name="name"
@@ -128,6 +120,5 @@ export function StudentForm({ student, onFinished }) {
           <Button type="submit" disabled={loading}>{loading ? 'Saving...' : 'Save Student'}</Button>
         </form>
       </Form>
-    </>
   );
 }

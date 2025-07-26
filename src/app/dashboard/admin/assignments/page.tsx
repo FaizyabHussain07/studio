@@ -10,7 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect } from 'react';
 import { getCourses, getSubmissionsByAssignment, getStudentUsers, deleteAssignment } from "@/lib/services";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AssignmentForm } from "@/components/forms/assignment-form";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -102,7 +102,13 @@ export default function ManageAssignmentsPage() {
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent>
-          <AssignmentForm courses={courses} assignment={selectedAssignment} onFinished={() => setIsFormOpen(false)} />
+            <DialogHeader>
+                <DialogTitle>{selectedAssignment ? 'Edit Assignment' : 'Create New Assignment'}</DialogTitle>
+                <DialogDescription>
+                  Fill in the details below. Click save when you're done.
+                </DialogDescription>
+            </DialogHeader>
+            <AssignmentForm courses={courses} assignment={selectedAssignment} onFinished={() => setIsFormOpen(false)} />
         </DialogContent>
       </Dialog>
       

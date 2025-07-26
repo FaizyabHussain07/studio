@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { getAssignmentsByCourse, deleteCourse } from "@/lib/services";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CourseForm } from "@/components/forms/course-form";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -85,6 +85,12 @@ export default function ManageCoursesPage() {
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent>
+            <DialogHeader>
+                <DialogTitle>{selectedCourse ? 'Edit Course' : 'Create New Course'}</DialogTitle>
+                <DialogDescription>
+                  Fill in the details below. Click save when you're done.
+                </DialogDescription>
+            </DialogHeader>
             <CourseForm course={selectedCourse} students={students} onFinished={() => setIsFormOpen(false)}/>
         </DialogContent>
       </Dialog>

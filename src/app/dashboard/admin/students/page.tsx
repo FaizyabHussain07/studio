@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { StudentForm } from "@/components/forms/student-form";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -68,7 +68,13 @@ export default function ManageStudentsPage() {
 
        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent>
-          <StudentForm student={selectedStudent} onFinished={() => setIsFormOpen(false)} />
+            <DialogHeader>
+                <DialogTitle>{selectedStudent ? 'Edit Student' : 'Add New Student'}</DialogTitle>
+                <DialogDescription>
+                  {selectedStudent ? 'Edit the details for this student.' : "Fill in the details below to create a new student account."}
+                </DialogDescription>
+            </DialogHeader>
+            <StudentForm student={selectedStudent} onFinished={() => setIsFormOpen(false)} />
         </DialogContent>
       </Dialog>
 

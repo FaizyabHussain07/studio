@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { createAssignment, updateAssignment } from "@/lib/services";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
@@ -54,15 +53,8 @@ export function AssignmentForm({ courses, assignment, onFinished }) {
   };
 
   return (
-    <>
-      <DialogHeader>
-        <DialogTitle>{assignment ? 'Edit Assignment' : 'Create New Assignment'}</DialogTitle>
-        <DialogDescription>
-          Fill in the details below. Click save when you're done.
-        </DialogDescription>
-      </DialogHeader>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
           <FormField
             control={form.control}
             name="title"
@@ -127,6 +119,5 @@ export function AssignmentForm({ courses, assignment, onFinished }) {
           <Button type="submit" disabled={loading}>{loading ? 'Saving...' : 'Save Changes'}</Button>
         </form>
       </Form>
-    </>
   );
 }
