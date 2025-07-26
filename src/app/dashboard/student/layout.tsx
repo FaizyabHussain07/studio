@@ -75,7 +75,7 @@ export default function StudentDashboardLayout({
           <SidebarMenu>
             {studentNav.map((item) => (
               <SidebarMenuItem key={item.name}>
-                <SidebarMenuButton href={item.href} tooltip={item.name} isActive={pathname === item.href}>
+                <SidebarMenuButton href={item.href} tooltip={item.name} isActive={pathname.startsWith(item.href) && (item.href !== '/dashboard/student' || pathname === '/dashboard/student')}>
                   <item.icon />
                   <span>{item.name}</span>
                 </SidebarMenuButton>
