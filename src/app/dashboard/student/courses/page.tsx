@@ -12,7 +12,7 @@ import { getStudentCoursesWithProgress } from "@/lib/services";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import Image from "next/image";
-import { doc, onSnapshot, collection } from "firebase/firestore";
+import { doc, onSnapshot, collection, query, where, getDocs } from "firebase/firestore";
 
 export default function StudentCoursesPage() {
   const [courses, setCourses] = useState([]);
@@ -32,30 +32,28 @@ export default function StudentCoursesPage() {
   useEffect(() => {
     if (!user) return;
 
-    const fetchAndUpdateCourses = async () => {
+    const userDocRef = doc(db, "users", user.uid);
+    
+    const unsubscribe = onSnapshot(userDocRef, async (userDoc) => {
       setLoading(true);
-      try {
-        const studentCourses = await getStudentCoursesWithProgress(user.uid);
-        setCourses(studentCourses);
-      } catch (error) {
-        console.error("Error fetching student courses with progress:", error)
-      } finally {
+      if (userDoc.exists()) {
+        try {
+          const studentCourses = await getStudentCoursesWithProgress(user.uid);
+          setCourses(studentCourses);
+        } catch (error) {
+          console.error("Error fetching student courses with progress:", error);
+          setCourses([]); // Clear courses on error
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        // User document doesn't exist, so no courses
+        setCourses([]);
         setLoading(false);
       }
-    }
-    
-    // We need to listen to multiple collections to update progress in real-time
-    const unsubs = [
-        onSnapshot(doc(db, "users", user.uid), fetchAndUpdateCourses),
-        onSnapshot(collection(db, "courses"), fetchAndUpdateCourses),
-        onSnapshot(collection(db, "assignments"), fetchAndUpdateCourses),
-        onSnapshot(collection(db, "submissions"), fetchAndUpdateCourses)
-    ];
+    });
 
-    // Initial fetch
-    fetchAndUpdateCourses();
-
-    return () => unsubs.forEach(unsub => unsub());
+    return () => unsubscribe();
   }, [user]);
 
   if (loading) {
