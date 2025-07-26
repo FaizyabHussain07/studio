@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
@@ -36,8 +37,9 @@ export default function StudentDashboardPage() {
     setLoading(true);
 
     const fetchData = async () => {
+      try {
         const studentCourses = await getStudentCoursesWithProgress(user.uid);
-        setCourses(studentCourses);
+        setCourses(studentCourses.slice(0, 3)); // Show max 3 courses on dashboard
 
         const studentAssignments = await getStudentAssignmentsWithStatus(user.uid);
         const upcomingAssignments = studentAssignments
@@ -48,8 +50,11 @@ export default function StudentDashboardPage() {
         
         const studentQuizzes = await getStudentQuizzes(user.uid);
         setQuizzes(studentQuizzes);
-
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      } finally {
         setLoading(false);
+      }
     };
     
     // Initial fetch
@@ -105,7 +110,7 @@ export default function StudentDashboardPage() {
                 </CardHeader>
                 <CardContent className="p-6 flex-grow">
                   <CardTitle className="font-headline text-xl mb-2">{course.name}</CardTitle>
-                  <CardDescription>{course.description}</CardDescription>
+                  <CardDescription className="line-clamp-3">{course.description}</CardDescription>
                 </CardContent>
                 <CardFooter className="p-6 pt-0 flex-col items-start gap-2 border-t mt-auto">
                     <div className="w-full">

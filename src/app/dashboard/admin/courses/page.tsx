@@ -36,20 +36,26 @@ export default function ManageCoursesPage() {
     const unsubCourses = onSnapshot(collection(db, 'courses'), async (snapshot) => {
         setLoading(true);
         const courseData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        const coursesWithDetails = await Promise.all(
-          courseData.map(async (course) => {
-            const assignments = await getAssignmentsByCourse(course.id);
-            const quizzes = await getQuizzesByCourse(course.id);
-            return { 
-              ...course, 
-              assignmentCount: assignments.length,
-              quizCount: quizzes.length,
-              studentCount: course.studentIds?.length || 0
-            };
-          })
-        );
-        setCourses(coursesWithDetails);
-        setLoading(false);
+        
+        try {
+            const coursesWithDetails = await Promise.all(
+              courseData.map(async (course) => {
+                const assignments = await getAssignmentsByCourse(course.id);
+                const quizzes = await getQuizzesByCourse(course.id);
+                return { 
+                  ...course, 
+                  assignmentCount: assignments.length,
+                  quizCount: quizzes.length,
+                  studentCount: course.studentIds?.length || 0
+                };
+              })
+            );
+            setCourses(coursesWithDetails);
+        } catch(error) {
+            console.error("Error processing course details:", error);
+        } finally {
+            setLoading(false);
+        }
     });
 
     return () => {
@@ -108,7 +114,7 @@ export default function ManageCoursesPage() {
           </Button>
       </div>
 
-      {loading ? <p className="text-center text-muted-foreground">Loading courses...</p> : (
+      {loading ? <p className="text-center text-muted-foreground py-8">Loading courses...</p> : (
         courses.length === 0 ? (
           <div className="text-center py-16 border-2 border-dashed rounded-lg">
              <h3 className="text-xl font-semibold">No courses created yet.</h3>

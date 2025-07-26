@@ -12,7 +12,7 @@ import { getStudentCoursesWithProgress } from "@/lib/services";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import Image from "next/image";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, onSnapshot, collection } from "firebase/firestore";
 
 export default function StudentCoursesPage() {
   const [courses, setCourses] = useState([]);
@@ -33,38 +33,33 @@ export default function StudentCoursesPage() {
     if (!user) return;
 
     setLoading(true);
-    // This real-time listener will react to changes in user's enrolled courses
-    const unsubUser = onSnapshot(doc(db, "users", user.uid), async (userDoc) => {
-      const userData = userDoc.data();
-      const courseIds = userData?.courses || [];
-
-      if (courseIds.length === 0) {
-        setCourses([]);
-        setLoading(false);
-        return;
-      }
-      
-      const fetchAndUpdateCourses = async () => {
+    
+    const fetchAndUpdateCourses = async () => {
+      try {
         const studentCourses = await getStudentCoursesWithProgress(user.uid);
         setCourses(studentCourses);
+      } catch (error) {
+        console.error("Error fetching student courses with progress:", error)
+      } finally {
         setLoading(false);
       }
-      
-      fetchAndUpdateCourses();
+    }
+    
+    // Initial fetch
+    fetchAndUpdateCourses();
 
-      // We also need to listen to courses and assignments to update progress in real-time
-      const unsubCourses = onSnapshot(collection(db, "courses"), fetchAndUpdateCourses);
-      const unsubAssignments = onSnapshot(collection(db, "assignments"), fetchAndUpdateCourses);
-      const unsubSubmissions = onSnapshot(collection(db, "submissions"), fetchAndUpdateCourses);
+    // We need to listen to multiple collections to update progress in real-time
+    const unsubUser = onSnapshot(doc(db, "users", user.uid), fetchAndUpdateCourses);
+    const unsubCourses = onSnapshot(collection(db, "courses"), fetchAndUpdateCourses);
+    const unsubAssignments = onSnapshot(collection(db, "assignments"), fetchAndUpdateCourses);
+    const unsubSubmissions = onSnapshot(collection(db, "submissions"), fetchAndUpdateCourses);
 
-      return () => {
+    return () => {
+        unsubUser();
         unsubCourses();
         unsubAssignments();
         unsubSubmissions();
-      }
-    });
-
-    return () => unsubUser();
+    };
   }, [user]);
 
   if (loading) {
