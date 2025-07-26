@@ -8,7 +8,7 @@ import { useState, useEffect } from "react";
 import { getStudentQuizzes } from "@/lib/services";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, onSnapshot, doc } from "firebase/firestore";
 
 export default function AllQuizzesPage() {
   const [quizzes, setQuizzes] = useState([]);
@@ -38,13 +38,15 @@ export default function AllQuizzesPage() {
       }
     };
 
-    const unsubQuizzes = onSnapshot(collection(db, "quizzes"), fetchQuizzes);
-    const unsubUser = onSnapshot(collection(db, "users"), fetchQuizzes);
+    const unsubs = [
+        onSnapshot(collection(db, "quizzes"), fetchQuizzes),
+        onSnapshot(doc(db, "users", user.uid), fetchQuizzes),
+        onSnapshot(collection(db, "courses"), fetchQuizzes)
+    ];
 
-    return () => {
-        unsubQuizzes();
-        unsubUser();
-    };
+    fetchQuizzes();
+
+    return () => unsubs.forEach(unsub => unsub());
   }, [user]);
 
 

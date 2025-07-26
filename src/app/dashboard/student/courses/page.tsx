@@ -32,9 +32,8 @@ export default function StudentCoursesPage() {
   useEffect(() => {
     if (!user) return;
 
-    setLoading(true);
-    
     const fetchAndUpdateCourses = async () => {
+      setLoading(true);
       try {
         const studentCourses = await getStudentCoursesWithProgress(user.uid);
         setCourses(studentCourses);
@@ -45,21 +44,18 @@ export default function StudentCoursesPage() {
       }
     }
     
+    // We need to listen to multiple collections to update progress in real-time
+    const unsubs = [
+        onSnapshot(doc(db, "users", user.uid), fetchAndUpdateCourses),
+        onSnapshot(collection(db, "courses"), fetchAndUpdateCourses),
+        onSnapshot(collection(db, "assignments"), fetchAndUpdateCourses),
+        onSnapshot(collection(db, "submissions"), fetchAndUpdateCourses)
+    ];
+
     // Initial fetch
     fetchAndUpdateCourses();
 
-    // We need to listen to multiple collections to update progress in real-time
-    const unsubUser = onSnapshot(doc(db, "users", user.uid), fetchAndUpdateCourses);
-    const unsubCourses = onSnapshot(collection(db, "courses"), fetchAndUpdateCourses);
-    const unsubAssignments = onSnapshot(collection(db, "assignments"), fetchAndUpdateCourses);
-    const unsubSubmissions = onSnapshot(collection(db, "submissions"), fetchAndUpdateCourses);
-
-    return () => {
-        unsubUser();
-        unsubCourses();
-        unsubAssignments();
-        unsubSubmissions();
-    };
+    return () => unsubs.forEach(unsub => unsub());
   }, [user]);
 
   if (loading) {

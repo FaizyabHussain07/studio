@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
@@ -8,8 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { FileText, ArrowLeft, CheckCircle2, XCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getCourse, getAssignmentsByCourse, getStudentAssignmentStatus } from "@/lib/services";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
 
 export default function CourseDetailPage({ params }: { params: { id: string } }) {
   const [user, setUser] = useState<User | null>(null);
@@ -52,7 +54,22 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
         setLoading(false);
       }
     };
+    
+    // Initial fetch
     fetchCourseData();
+
+    // Listen to changes in assignments and submissions to update progress
+    const assignmentsQuery = query(collection(db, "assignments"), where("courseId", "==", params.id));
+    const submissionsQuery = query(collection(db, "submissions"), where("studentId", "==", user.uid));
+
+    const unsubAssignments = onSnapshot(assignmentsQuery, fetchCourseData);
+    const unsubSubmissions = onSnapshot(submissionsQuery, fetchCourseData);
+    
+    return () => {
+        unsubAssignments();
+        unsubSubmissions();
+    };
+
   }, [params.id, user]);
   
   const getStatusInfo = (status) => {
@@ -77,8 +94,8 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
     <div className="space-y-8">
       <div>
         <Button variant="ghost" asChild className="mb-4">
-            <Link href="/dashboard/student">
-                <ArrowLeft className="mr-2 h-4 w-4"/> Back to Dashboard
+            <Link href="/dashboard/student/courses">
+                <ArrowLeft className="mr-2 h-4 w-4"/> Back to My Courses
             </Link>
         </Button>
         <h1 className="text-3xl font-bold font-headline">{courseData.name}</h1>

@@ -7,9 +7,10 @@ import Link from "next/link";
 import { FileText, CheckCircle2, XCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getStudentAssignmentsWithStatus } from "@/lib/services";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { Badge } from "@/components/ui/badge";
+import { collection, onSnapshot } from "firebase/firestore";
 
 export default function AllAssignmentsPage() {
   const [assignments, setAssignments] = useState([]);
@@ -26,6 +27,7 @@ export default function AllAssignmentsPage() {
 
   useEffect(() => {
     if (!user) return;
+    
     const fetchAssignments = async () => {
       setLoading(true);
       try {
@@ -38,7 +40,17 @@ export default function AllAssignmentsPage() {
         setLoading(false);
       }
     };
-    fetchAssignments();
+    
+    // Listen for changes that would affect assignments
+    const unsubs = [
+        onSnapshot(collection(db, 'assignments'), fetchAssignments),
+        onSnapshot(collection(db, 'submissions'), fetchAssignments),
+        onSnapshot(collection(db, 'courses'), fetchAssignments),
+    ];
+
+    fetchAssignments(); // Initial fetch
+    
+    return () => unsubs.forEach(unsub => unsub());
   }, [user]);
 
   const getStatusInfo = (status) => {

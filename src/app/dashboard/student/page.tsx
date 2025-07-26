@@ -57,23 +57,19 @@ export default function StudentDashboardPage() {
       }
     };
     
+    // Set up listeners for real-time updates
+    const unsubs = [
+        onSnapshot(doc(db, "users", user.uid), fetchData),
+        onSnapshot(collection(db, "courses"), fetchData),
+        onSnapshot(collection(db, "assignments"), fetchData),
+        onSnapshot(collection(db, "submissions"), fetchData),
+        onSnapshot(collection(db, "quizzes"), fetchData)
+    ];
+    
     // Initial fetch
     fetchData();
 
-    // Set up listeners for real-time updates
-    const unsubUser = onSnapshot(doc(db, "users", user.uid), fetchData);
-    const unsubCourses = onSnapshot(collection(db, "courses"), fetchData);
-    const unsubAssignments = onSnapshot(collection(db, "assignments"), fetchData);
-    const unsubSubmissions = onSnapshot(collection(db, "submissions"), fetchData);
-    const unsubQuizzes = onSnapshot(collection(db, "quizzes"), fetchData);
-
-    return () => {
-        unsubUser();
-        unsubCourses();
-        unsubAssignments();
-        unsubSubmissions();
-        unsubQuizzes();
-    };
+    return () => unsubs.forEach(unsub => unsub());
 
   }, [user]);
 
