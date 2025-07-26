@@ -53,7 +53,10 @@ export const updateCourse = async (id, courseData) => {
 }
 
 export const updateUserCourses = async (courseId, newStudentIds) => {
-    const allStudents = await getStudentUsers();
+    const q = query(collection(db, "users"), where("role", "==", "student"));
+    const snapshot = await getDocs(q);
+    const allStudents = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
     const batch = writeBatch(db);
 
     allStudents.forEach(student => {
@@ -156,8 +159,11 @@ export const getStudentCoursesWithProgress = async (studentId) => {
 
       const assignmentIds = assignments.map(a => a.id);
       const submissions = await getSubmissionsByStudent(studentId, assignmentIds);
+      
       const completedCount = submissions.filter(s => s.status === 'Submitted' || s.status === 'Graded').length;
-      const progress = Math.round((completedCount / assignments.length) * 100);
+
+      const progress = assignments.length > 0 ? Math.round((completedCount / assignments.length) * 100) : 0;
+      
       return { ...course, progress };
     })
   );
@@ -340,7 +346,7 @@ export const getStudentAssignmentStatus = async (studentId, assignmentId) => {
 
   if (snapshot.empty) {
     const assignment = await getAssignment(assignmentId);
-    if (assignment && new Date(assignment.dueDate) < new Date()) {
+    if (assignment && new Date() > new Date(assignment.dueDate)) {
         return 'Missing';
     }
     return 'Pending';

@@ -8,11 +8,11 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { useState, useEffect } from "react";
-import { getStudentCoursesWithProgress, getStudentAssignmentsWithStatus, getStudentCourses } from "@/lib/services";
+import { getStudentCoursesWithProgress } from "@/lib/services";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import Image from "next/image";
-import { collection, onSnapshot, query, where, documentId } from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
 
 export default function StudentCoursesPage() {
   const [courses, setCourses] = useState([]);
@@ -32,9 +32,9 @@ export default function StudentCoursesPage() {
   useEffect(() => {
     if (!user) return;
 
-    // Listen to changes in the user document to get course IDs
+    setLoading(true);
+    // Listen to changes in the user document to get course IDs in real-time
     const unsubUser = onSnapshot(doc(db, "users", user.uid), async (userDoc) => {
-      setLoading(true);
       const userData = userDoc.data();
       const courseIds = userData?.courses || [];
 
@@ -108,3 +108,5 @@ export default function StudentCoursesPage() {
     </div>
   );
 }
+
+    

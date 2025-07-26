@@ -80,7 +80,7 @@ export default function AssignmentDetailPage({ params }: { params: { id:string }
   }
 
   const handleSubmission = async () => {
-    if (!user || !assignmentData || (!file && !textSubmission)) {
+    if (!user || !assignmentData || (!file && !textSubmission.trim())) {
         toast({ title: "Submission empty", description: "Please provide a file or text to submit.", variant: "destructive" });
         return;
     }
