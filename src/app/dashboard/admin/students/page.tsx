@@ -12,12 +12,16 @@ import { db } from "@/lib/firebase";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { StudentForm } from "@/components/forms/student-form";
+import { useToast } from "@/hooks/use-toast";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { deleteUser } from "@/lib/services";
 
 export default function ManageStudentsPage() {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     setLoading(true);
@@ -43,6 +47,16 @@ export default function ManageStudentsPage() {
   const handleCreate = () => {
     setSelectedStudent(null);
     setIsFormOpen(true);
+  }
+
+  const handleDelete = async (userId) => {
+    try {
+        await deleteUser(userId);
+        toast({ title: "Success", description: "Student deleted successfully." });
+    } catch(error) {
+        console.error("Failed to delete student:", error);
+        toast({ title: "Error", description: "Could not delete student.", variant: "destructive" });
+    }
   }
 
   return (
@@ -117,7 +131,23 @@ export default function ManageStudentsPage() {
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
                           <DropdownMenuItem onClick={() => handleEdit(student)}>Edit</DropdownMenuItem>
                           <DropdownMenuItem>View Profile</DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+                           <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive cursor-pointer">Delete</DropdownMenuItem>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This will permanently delete the student account. This action cannot be undone.
+                                    </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDelete(student.id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>

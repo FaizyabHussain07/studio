@@ -7,9 +7,11 @@ import Link from "next/link";
 import { ArrowLeft, Paperclip, Upload, File, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getAssignment, getCourse, createSubmission, getStudentSubmissionForAssignment, uploadFile } from "@/lib/services";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
+import { onAuthStateChanged } from "firebase/auth";
+import { doc, onSnapshot } from "firebase/firestore";
 
 export default function AssignmentDetailPage({ params }: { params: { id:string } }) {
   const [assignmentData, setAssignmentData] = useState(null);
@@ -23,33 +25,39 @@ export default function AssignmentDetailPage({ params }: { params: { id:string }
   const { toast } = useToast();
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
     });
     return () => unsubscribe();
   }, []);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !params.id) return;
 
-    const fetchAssignmentData = async () => {
-      setLoading(true);
-      try {
-        const assignment = await getAssignment(params.id);
-        if (assignment) {
-          setAssignmentData(assignment);
-          const course = await getCourse(assignment.courseId);
-          setCourseName(course?.name || "Course");
-          const existingSubmission = await getStudentSubmissionForAssignment(user.uid, params.id);
-          setSubmission(existingSubmission);
+    const fetchInitialData = async () => {
+        setLoading(true);
+        try {
+            const assignment = await getAssignment(params.id);
+            if (assignment) {
+                setAssignmentData(assignment);
+                const course = await getCourse(assignment.courseId);
+                setCourseName(course?.name || "Course");
+            }
+        } catch (error) {
+             console.error("Error fetching assignment:", error);
+        } finally {
+            setLoading(false);
         }
-      } catch (error) {
-        console.error("Error fetching assignment:", error);
-      } finally {
-        setLoading(false);
-      }
     };
-    fetchAssignmentData();
+    fetchInitialData();
+    
+    // Listen for real-time updates on submission
+    const unsubSubmission = getStudentSubmissionForAssignment(user.uid, params.id, (sub) => {
+        setSubmission(sub);
+    });
+
+    return () => unsubSubmission();
+
   }, [params.id, user]);
   
   const handleFileChange = (e) => {
@@ -78,10 +86,7 @@ export default function AssignmentDetailPage({ params }: { params: { id:string }
           fileName: file.name
       });
       toast({ title: "Success", description: "Assignment submitted successfully!" });
-      
-      const existingSubmission = await getStudentSubmissionForAssignment(user.uid, params.id);
-      setSubmission(existingSubmission);
-
+      // Real-time listener will update the submission state, no need to manually set it.
     } catch(error) {
         console.error("Submission failed", error);
         toast({ title: "Error", description: "Failed to submit assignment.", variant: "destructive" });

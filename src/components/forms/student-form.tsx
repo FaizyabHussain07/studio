@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useForm } from "react-hook-form";
@@ -12,19 +11,25 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { auth } from "@/lib/firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { createUser } from "@/lib/services";
+import { createUser, updateUser } from "@/lib/services";
 
-const studentSchema = z.object({
+const studentCreateSchema = z.object({
   name: z.string().min(1, "Full name is required"),
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
+const studentUpdateSchema = z.object({
+  name: z.string().min(1, "Full name is required"),
+  email: z.string().email("Invalid email address"),
+});
+
+
 export function StudentForm({ student, onFinished }) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const form = useForm({
-    resolver: zodResolver(studentSchema),
+    resolver: zodResolver(student ? studentUpdateSchema : studentCreateSchema),
     defaultValues: {
       name: student?.name || "",
       email: student?.email || "",
@@ -36,23 +41,20 @@ export function StudentForm({ student, onFinished }) {
     setLoading(true);
     try {
       if (student) {
-        // NOTE: Student update logic is not implemented in this form.
-        // This form is primarily for creation.
-        // To update, you'd typically handle it separately or conditionally.
-        toast({ title: "Note", description: "Student update functionality is not implemented in this form." });
+        await updateUser(student.id, {
+            name: data.name,
+            email: data.email,
+        });
+        toast({ title: "Success", description: "Student updated successfully." });
+
       } else {
-        // This is a simplified creation flow from the admin panel.
-        // It creates the user in Auth and then in the 'users' collection.
-        // A more robust solution might use a server-side function to handle this.
-        
-        // We can't create a user and sign them in here as it would affect the admin's session.
-        // The ideal way is an invite system, but for simplicity, we create them directly.
-        // This requires a temporary workaround or a backend function.
-        // For this project, we will simulate the creation without affecting the current admin's auth state.
-        // This will add them to the database, and they can log in with the password you set.
-         await createUser({
-            // uid will be set later if we use a proper backend function
-            uid: `temp_${Date.now()}`, // placeholder
+        // This is a placeholder for a more robust user creation flow.
+        // In a real app, you would use Firebase Functions to create the user in Auth.
+        // This client-side approach is for demonstration and might have limitations (e.g., requires separate auth handling).
+        // For now, we are creating a document in Firestore. The user needs to be created in Auth separately.
+        const tempId = `temp_${Date.now()}`;
+        await createUser({
+            uid: tempId, // This will be updated when the user is created in Auth
             name: data.name,
             email: data.email,
             role: 'student',
@@ -61,7 +63,7 @@ export function StudentForm({ student, onFinished }) {
             photoURL: ''
         });
 
-        toast({ title: "Success", description: `Student ${data.name} created. They can now log in with the password you set.` });
+        toast({ title: "Success", description: `Student profile for ${data.name} created. You must now create their authentication account separately with the same email.` });
       }
       onFinished();
     } catch (error) {
@@ -77,7 +79,7 @@ export function StudentForm({ student, onFinished }) {
       <DialogHeader>
         <DialogTitle>{student ? 'Edit Student' : 'Add New Student'}</DialogTitle>
         <DialogDescription>
-          Fill in the details below to create a new student account.
+          {student ? 'Edit the details for this student.' : "Fill in the details below to create a new student account."}
         </DialogDescription>
       </DialogHeader>
       <Form {...form}>
@@ -114,7 +116,7 @@ export function StudentForm({ student, onFinished }) {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>Temporary Password</FormLabel>
                     <FormControl>
                       <Input type="password" placeholder="••••••••" {...field} disabled={loading}/>
                     </FormControl>

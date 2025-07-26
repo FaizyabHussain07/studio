@@ -9,7 +9,7 @@ import { MoreHorizontal, PlusCircle, Search } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect } from 'react';
-import { getAssignments, getCourses, getSubmissionsByAssignment, getStudentUsers, deleteAssignment } from "@/lib/services";
+import { getCourses, getSubmissionsByAssignment, getStudentUsers, deleteAssignment } from "@/lib/services";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { AssignmentForm } from "@/components/forms/assignment-form";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -45,14 +45,21 @@ export default function ManageAssignmentsPage() {
     setLoading(true);
     const unsubAssignments = onSnapshot(collection(db, 'assignments'), async (snapshot) => {
         const assignmentsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        if (courses.length > 0 && studentCount > 0) {
+        
+        // Ensure courses and studentCount are available before processing
+        const currentCourses = await getCourses();
+        const students = await getStudentUsers();
+        setCourses(currentCourses);
+        setStudentCount(students.length);
+
+        if (currentCourses.length > 0) {
             const assignmentsWithDetails = await Promise.all(assignmentsData.map(async (assignment) => {
-              const course = courses.find(c => c.id === assignment.courseId);
+              const course = currentCourses.find(c => c.id === assignment.courseId);
               const submissions = await getSubmissionsByAssignment(assignment.id);
               return {
                 ...assignment,
                 courseName: course ? course.name : "Unknown Course",
-                submissionsCount: `${submissions.length}/${studentCount}`,
+                submissionsCount: `${submissions.length}/${students.length}`,
               };
             }));
             setAssignments(assignmentsWithDetails);
@@ -63,7 +70,7 @@ export default function ManageAssignmentsPage() {
     });
 
     return () => unsubAssignments();
-  }, [courses, studentCount]);
+  }, []);
 
   const handleEdit = (assignment) => {
       setSelectedAssignment(assignment);
@@ -167,7 +174,7 @@ export default function ManageAssignmentsPage() {
                             </DropdownMenuItem>
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">Delete</DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive cursor-pointer">Delete</DropdownMenuItem>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                     <AlertDialogHeader>
@@ -178,7 +185,7 @@ export default function ManageAssignmentsPage() {
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDelete(assignment.id)}>Delete</AlertDialogAction>
+                                    <AlertDialogAction onClick={() => handleDelete(assignment.id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
                             </AlertDialog>

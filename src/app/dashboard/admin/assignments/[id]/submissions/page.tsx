@@ -7,10 +7,11 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft, Download } from "lucide-react";
 import { useState, useEffect } from "react";
-import { getAssignment, getSubmissionsByAssignment, getUser, getCourse } from "@/lib/services";
+import { getAssignment, getSubmissionsByAssignment, getUser, getCourse, updateSubmissionStatus } from "@/lib/services";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { updateSubmissionStatus } from "@/lib/services";
 import { useToast } from "@/hooks/use-toast";
+import { onSnapshot, query, collection, where } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 export default function ViewSubmissionsPage({ params }: { params: { id: string }}) {
   const [assignment, setAssignment] = useState(null);
@@ -20,7 +21,7 @@ export default function ViewSubmissionsPage({ params }: { params: { id: string }
   const { toast } = useToast();
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchStaticData = async () => {
       setLoading(true);
       try {
         const assignmentData = await getAssignment(params.id);
@@ -29,8 +30,23 @@ export default function ViewSubmissionsPage({ params }: { params: { id: string }
         if (assignmentData) {
             const courseData = await getCourse(assignmentData.courseId);
             setCourse(courseData);
-            
-            const submissionsData = await getSubmissionsByAssignment(params.id);
+        }
+      } catch (error) {
+        console.error("Error fetching static data:", error);
+      }
+    };
+    fetchStaticData();
+  }, [params.id]);
+
+  useEffect(() => {
+    if (!params.id) return;
+    
+    const q = query(collection(db, 'submissions'), where('assignmentId', '==', params.id));
+    
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
+        setLoading(true);
+        try {
+            const submissionsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             const submissionsWithStudentInfo = await Promise.all(
                 submissionsData.map(async (sub) => {
                     const student = await getUser(sub.studentId);
@@ -42,20 +58,21 @@ export default function ViewSubmissionsPage({ params }: { params: { id: string }
                 })
             );
             setSubmissions(submissionsWithStudentInfo);
+        } catch (error) {
+            console.error("Error fetching submissions real-time:", error);
+        } finally {
+            setLoading(false);
         }
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
+    });
+
+    return () => unsubscribe();
+
   }, [params.id]);
+
 
   const handleStatusChange = async (submissionId, newStatus) => {
     try {
         await updateSubmissionStatus(submissionId, newStatus);
-        setSubmissions(prev => prev.map(s => s.id === submissionId ? {...s, status: newStatus} : s));
         toast({ title: "Status Updated", description: "The submission status has been changed."});
     } catch (error) {
         console.error("Failed to update status", error);
@@ -71,7 +88,7 @@ export default function ViewSubmissionsPage({ params }: { params: { id: string }
                 <ArrowLeft className="mr-2 h-4 w-4"/> Back to Assignments
             </Link>
         </Button>
-        {loading ? (
+        {loading && !assignment ? (
              <h1 className="text-3xl font-bold font-headline">Loading submissions...</h1>
         ) : (
             <div>
