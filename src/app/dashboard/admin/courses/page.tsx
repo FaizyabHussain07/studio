@@ -33,36 +33,37 @@ export default function ManageCoursesPage() {
     });
 
     // Listen for real-time updates on courses
-    const unsubCourses = onSnapshot(collection(db, 'courses'), async (snapshot) => {
+    const unsubCourses = onSnapshot(collection(db, 'courses'), (snapshot) => {
         setLoading(true);
         const courseData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         
-        try {
-            const coursesWithDetails = await Promise.all(
-              courseData.map(async (course) => {
-                const assignments = await getAssignmentsByCourse(course.id);
-                const quizzes = await getQuizzesByCourse(course.id);
-                return { 
-                  ...course, 
-                  assignmentCount: assignments.length,
-                  quizCount: quizzes.length,
-                  studentCount: course.studentIds?.length || 0
-                };
-              })
-            );
+        // Using Promise.all to fetch related data for each course
+        Promise.all(
+          courseData.map(async (course) => {
+            const assignments = await getAssignmentsByCourse(course.id);
+            const quizzes = await getQuizzesByCourse(course.id);
+            return { 
+              ...course, 
+              assignmentCount: assignments.length,
+              quizCount: quizzes.length,
+              studentCount: course.studentIds?.length || 0
+            };
+          })
+        ).then(coursesWithDetails => {
             setCourses(coursesWithDetails);
-        } catch(error) {
+        }).catch(error => {
             console.error("Error processing course details:", error);
-        } finally {
+            toast({ title: "Error", description: "Could not load course details."});
+        }).finally(() => {
             setLoading(false);
-        }
+        });
     });
 
     return () => {
         unsubCourses();
         unsubStudents();
     };
-  }, []);
+  }, [toast]);
 
   const handleEdit = (course) => {
     setSelectedCourse(course);
