@@ -1,5 +1,6 @@
+
 import { db } from './firebase';
-import { collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, query, where, documentId, orderBy, limit, writeBatch, setDoc, onSnapshot } from 'firebase/firestore';
+import { collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, query, where, documentId, orderBy, limit, writeBatch, setDoc, onSnapshot, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 
 const storage = getStorage();
@@ -30,9 +31,7 @@ export const uploadFile = (file, onProgress) => {
 
 // User Management
 export const createUser = async (userData) => {
-  // Use uid as the document ID if provided, otherwise Firestore generates one.
   const userRef = userData.uid ? doc(db, 'users', userData.uid) : doc(collection(db, 'users'));
-  // If uid is not provided, we need to add it to the data.
   const finalUserData = { ...userData, uid: userRef.id };
   await setDoc(userRef, finalUserData);
 };
@@ -44,11 +43,7 @@ export const updateUser = async (id, userData) => {
 }
 
 export const deleteUser = async (userId) => {
-    // This function only deletes the Firestore user document.
-    // Deleting a user from Firebase Auth requires admin privileges and is best done from a secure server environment (e.g., Firebase Functions).
-    // Attempting to do this on the client can expose admin credentials.
     await deleteDoc(doc(db, 'users', userId));
-    // Here you would also call a Firebase Function to delete the Auth user.
 }
 
 
@@ -83,11 +78,39 @@ export const updateCourse = async (id, courseData) => {
     await updateDoc(doc(db, 'courses', id), courseData);
 }
 
+export const updateUserCourses = async (courseId, newStudentIds) => {
+    const allStudents = await getStudentUsers();
+    const batch = writeBatch(db);
+
+    allStudents.forEach(student => {
+        const studentRef = doc(db, 'users', student.id);
+        const isEnrolled = newStudentIds.includes(student.id);
+        const wasEnrolled = student.courses?.includes(courseId);
+
+        if(isEnrolled && !wasEnrolled) {
+            batch.update(studentRef, { courses: arrayUnion(courseId) });
+        } else if (!isEnrolled && wasEnrolled) {
+            batch.update(studentRef, { courses: arrayRemove(courseId) });
+        }
+    });
+
+    await batch.commit();
+}
+
 export const deleteCourse = async (courseId) => {
     const batch = writeBatch(db);
     
     const courseRef = doc(db, 'courses', courseId);
     batch.delete(courseRef);
+
+    // Remove course from all users who are enrolled
+    const usersQuery = query(collection(db, 'users'), where('courses', 'array-contains', courseId));
+    const usersSnapshot = await getDocs(usersQuery);
+    usersSnapshot.forEach(userDoc => {
+        const userRef = doc(db, 'users', userDoc.id);
+        batch.update(userRef, { courses: arrayRemove(courseId) });
+    });
+
 
     const assignmentsQuery = query(collection(db, 'assignments'), where('courseId', '==', courseId));
     const assignmentsSnapshot = await getDocs(assignmentsQuery);
@@ -99,7 +122,6 @@ export const deleteCourse = async (courseId) => {
             batch.delete(doc.ref);
         });
 
-        // Split assignmentIds into chunks of 30 for 'in' query limitation
         for (let i = 0; i < assignmentIds.length; i += 30) {
             const chunk = assignmentIds.slice(i, i + 30);
             if (chunk.length > 0) {
@@ -133,7 +155,6 @@ export const getStudentCourses = async (studentId) => {
     return [];
   }
   const courses = [];
-  // Firestore 'in' queries are limited to 30 items. Chunk if needed.
   for (let i = 0; i < user.courses.length; i+= 30) {
       const chunk = user.courses.slice(i, i + 30);
       if (chunk.length > 0) {
@@ -164,11 +185,6 @@ export const getStudentCoursesWithProgress = async (studentId) => {
   return coursesWithProgress;
 }
 
-export const getStudentCountForCourse = async (courseId) => {
-    const q = query(collection(db, 'users'), where('courses', 'array-contains', courseId));
-    const snapshot = await getDocs(q);
-    return snapshot.size;
-}
 
 // Assignment Management
 export const createAssignment = async (assignmentData) => {
@@ -317,7 +333,6 @@ export const getSubmissionsByStudent = async (studentId, assignmentIds) => {
   if (!assignmentIds || assignmentIds.length === 0) return [];
   
   const submissions = [];
-  // Chunking to handle 'in' query limitation (max 30 values)
   for (let i = 0; i < assignmentIds.length; i += 30) {
       const chunk = assignmentIds.slice(i, i + 30);
       if(chunk.length > 0) {

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
@@ -7,7 +8,7 @@ import { MoreVertical, PlusCircle, Search, Users, FileText } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { getAssignmentsByCourse, getStudentCountForCourse, deleteCourse } from "@/lib/services";
+import { getAssignmentsByCourse, getStudentUsers, deleteCourse } from "@/lib/services";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { CourseForm } from "@/components/forms/course-form";
 import { useToast } from "@/hooks/use-toast";
@@ -17,23 +18,33 @@ import { db } from "@/lib/firebase";
 
 export default function ManageCoursesPage() {
   const [courses, setCourses] = useState([]);
+  const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const { toast } = useToast();
 
   useEffect(() => {
+    const fetchStudents = async () => {
+        const studentData = await getStudentUsers();
+        setStudents(studentData);
+    };
+    fetchStudents();
+
+    const unsubStudents = onSnapshot(collection(db, 'users'), (snapshot) => {
+        setStudents(snapshot.docs.map(doc => ({id: doc.id, ...doc.data()})));
+    });
+
     setLoading(true);
     const unsubscribe = onSnapshot(collection(db, 'courses'), async (snapshot) => {
         const courseData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         const coursesWithDetails = await Promise.all(
           courseData.map(async (course) => {
             const assignments = await getAssignmentsByCourse(course.id);
-            const studentCount = await getStudentCountForCourse(course.id);
             return { 
               ...course, 
               assignmentCount: assignments.length,
-              studentCount: studentCount
+              studentCount: course.studentIds?.length || 0
             };
           })
         );
@@ -41,7 +52,10 @@ export default function ManageCoursesPage() {
         setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+        unsubscribe();
+        unsubStudents();
+    };
   }, []);
 
   const handleEdit = (course) => {
@@ -73,7 +87,7 @@ export default function ManageCoursesPage() {
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent>
-            <CourseForm course={selectedCourse} onFinished={() => setIsFormOpen(false)}/>
+            <CourseForm course={selectedCourse} students={students} onFinished={() => setIsFormOpen(false)}/>
         </DialogContent>
       </Dialog>
 

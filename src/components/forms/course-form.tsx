@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
@@ -9,17 +9,19 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { createCourse, updateCourse } from "@/lib/services";
+import { createCourse, updateCourse, updateUserCourses } from "@/lib/services";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { MultiSelect } from "@/components/ui/multi-select";
 
 const courseSchema = z.object({
   name: z.string().min(1, "Course name is required"),
   description: z.string().min(1, "Description is required"),
   imageUrl: z.string().url().optional().or(z.literal('')),
+  studentIds: z.array(z.string()).optional(),
 });
 
-export function CourseForm({ course, onFinished }) {
+export function CourseForm({ course, students, onFinished }) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const form = useForm({
@@ -28,17 +30,32 @@ export function CourseForm({ course, onFinished }) {
       name: course?.name || "",
       description: course?.description || "",
       imageUrl: course?.imageUrl || "",
+      studentIds: course?.studentIds || [],
     },
   });
+
+  const studentOptions = students.map(student => ({
+    value: student.id,
+    label: student.name,
+  }));
 
   const onSubmit = async (data) => {
     setLoading(true);
     try {
+      const coursePayload = {
+          name: data.name,
+          description: data.description,
+          imageUrl: data.imageUrl,
+          studentIds: data.studentIds || [],
+      };
+
       if (course) {
-        await updateCourse(course.id, data);
+        await updateCourse(course.id, coursePayload);
+        await updateUserCourses(course.id, data.studentIds);
         toast({ title: "Success", description: "Course updated successfully." });
       } else {
-        await createCourse(data);
+        const newCourseId = await createCourse(coursePayload);
+        await updateUserCourses(newCourseId, data.studentIds);
         toast({ title: "Success", description: "Course created successfully." });
       }
       onFinished();
@@ -94,6 +111,24 @@ export function CourseForm({ course, onFinished }) {
                 <FormLabel>Image URL (Optional)</FormLabel>
                 <FormControl>
                   <Input placeholder="https://example.com/image.png" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+           <FormField
+            control={form.control}
+            name="studentIds"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Enroll Students</FormLabel>
+                <FormControl>
+                   <MultiSelect
+                        options={studentOptions}
+                        selected={field.value}
+                        onChange={field.onChange}
+                        placeholder="Select students to enroll..."
+                    />
                 </FormControl>
                 <FormMessage />
               </FormItem>
