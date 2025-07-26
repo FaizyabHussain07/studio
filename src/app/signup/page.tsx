@@ -7,23 +7,49 @@ import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/logo";
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
+import { auth } from '@/lib/firebase';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUser } from '@/lib/services';
+import { useToast } from "@/hooks/use-toast";
 
 export default function SignUpPage() {
   const router = useRouter();
+  const { toast } = useToast();
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const email = formData.get('email');
+    const name = formData.get('name') as string;
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
     
-    // In a real app, you would handle user creation and then redirect.
-    // Here, we simulate the role-based redirection.
-    if (email === 'syedfaizyabhussain07@gmail.com') {
-      // This user is an admin
-      router.push('/dashboard/admin');
-    } else {
-      // Any other user is a student
-      router.push('/dashboard/student');
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      const role = email === 'syedfaizyabhussain07@gmail.com' ? 'admin' : 'student';
+
+      await createUser({
+        uid: user.uid,
+        name,
+        email,
+        role,
+        joined: new Date().toISOString().split('T')[0],
+        courses: [],
+      });
+      
+      if (role === 'admin') {
+        router.push('/dashboard/admin');
+      } else {
+        router.push('/dashboard/student');
+      }
+
+    } catch (error) {
+      console.error("Failed to sign up:", error);
+      toast({
+        title: "Sign-up Failed",
+        description: "This email might already be in use. Please try another one.",
+        variant: "destructive",
+      });
     }
   };
 

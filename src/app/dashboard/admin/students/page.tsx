@@ -1,21 +1,33 @@
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
+'use client';
+
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MoreHorizontal, PlusCircle, Search } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
-const students = [
-  { id: "1", name: "Ayesha Khan", email: "ayesha.k@example.com", courses: 3, joined: "2023-01-15" },
-  { id: "2", name: "Bilal Ahmed", email: "bilal.a@example.com", courses: 2, joined: "2023-02-20" },
-  { id: "3", name: "Fatima Ali", email: "fatima.a@example.com", courses: 4, joined: "2023-03-10" },
-  { id: "4", name: "Omar Hassan", email: "omar.h@example.com", courses: 1, joined: "2023-04-05" },
-  { id: "5", name: "Zainab Malik", email: "zainab.m@example.com", courses: 3, joined: "2023-05-12" },
-];
+import { useState, useEffect } from "react";
+import { getStudentUsers } from "@/lib/services";
 
 export default function ManageStudentsPage() {
+  const [students, setStudents] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        const studentData = await getStudentUsers();
+        setStudents(studentData);
+      } catch (error) {
+        console.error("Error fetching students:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStudents();
+  }, []);
+
   return (
     <div className="space-y-8">
       <div>
@@ -47,7 +59,11 @@ export default function ManageStudentsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {students.map((student) => (
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center">Loading students...</TableCell>
+                </TableRow>
+              ) : students.map((student) => (
                 <TableRow key={student.id}>
                   <TableCell className="font-medium">
                      <div className="flex items-center gap-3">
@@ -61,7 +77,7 @@ export default function ManageStudentsPage() {
                         </div>
                      </div>
                   </TableCell>
-                  <TableCell>{student.courses}</TableCell>
+                  <TableCell>{student.courses?.length || 0}</TableCell>
                   <TableCell>{student.joined}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>

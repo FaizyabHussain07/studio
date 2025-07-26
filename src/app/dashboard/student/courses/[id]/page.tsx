@@ -1,26 +1,43 @@
+'use client';
+
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { FileText, ArrowLeft } from "lucide-react";
-
-const courseData = {
-  id: 'quran-101',
-  name: "Quranic Studies 101",
-  progress: 75,
-  description: "This course covers the fundamentals of Tajweed, including the correct pronunciation of letters, articulation points, and the rules that apply to them. Students will also practice recitation of short surahs.",
-  assignments: [
-    { id: 'recitation-1', title: "Recitation of Surah Al-Fatiha", dueDate: "2024-07-20", status: "Graded" },
-    { id: 'tajweed-hw-4', title: "Tajweed Exercise 4", dueDate: "2024-08-01", status: "Submitted" },
-    { id: 'tajweed-hw-5', title: "Tajweed Exercise 5", dueDate: "2024-08-15", status: "Pending" },
-    { id: 'mid-term-rec', title: "Mid-term Recitation", dueDate: "2024-08-25", status: "Pending" },
-  ]
-};
+import { useState, useEffect } from "react";
+import { getCourse, getAssignmentsByCourse } from "@/lib/services";
 
 export default function CourseDetailPage({ params }: { params: { id: string } }) {
-  // In a real app, you would fetch courseData based on params.id
+  const [courseData, setCourseData] = useState(null);
+  const [assignments, setAssignments] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCourseData = async () => {
+      setLoading(true);
+      try {
+        const course = await getCourse(params.id);
+        if (course) {
+          const courseAssignments = await getAssignmentsByCourse(params.id);
+          setCourseData({...course, progress: 75}); // Placeholder progress
+          setAssignments(courseAssignments);
+        } else {
+          // Handle course not found
+        }
+      } catch (error) {
+        console.error("Error fetching course data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCourseData();
+  }, [params.id]);
+
+  if (loading || !courseData) {
+    return <div>Loading course details...</div>;
+  }
   
   return (
     <div className="space-y-8">
@@ -51,7 +68,7 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
         </CardHeader>
         <CardContent className="p-0">
           <ul className="divide-y">
-            {courseData.assignments.map(assignment => (
+            {assignments.map(assignment => (
               <li key={assignment.id} className="flex items-center justify-between p-4 hover:bg-secondary/50">
                 <div className="flex items-center gap-4">
                   <FileText className="h-6 w-6 text-primary flex-shrink-0" />
@@ -65,7 +82,7 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
                         assignment.status === 'Graded' ? 'default' : 
                         assignment.status === 'Submitted' ? 'secondary' : 'outline'
                     }>
-                        {assignment.status}
+                        {assignment.status || 'Pending'}
                     </Badge>
                     <Button asChild variant="outline" size="sm">
                        <Link href={`/dashboard/student/assignments/${assignment.id}`}>View</Link>

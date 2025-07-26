@@ -7,19 +7,35 @@ import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/logo";
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
+import { auth } from '@/lib/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { useToast } from "@/hooks/use-toast";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { toast } = useToast();
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const email = formData.get('email');
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
     
-    if (email === 'syedfaizyabhussain07@gmail.com') {
-      router.push('/dashboard/admin');
-    } else {
-      router.push('/dashboard/student');
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      
+      if (email === 'syedfaizyabhussain07@gmail.com') {
+        router.push('/dashboard/admin');
+      } else {
+        router.push('/dashboard/student');
+      }
+    } catch (error) {
+      console.error("Failed to sign in:", error);
+      toast({
+        title: "Sign-in Failed",
+        description: "Please check your email and password and try again.",
+        variant: "destructive",
+      });
     }
   };
 

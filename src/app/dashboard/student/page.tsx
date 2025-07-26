@@ -1,30 +1,65 @@
+'use client';
+
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowRight, BookText, FileText } from "lucide-react";
-
-const courses = [
-  { id: 'quran-101', name: "Quranic Studies 101", progress: 75, description: "Fundamentals of Tajweed and recitation." },
-  { id: 'islamic-hist', name: "Islamic History", progress: 40, description: "From the time of the Prophet (PBUH) to the Ottoman Empire." },
-  { id: 'arabic-lang', name: "Arabic Language Beginners", progress: 60, description: "Learn the basics of Arabic grammar and vocabulary." },
-];
-
-const assignments = [
-  { id: 'tajweed-hw', course: "Quranic Studies 101", title: "Tajweed Exercise 5", dueDate: "2024-08-15", status: "Pending" },
-  { id: 'history-essay', course: "Islamic History", title: "Essay on the Caliphates", dueDate: "2024-08-20", status: "Pending" },
-];
-
-const quizzes = [
-  { id: 'vocab-quiz', course: "Arabic Language Beginners", title: "Vocabulary Quiz 3", dueDate: "2024-08-12" },
-];
+import { useState, useEffect } from "react";
+import { getCourses, getAssignments } from "@/lib/services";
+import { auth } from "@/lib/firebase";
 
 export default function StudentDashboardPage() {
+  const [courses, setCourses] = useState([]);
+  const [assignments, setAssignments] = useState([]);
+  const [quizzes, setQuizzes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        setUser(user);
+      } else {
+        // Redirect to login or handle unauthenticated state
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const coursesData = await getCourses();
+        const assignmentsData = await getAssignments();
+
+        // This is a placeholder, you should filter courses/assignments for the current user
+        setCourses(coursesData.slice(0, 3).map(c => ({...c, progress: Math.floor(Math.random() * 100)})));
+        setAssignments(assignmentsData.slice(0,2));
+        // Add quiz fetching logic here if needed
+        setQuizzes([]);
+
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [user]);
+
+  if (loading) {
+    return <div>Loading dashboard...</div>;
+  }
+
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold font-headline">Welcome, Student!</h1>
+        <h1 className="text-3xl font-bold font-headline">Welcome, {user?.displayName || 'Student'}!</h1>
         <p className="text-muted-foreground">Here's an overview of your academic progress.</p>
       </div>
 
@@ -68,7 +103,7 @@ export default function StudentDashboardPage() {
                       <FileText className="h-6 w-6 text-primary" />
                       <div>
                         <h3 className="font-semibold">{assignment.title}</h3>
-                        <p className="text-sm text-muted-foreground">{assignment.course} &bull; Due: {assignment.dueDate}</p>
+                        <p className="text-sm text-muted-foreground">Due: {assignment.dueDate}</p>
                       </div>
                     </div>
                     <Button asChild variant="secondary" size="sm">
@@ -82,20 +117,7 @@ export default function StudentDashboardPage() {
           <TabsContent value="quizzes">
             <Card>
               <CardContent className="p-6 space-y-4">
-                {quizzes.map(quiz => (
-                  <div key={quiz.id} className="flex items-center justify-between p-4 rounded-md border">
-                     <div className="flex items-center gap-4">
-                      <BookText className="h-6 w-6 text-primary" />
-                      <div>
-                        <h3 className="font-semibold">{quiz.title}</h3>
-                        <p className="text-sm text-muted-foreground">{quiz.course} &bull; Due: {quiz.dueDate}</p>
-                      </div>
-                    </div>
-                    <Button asChild variant="default" size="sm">
-                       <Link href="#">Start Quiz</Link>
-                    </Button>
-                  </div>
-                ))}
+                 <p className="text-center text-muted-foreground">No quizzes available yet.</p>
               </CardContent>
             </Card>
           </TabsContent>

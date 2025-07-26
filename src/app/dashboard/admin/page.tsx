@@ -1,23 +1,55 @@
+'use client';
+
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Users, BookCopy, CheckSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-const stats = [
-  { title: "Total Students", value: "150", icon: Users },
-  { title: "Total Courses", value: "12", icon: BookCopy },
-  { title: "Total Submissions", value: "452", icon: CheckSquare },
-];
-
-const recentSubmissions = [
-  { id: "1", student: "Ayesha Khan", course: "Quranic Studies 101", assignment: "Tajweed Exercise 5", date: "2024-08-10", status: "Graded" },
-  { id: "2", student: "Bilal Ahmed", course: "Islamic History", assignment: "Essay on the Caliphates", date: "2024-08-09", status: "Pending" },
-  { id: "3", student: "Fatima Ali", course: "Arabic Language", assignment: "Grammar Worksheet 2", date: "2024-08-09", status: "Graded" },
-  { id: "4", student: "Omar Hassan", course: "Quranic Studies 101", assignment: "Surah Al-Fatiha Memorization", date: "2024-08-08", status: "Pending" },
-];
+import { useState, useEffect } from "react";
+import { getUsers, getCourses, getAssignments } from "@/lib/services"; // Assuming a getSubmissions function exists
 
 export default function AdminDashboardPage() {
+  const [stats, setStats] = useState([
+    { title: "Total Students", value: "0", icon: Users },
+    { title: "Total Courses", value: "0", icon: BookCopy },
+    { title: "Total Submissions", value: "0", icon: CheckSquare },
+  ]);
+  const [recentSubmissions, setRecentSubmissions] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      setLoading(true);
+      try {
+        const [users, courses, assignments] = await Promise.all([
+          getUsers(),
+          getCourses(),
+          getAssignments(), // In a real app, this should be getSubmissions()
+        ]);
+
+        const studentCount = users.filter(u => u.role === 'student').length;
+        const courseCount = courses.length;
+        // Placeholder for submission count
+        const submissionCount = assignments.length; 
+
+        setStats([
+          { title: "Total Students", value: studentCount.toString(), icon: Users },
+          { title: "Total Courses", value: courseCount.toString(), icon: BookCopy },
+          { title: "Total Submissions", value: submissionCount.toString(), icon: CheckSquare },
+        ]);
+
+        // Placeholder for recent submissions
+        // setRecentSubmissions(...) 
+
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboardData();
+  }, []);
+
   return (
     <div className="space-y-8">
       <div>
@@ -33,7 +65,7 @@ export default function AdminDashboardPage() {
               <stat.icon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
+              <div className="text-2xl font-bold">{loading ? '...' : stat.value}</div>
             </CardContent>
           </Card>
         ))}
@@ -44,34 +76,8 @@ export default function AdminDashboardPage() {
           <CardTitle>Recent Submissions</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Student</TableHead>
-                <TableHead>Course</TableHead>
-                <TableHead>Assignment</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {recentSubmissions.map((submission) => (
-                <TableRow key={submission.id}>
-                  <TableCell className="font-medium">{submission.student}</TableCell>
-                  <TableCell>{submission.course}</TableCell>
-                  <TableCell>{submission.assignment}</TableCell>
-                  <TableCell>{submission.date}</TableCell>
-                  <TableCell>
-                    <Badge variant={submission.status === 'Graded' ? 'default' : 'secondary'}>{submission.status}</Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="outline" size="sm">Review</Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+           {/* Recent submissions table will be implemented once submission logic is complete */}
+          <p className="text-center text-muted-foreground">No recent submissions to display.</p>
         </CardContent>
       </Card>
     </div>

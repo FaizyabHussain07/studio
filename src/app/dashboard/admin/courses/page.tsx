@@ -1,18 +1,39 @@
+'use client';
+
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MoreVertical, PlusCircle, Search, Users } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import Image from "next/image";
-
-const courses = [
-  { id: 'quran-101', name: "Quranic Studies 101", students: 45, assignments: 12, description: "Fundamentals of Tajweed and recitation." },
-  { id: 'islamic-hist', name: "Islamic History", students: 32, assignments: 8, description: "From the time of the Prophet (PBUH) to the Ottoman Empire." },
-  { id: 'arabic-lang', name: "Arabic Language Beginners", students: 50, assignments: 15, description: "Learn the basics of Arabic grammar and vocabulary." },
-  { id: 'fiqh-basics', name: "Fiqh Basics", students: 25, assignments: 5, description: "Introduction to Islamic jurisprudence." },
-];
+import { useState, useEffect } from "react";
+import { getCourses, getAssignments } from "@/lib/services";
 
 export default function ManageCoursesPage() {
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const courseData = await getCourses();
+        const coursesWithAssignmentCounts = await Promise.all(
+          courseData.map(async (course) => {
+            const assignments = await getAssignments();
+            const courseAssignments = assignments.filter(a => a.courseId === course.id);
+            return { ...course, assignments: courseAssignments.length };
+          })
+        );
+        setCourses(coursesWithAssignmentCounts);
+      } catch (error) {
+        console.error("Error fetching courses:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCourses();
+  }, []);
+
   return (
     <div className="space-y-8">
       <div>
@@ -31,7 +52,8 @@ export default function ManageCoursesPage() {
           </Button>
       </div>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      {loading ? <p>Loading courses...</p> : (
+        <div className="grid md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {courses.map(course => (
             <Card key={course.id}>
               <CardHeader>
@@ -68,13 +90,14 @@ export default function ManageCoursesPage() {
               <CardFooter className="flex items-center justify-between text-sm text-muted-foreground">
                 <div className="flex items-center gap-1">
                     <Users className="h-4 w-4" />
-                    <span>{course.students} Students</span>
+                    <span>{course.students?.length || 0} Students</span>
                 </div>
                  <span>{course.assignments} Assignments</span>
               </CardFooter>
             </Card>
           ))}
         </div>
+      )}
     </div>
   );
 }
