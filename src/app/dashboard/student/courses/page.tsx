@@ -11,7 +11,7 @@ import { getStudentCoursesWithProgress } from "@/lib/services";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import Image from "next/image";
-import { doc, onSnapshot } from "firebase/firestore";
+import { onSnapshot, doc, collection } from "firebase/firestore";
 
 export default function StudentCoursesPage() {
   const [courses, setCourses] = useState([]);
@@ -21,9 +21,6 @@ export default function StudentCoursesPage() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      if (!currentUser) {
-        setLoading(false);
-      }
     });
     return () => unsubscribe();
   }, []);
@@ -33,27 +30,30 @@ export default function StudentCoursesPage() {
         setLoading(false);
         return;
     }
-
-    setLoading(true);
-
-    const userDocRef = doc(db, "users", user.uid);
     
-    const unsubscribe = onSnapshot(userDocRef, async (userDoc) => {
-      if (userDoc.exists() && userDoc.data().courses?.length > 0) {
+    const fetchData = async () => {
+        setLoading(true);
         try {
-          const studentCourses = await getStudentCoursesWithProgress(user.uid);
-          setCourses(studentCourses);
+            const studentCourses = await getStudentCoursesWithProgress(user.uid);
+            setCourses(studentCourses);
         } catch (error) {
-          console.error("Error fetching student courses with progress:", error);
-          setCourses([]);
+            console.error("Error fetching courses: ", error);
+            setCourses([]);
+        } finally {
+            setLoading(false);
         }
-      } else {
-        setCourses([]);
-      }
-      setLoading(false);
-    });
+    }
 
-    return () => unsubscribe();
+    const unsubs = [
+        onSnapshot(doc(db, "users", user.uid), fetchData),
+        onSnapshot(collection(db, "assignments"), fetchData),
+        onSnapshot(collection(db, "submissions"), fetchData)
+    ];
+
+    fetchData();
+
+    return () => unsubs.forEach(unsub => unsub());
+
   }, [user]);
 
   if (loading) {
@@ -111,3 +111,4 @@ export default function StudentCoursesPage() {
     </div>
   );
 }
+
