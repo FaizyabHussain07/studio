@@ -3,7 +3,7 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Users, BookCopy, CheckSquare } from "lucide-react";
+import { Users, BookCopy, CheckSquare, HelpCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getStudentUsers, getCourses, getSubmissions } from "@/lib/services";
 import { onSnapshot, collection, query, where } from "firebase/firestore";
@@ -15,6 +15,7 @@ export default function AdminDashboardPage() {
     students: { title: "Total Students", value: "0", icon: Users },
     courses: { title: "Total Courses", value: "0", icon: BookCopy },
     submissions: { title: "Total Submissions", value: "0", icon: CheckSquare },
+    quizzes: { title: "Total Quizzes", value: "0", icon: HelpCircle }
   });
   const [recentSubmissions, setRecentSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -39,11 +40,17 @@ export default function AdminDashboardPage() {
        const submissionsData = await getSubmissions(5); // Get 5 most recent
        setRecentSubmissions(submissionsData);
     });
+    
+    const qQuizzes = collection(db, "quizzes");
+    const unsubQuizzes = onSnapshot(qQuizzes, (snapshot) => {
+        setStats(prev => ({ ...prev, quizzes: {...prev.quizzes, value: snapshot.size.toString()} }));
+    });
 
     return () => {
       unsubStudents();
       unsubCourses();
       unsubSubmissions();
+      unsubQuizzes();
     };
   }, []);
 
@@ -54,7 +61,7 @@ export default function AdminDashboardPage() {
         <p className="text-muted-foreground">A real-time overview of your learning platform.</p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {Object.values(stats).map((stat, index) => (
           <Card key={index}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

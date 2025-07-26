@@ -1,6 +1,7 @@
 
 
 
+
 import { db } from './firebase';
 import { collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, query, where, documentId, orderBy, limit, writeBatch, setDoc, onSnapshot, arrayUnion, arrayRemove } from 'firebase/firestore';
 
@@ -111,6 +112,13 @@ export const deleteCourse = async (courseId) => {
             }
         }
     }
+    
+    // Delete quizzes associated with the course
+    const quizzesQuery = query(collection(db, 'quizzes'), where('courseId', '==', courseId));
+    const quizzesSnapshot = await getDocs(quizzesQuery);
+    quizzesSnapshot.forEach(doc => {
+        batch.delete(doc.ref);
+    });
 
     await batch.commit();
 }
@@ -355,4 +363,45 @@ export const getStudentAssignmentStatus = async (studentId, assignmentId) => {
   return snapshot.docs[0].data().status || 'Submitted';
 }
 
-    
+// Quiz Management
+export const createQuiz = async (quizData) => {
+    const newQuiz = await addDoc(collection(db, 'quizzes'), quizData);
+    return newQuiz.id;
+}
+
+export const updateQuiz = async (id, quizData) => {
+    await updateDoc(doc(db, 'quizzes', id), quizData);
+}
+
+export const deleteQuiz = async (quizId) => {
+    await deleteDoc(doc(db, 'quizzes', quizId));
+}
+
+export const getQuizzesByCourse = async (courseId) => {
+    const q = query(collection(db, "quizzes"), where("courseId", "==", courseId));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+
+export const getStudentQuizzes = async (studentId) => {
+    const courses = await getStudentCourses(studentId);
+    if(courses.length === 0) return [];
+
+    const courseIds = courses.map(c => c.id);
+    if(courseIds.length === 0) return [];
+
+    const quizzes = [];
+    for (let i = 0; i < courseIds.length; i += 30) {
+        const chunk = courseIds.slice(i, i + 30);
+        if (chunk.length > 0) {
+            const q = query(collection(db, "quizzes"), where("courseId", "in", chunk));
+            const snapshot = await getDocs(q);
+            snapshot.forEach(doc => {
+                const quiz = { id: doc.id, ...doc.data() };
+                const course = courses.find(c => c.id === quiz.courseId);
+                quizzes.push({...quiz, courseName: course?.name || 'Unknown' });
+            });
+        }
+    }
+    return quizzes;
+}

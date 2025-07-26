@@ -5,16 +5,18 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowRight, BookText, FileText, CheckCircle2, Circle } from "lucide-react";
+import { ArrowRight, BookText, FileText, CheckCircle2, Circle, HelpCircle } from "lucide-react";
 import { useState, useEffect } from "react";
-import { getStudentCoursesWithProgress, getStudentAssignmentsWithStatus } from "@/lib/services";
-import { auth } from "@/lib/firebase";
+import { getStudentCoursesWithProgress, getStudentAssignmentsWithStatus, getStudentQuizzes } from "@/lib/services";
+import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import Image from "next/image";
+import { onSnapshot, doc, collection } from "firebase/firestore";
 
 export default function StudentDashboardPage() {
   const [courses, setCourses] = useState([]);
   const [assignments, setAssignments] = useState([]);
+  const [quizzes, setQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
 
@@ -31,26 +33,43 @@ export default function StudentDashboardPage() {
   useEffect(() => {
     if (!user) return;
 
+    setLoading(true);
+
     const fetchData = async () => {
-      setLoading(true);
-      try {
         const studentCourses = await getStudentCoursesWithProgress(user.uid);
         setCourses(studentCourses);
 
         const studentAssignments = await getStudentAssignmentsWithStatus(user.uid);
         const upcomingAssignments = studentAssignments
             .filter(a => a.status === 'Pending')
-            .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
+            .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
             .slice(0, 3);
         setAssignments(upcomingAssignments);
         
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
+        const studentQuizzes = await getStudentQuizzes(user.uid);
+        setQuizzes(studentQuizzes);
+
         setLoading(false);
-      }
     };
+    
+    // Initial fetch
     fetchData();
+
+    // Set up listeners for real-time updates
+    const unsubUser = onSnapshot(doc(db, "users", user.uid), fetchData);
+    const unsubCourses = onSnapshot(collection(db, "courses"), fetchData);
+    const unsubAssignments = onSnapshot(collection(db, "assignments"), fetchData);
+    const unsubSubmissions = onSnapshot(collection(db, "submissions"), fetchData);
+    const unsubQuizzes = onSnapshot(collection(db, "quizzes"), fetchData);
+
+    return () => {
+        unsubUser();
+        unsubCourses();
+        unsubAssignments();
+        unsubSubmissions();
+        unsubQuizzes();
+    };
+
   }, [user]);
 
   if (loading) {
@@ -76,7 +95,7 @@ export default function StudentDashboardPage() {
               <Card key={course.id} className="flex flex-col">
                 <CardHeader className="p-0">
                   <Image
-                    src="https://placehold.co/600x400.png"
+                    src={course.imageUrl || "https://placehold.co/600x400.png"}
                     width={600}
                     height={400}
                     alt={course.name}
@@ -145,8 +164,25 @@ export default function StudentDashboardPage() {
           </TabsContent>
           <TabsContent value="quizzes">
             <Card>
-              <CardContent className="p-6">
-                 <p className="text-center text-muted-foreground">No quizzes available yet.</p>
+              <CardContent className="p-0">
+                 <ul className="divide-y">
+                  {quizzes.length > 0 ? quizzes.map(quiz => (
+                    <li key={quiz.id} className="flex items-center justify-between p-4 hover:bg-secondary/50">
+                      <div className="flex items-center gap-4">
+                        <HelpCircle className="h-6 w-6 text-primary" />
+                        <div>
+                          <h3 className="font-semibold">{quiz.title}</h3>
+                          <p className="text-sm text-muted-foreground">Course: {quiz.courseName}</p>
+                        </div>
+                      </div>
+                      <Button asChild variant="secondary" size="sm">
+                         <a href={quiz.externalUrl} target="_blank" rel="noopener noreferrer">Take Quiz</a>
+                      </Button>
+                    </li>
+                  )) : (
+                    <p className="text-center text-muted-foreground p-6">No quizzes available yet.</p>
+                  )}
+                </ul>
               </CardContent>
             </Card>
           </TabsContent>

@@ -8,7 +8,7 @@ import { MoreVertical, PlusCircle, Search, Users, FileText } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { getAssignmentsByCourse, deleteCourse } from "@/lib/services";
+import { getAssignmentsByCourse, deleteCourse, getQuizzesByCourse } from "@/lib/services";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CourseForm } from "@/components/forms/course-form";
 import { useToast } from "@/hooks/use-toast";
@@ -39,9 +39,11 @@ export default function ManageCoursesPage() {
         const coursesWithDetails = await Promise.all(
           courseData.map(async (course) => {
             const assignments = await getAssignmentsByCourse(course.id);
+            const quizzes = await getQuizzesByCourse(course.id);
             return { 
               ...course, 
               assignmentCount: assignments.length,
+              quizCount: quizzes.length,
               studentCount: course.studentIds?.length || 0
             };
           })
@@ -147,6 +149,7 @@ export default function ManageCoursesPage() {
                           <DropdownMenuItem onClick={() => handleEdit(course)}>Edit Course</DropdownMenuItem>
                           <DropdownMenuItem>Manage Students</DropdownMenuItem>
                           <DropdownMenuItem>View Assignments</DropdownMenuItem>
+                           <DropdownMenuItem>View Quizzes</DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
@@ -178,6 +181,10 @@ export default function ManageCoursesPage() {
                       <FileText className="h-4 w-4" />
                       <span>{course.assignmentCount} Assignment{course.assignmentCount !== 1 ? 's' : ''}</span>
                    </div>
+                   <div className="flex items-center gap-1">
+                      <FileText className="h-4 w-4" />
+                      <span>{course.quizCount} Quiz{course.quizCount !== 1 ? 's' : ''}</span>
+                   </div>
                 </CardFooter>
               </Card>
             ))}
@@ -187,5 +194,3 @@ export default function ManageCoursesPage() {
     </div>
   );
 }
-
-    

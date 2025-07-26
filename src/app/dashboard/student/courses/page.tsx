@@ -33,7 +33,7 @@ export default function StudentCoursesPage() {
     if (!user) return;
 
     setLoading(true);
-    // Listen to changes in the user document to get course IDs in real-time
+    // This real-time listener will react to changes in user's enrolled courses
     const unsubUser = onSnapshot(doc(db, "users", user.uid), async (userDoc) => {
       const userData = userDoc.data();
       const courseIds = userData?.courses || [];
@@ -44,10 +44,24 @@ export default function StudentCoursesPage() {
         return;
       }
       
-      const studentCourses = await getStudentCoursesWithProgress(user.uid);
-      setCourses(studentCourses);
-      setLoading(false);
+      const fetchAndUpdateCourses = async () => {
+        const studentCourses = await getStudentCoursesWithProgress(user.uid);
+        setCourses(studentCourses);
+        setLoading(false);
+      }
+      
+      fetchAndUpdateCourses();
 
+      // We also need to listen to courses and assignments to update progress in real-time
+      const unsubCourses = onSnapshot(collection(db, "courses"), fetchAndUpdateCourses);
+      const unsubAssignments = onSnapshot(collection(db, "assignments"), fetchAndUpdateCourses);
+      const unsubSubmissions = onSnapshot(collection(db, "submissions"), fetchAndUpdateCourses);
+
+      return () => {
+        unsubCourses();
+        unsubAssignments();
+        unsubSubmissions();
+      }
     });
 
     return () => unsubUser();
@@ -108,5 +122,3 @@ export default function StudentCoursesPage() {
     </div>
   );
 }
-
-    

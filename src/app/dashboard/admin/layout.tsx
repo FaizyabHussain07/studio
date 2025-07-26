@@ -13,7 +13,7 @@ import {
   SidebarInset,
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LayoutDashboard, Users, BookCopy, PenSquare, LogOut, Settings } from "lucide-react";
+import { LayoutDashboard, Users, BookCopy, PenSquare, LogOut, Settings, HelpCircle } from "lucide-react";
 import { Logo } from "@/components/logo";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ const adminNav = [
   { name: "Students", href: "/dashboard/admin/students", icon: Users },
   { name: "Courses", href: "/dashboard/admin/courses", icon: BookCopy },
   { name: "Assignments", href: "/dashboard/admin/assignments", icon: PenSquare },
+  { name: "Quizzes", href: "/dashboard/admin/quizzes", icon: HelpCircle },
 ];
 
 export default function AdminDashboardLayout({
