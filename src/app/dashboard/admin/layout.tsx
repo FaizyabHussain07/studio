@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 
 const adminNav = [
@@ -37,6 +37,7 @@ export default function AdminDashboardLayout({
 }) {
   const [user, setUser] = useState(null);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -66,7 +67,11 @@ export default function AdminDashboardLayout({
           <SidebarMenu>
             {adminNav.map((item) => (
               <SidebarMenuItem key={item.name}>
-                <SidebarMenuButton href={item.href} tooltip={item.name}>
+                <SidebarMenuButton 
+                  href={item.href} 
+                  tooltip={item.name}
+                  isActive={pathname.startsWith(item.href) && (item.href !== '/dashboard/admin' || pathname === '/dashboard/admin')}
+                >
                   <item.icon />
                   <span>{item.name}</span>
                 </SidebarMenuButton>
