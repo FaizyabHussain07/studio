@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
@@ -12,7 +11,7 @@ import { getStudentCoursesWithProgress } from "@/lib/services";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import Image from "next/image";
-import { doc, onSnapshot, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
 
 export default function StudentCoursesPage() {
   const [courses, setCourses] = useState([]);
@@ -30,27 +29,28 @@ export default function StudentCoursesPage() {
   }, []);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+        setLoading(false);
+        return;
+    }
+
+    setLoading(true);
 
     const userDocRef = doc(db, "users", user.uid);
     
     const unsubscribe = onSnapshot(userDocRef, async (userDoc) => {
-      setLoading(true);
-      if (userDoc.exists()) {
+      if (userDoc.exists() && userDoc.data().courses?.length > 0) {
         try {
           const studentCourses = await getStudentCoursesWithProgress(user.uid);
           setCourses(studentCourses);
         } catch (error) {
           console.error("Error fetching student courses with progress:", error);
-          setCourses([]); // Clear courses on error
-        } finally {
-          setLoading(false);
+          setCourses([]);
         }
       } else {
-        // User document doesn't exist, so no courses
         setCourses([]);
-        setLoading(false);
       }
+      setLoading(false);
     });
 
     return () => unsubscribe();
