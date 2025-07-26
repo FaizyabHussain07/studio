@@ -1,0 +1,14 @@
+# **App Name**: Faizyab Al-Quran
+
+## Core Features:
+
+- Faizyab Al Quran: Faizyab Al Quran is a Google Classroom-style web application designed for Quranic and academic learning, featuring role-based dashboards for Students and Admins. Built with React or Next.js, TailwindCSS, and Clerk for authentication, the app supports real-time updates via Supabase/Firebase or Node.js + MongoDB. Students can view and interact with assigned courses, assignments (including file/link submissions), and quizzes through a clean, mobile-responsive UI. Admins have full CRUD control to manage users, create and assign courses, assignments, and quizzes, and monitor progress and submissions. Notifications keep users updated on new tasks and deadlines, ensuring an engaging and organized learning environment.  Firstly build landing page to show thes sections nav hero about features how to work faq contact us footer with social link . in nav to logo some link of section  two btn sign in sign up page after sign up to show acording to role of dashboard in sign up page role are hide but the this email is admin syedfaizyabhussain07@gmail.com and any other are students dashboard . an admin have full control like crud cms , managed . this project will be full functional dynamic working able and real time . no hard code data use. ur user auth kia mutabiq dashboards milai ur har jiz churti sai likar har jiz functionable hu . The Student Dashboard includes sections like My Courses, Assignments, and Quizzes, showing progress, submission status, and upcoming tasks. Assignments may include PDFs, images, links, and submission options, while quizzes can be launched via external links or built-in forms. The Admin Dashboard allows for managing students, enrolling them in courses, and assigning/reviewing assignments and quizzes. Everything is mobile-responsive and supports real-time updates using Supabase.
+
+## Style Guidelines:
+
+- Primary color: HSL(50, 80%, 50%) which converts to a vibrant yellow (#E6B80A) to reflect the knowledge sharing with trust and optimism.
+- Background color: A light scheme using HSL(50, 20%, 95%) which converts to a soft off-white background (#F7F6F2).
+- Accent color: HSL(20, 70%, 50%) which converts to a warm orange (#E6730A) to highlight key interactive elements, such as buttons or links.
+- Font Pairing: 'Playfair' (serif) for headings to bring elegance and 'PT Sans' (sans-serif) for body text to be modern and easily readable.
+- Simple, clear icons, with line weights that harmonize with the typography.
+- Clean, organized layout with a clear visual hierarchy for easy navigation and content consumption.
