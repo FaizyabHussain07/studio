@@ -1,30 +1,37 @@
 'use client';
 
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { ArrowLeft, Paperclip, Upload } from "lucide-react";
+import { ArrowLeft, Paperclip, Upload, File, X } from "lucide-react";
 import { useState, useEffect } from "react";
-import { getAssignment, getCourse, createSubmission } from "@/lib/services";
+import { getAssignment, getCourse, createSubmission, getStudentSubmissionForAssignment, uploadFile } from "@/lib/services";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
+import { Progress } from "@/components/ui/progress";
 
 export default function AssignmentDetailPage({ params }: { params: { id:string } }) {
   const [assignmentData, setAssignmentData] = useState(null);
   const [courseName, setCourseName] = useState("");
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [submission, setSubmission] = useState(null);
+  const [file, setFile] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const { toast } = useToast();
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      setUser(user);
+    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+      setUser(currentUser);
     });
     return () => unsubscribe();
   }, []);
 
   useEffect(() => {
+    if (!user) return;
+
     const fetchAssignmentData = async () => {
       setLoading(true);
       try {
@@ -33,6 +40,8 @@ export default function AssignmentDetailPage({ params }: { params: { id:string }
           setAssignmentData(assignment);
           const course = await getCourse(assignment.courseId);
           setCourseName(course?.name || "Course");
+          const existingSubmission = await getStudentSubmissionForAssignment(user.uid, params.id);
+          setSubmission(existingSubmission);
         }
       } catch (error) {
         console.error("Error fetching assignment:", error);
@@ -41,30 +50,53 @@ export default function AssignmentDetailPage({ params }: { params: { id:string }
       }
     };
     fetchAssignmentData();
-  }, [params.id]);
+  }, [params.id, user]);
   
+  const handleFileChange = (e) => {
+    if (e.target.files.length > 0) {
+      setFile(e.target.files[0]);
+    }
+  }
+
   const handleSubmission = async () => {
-    if (!user || !assignmentData) return;
+    if (!user || !assignmentData || !file) return;
+
+    setIsSubmitting(true);
+    setUploadProgress(0);
+
     try {
-        await createSubmission({
-            assignmentId: assignmentData.id,
-            studentId: user.uid,
-            submissionDate: new Date().toISOString(),
-            status: 'Submitted',
-            // Add file/link data here
-        });
-        toast({ title: "Success", description: "Assignment submitted successfully!" });
-        // Potentially update assignment status locally or refetch
+      const fileUrl = await uploadFile(file, (progress) => {
+        setUploadProgress(progress);
+      });
+
+      await createSubmission({
+          assignmentId: assignmentData.id,
+          studentId: user.uid,
+          submissionDate: new Date().toISOString(),
+          status: 'Submitted',
+          fileUrl: fileUrl,
+          fileName: file.name
+      });
+      toast({ title: "Success", description: "Assignment submitted successfully!" });
+      
+      const existingSubmission = await getStudentSubmissionForAssignment(user.uid, params.id);
+      setSubmission(existingSubmission);
+
     } catch(error) {
         console.error("Submission failed", error);
         toast({ title: "Error", description: "Failed to submit assignment.", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+      setFile(null);
     }
   }
 
   if (loading || !assignmentData) {
-    return <div>Loading assignment...</div>;
+    return <div className="flex justify-center items-center h-full">Loading assignment details...</div>;
   }
   
+  const status = submission?.status || 'Pending';
+
   return (
     <div className="space-y-8">
       <div>
@@ -73,13 +105,13 @@ export default function AssignmentDetailPage({ params }: { params: { id:string }
                 <ArrowLeft className="mr-2 h-4 w-4"/> Back to {courseName}
             </Link>
         </Button>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
                  <p className="text-sm text-primary font-medium">{courseName}</p>
                  <h1 className="text-3xl font-bold font-headline">{assignmentData.title}</h1>
                  <p className="text-muted-foreground mt-1">Due Date: {assignmentData.dueDate}</p>
             </div>
-            <Badge variant="outline" className="text-lg px-4 py-2">{assignmentData.status || 'Pending'}</Badge>
+            <Badge variant={status === 'Graded' ? 'default' : status === 'Submitted' ? 'secondary' : 'outline'} className="text-lg px-4 py-2">{status}</Badge>
         </div>
       </div>
 
@@ -90,7 +122,7 @@ export default function AssignmentDetailPage({ params }: { params: { id:string }
                     <CardTitle>Instructions</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-muted-foreground">{assignmentData.instructions}</p>
+                    <p className="text-muted-foreground whitespace-pre-wrap">{assignmentData.instructions}</p>
                 </CardContent>
             </Card>
 
@@ -101,12 +133,12 @@ export default function AssignmentDetailPage({ params }: { params: { id:string }
                 <CardContent>
                     {assignmentData.attachments?.map(file => (
                         <Button key={file.name} variant="outline" asChild>
-                            <Link href={file.url}>
+                            <a href={file.url} target="_blank" rel="noopener noreferrer">
                                 <Paperclip className="mr-2 h-4 w-4"/>
                                 {file.name}
-                            </Link>
+                            </a>
                         </Button>
-                    )) || <p className="text-muted-foreground">No attachments.</p>}
+                    )) || <p className="text-muted-foreground">No attachments for this assignment.</p>}
                 </CardContent>
             </Card>
         </div>
@@ -117,12 +149,50 @@ export default function AssignmentDetailPage({ params }: { params: { id:string }
                     <CardTitle>Your Submission</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center text-center">
-                        <Upload className="h-10 w-10 text-muted-foreground mb-2"/>
-                        <p className="text-muted-foreground">Drag & drop files here or</p>
-                        <Button variant="link" className="p-0 h-auto">click to browse</Button>
-                    </div>
-                    <Button className="w-full" style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }} onClick={handleSubmission}>Submit Assignment</Button>
+                  {status !== 'Pending' ? (
+                      <div>
+                          <p className="text-muted-foreground mb-2">You have already submitted this assignment.</p>
+                          <div className="border rounded-lg p-3 flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                  <File className="h-5 w-5"/>
+                                  <a href={submission.fileUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-medium hover:underline">{submission.fileName}</a>
+                              </div>
+                          </div>
+                      </div>
+                  ) : (
+                    <>
+                      <div className="relative border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center text-center">
+                          <Upload className="h-10 w-10 text-muted-foreground mb-2"/>
+                          <p className="text-muted-foreground">Drag & drop or</p>
+                          <Button variant="link" className="p-0 h-auto">
+                              <label htmlFor="file-upload" className="cursor-pointer">
+                                  click to browse
+                              </label>
+                          </Button>
+                          <input id="file-upload" type="file" className="sr-only" onChange={handleFileChange} disabled={isSubmitting}/>
+                      </div>
+                      {file && (
+                          <div className="border rounded-lg p-3 flex items-center justify-between">
+                            <div className="flex items-center gap-2 overflow-hidden">
+                               <File className="h-5 w-5 flex-shrink-0"/>
+                               <span className="text-sm truncate">{file.name}</span>
+                            </div>
+                            <Button variant="ghost" size="icon" onClick={() => setFile(null)} disabled={isSubmitting}>
+                                <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                      )}
+                      {isSubmitting && (
+                          <div className="space-y-2">
+                              <Progress value={uploadProgress} />
+                              <p className="text-sm text-muted-foreground text-center">{Math.round(uploadProgress)}% uploaded...</p>
+                          </div>
+                      )}
+                      <Button className="w-full" style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }} onClick={handleSubmission} disabled={!file || isSubmitting}>
+                          {isSubmitting ? 'Submitting...' : 'Submit Assignment'}
+                      </Button>
+                    </>
+                  )}
                 </CardContent>
             </Card>
         </div>

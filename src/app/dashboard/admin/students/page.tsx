@@ -10,10 +10,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { StudentForm } from "@/components/forms/student-form";
 
 export default function ManageStudentsPage() {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -31,12 +35,28 @@ export default function ManageStudentsPage() {
     return () => unsubscribe();
   }, []);
 
+  const handleEdit = (student) => {
+    setSelectedStudent(student);
+    setIsFormOpen(true);
+  }
+
+  const handleCreate = () => {
+    setSelectedStudent(null);
+    setIsFormOpen(true);
+  }
+
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold font-headline">Manage Students</h1>
         <p className="text-muted-foreground">View, add, edit, or remove student profiles.</p>
       </div>
+
+       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <DialogContent>
+          <StudentForm student={selectedStudent} onFinished={() => setIsFormOpen(false)} />
+        </DialogContent>
+      </Dialog>
 
       <Card>
         <CardHeader>
@@ -45,7 +65,7 @@ export default function ManageStudentsPage() {
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input placeholder="Search students..." className="pl-8" />
              </div>
-             <Button>
+             <Button onClick={handleCreate}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Add Student
              </Button>
@@ -95,7 +115,7 @@ export default function ManageStudentsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem>Edit</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEdit(student)}>Edit</DropdownMenuItem>
                           <DropdownMenuItem>View Profile</DropdownMenuItem>
                           <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
                         </DropdownMenuContent>

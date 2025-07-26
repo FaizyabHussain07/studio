@@ -1,11 +1,47 @@
 import { db } from './firebase';
-import { collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, query, where, documentId, orderBy, limit } from 'firebase/firestore';
+import { collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, query, where, documentId, orderBy, limit, writeBatch } from 'firebase/firestore';
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+
+const storage = getStorage();
+
+export const uploadFile = (file, onProgress) => {
+  return new Promise((resolve, reject) => {
+    const storageRef = ref(storage, `submissions/${new Date().getTime()}_${file.name}`);
+    const uploadTask = uploadBytesResumable(storageRef, file);
+
+    uploadTask.on('state_changed', 
+      (snapshot) => {
+        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        onProgress(progress);
+      }, 
+      (error) => {
+        console.error("Upload failed:", error);
+        reject(error);
+      }, 
+      () => {
+        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+          resolve(downloadURL);
+        });
+      }
+    );
+  });
+};
+
 
 // User Management
 export const createUser = async (userData) => {
   // Use uid as the document ID
+  const userRef = doc(db, 'users', userData.uid);
   await addDoc(collection(db, 'users'), userData);
 };
+
+export const createStudent = async (studentData) => {
+    const userRef = await addDoc(collection(db, 'users'), {
+        ...studentData,
+        role: 'student'
+    });
+    return userRef.id;
+}
 
 export const getUsers = async () => {
   const snapshot = await getDocs(collection(db, 'users'));
@@ -18,15 +54,21 @@ export const getStudentUsers = async () => {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 }
 
-
 export const getUser = async (id) => {
+  const userDocRef = doc(db, 'users', id);
+  const userDoc = await getDoc(userDocRef);
+  if (userDoc.exists()) {
+    return { id: userDoc.id, ...userDoc.data() };
+  }
+  
+  // Fallback for old query logic, might be removable later
   const q = query(collection(db, 'users'), where('uid', '==', id));
   const snapshot = await getDocs(q);
   if (snapshot.empty) {
     return null;
   }
-  const userDoc = snapshot.docs[0];
-  return { id: userDoc.id, ...userDoc.data() };
+  const userByUid = snapshot.docs[0];
+  return { id: userByUid.id, ...userByUid.data() };
 };
 
 // Course Management
@@ -35,12 +77,48 @@ export const createCourse = async (courseData) => {
   return newCourse.id;
 };
 
+export const updateCourse = async (id, courseData) => {
+    await updateDoc(doc(db, 'courses', id), courseData);
+}
+
+export const deleteCourse = async (courseId) => {
+    const batch = writeBatch(db);
+    
+    // 1. Delete the course itself
+    const courseRef = doc(db, 'courses', courseId);
+    batch.delete(courseRef);
+
+    // 2. Find and delete all assignments for this course
+    const assignmentsQuery = query(collection(db, 'assignments'), where('courseId', '==', courseId));
+    const assignmentsSnapshot = await getDocs(assignmentsQuery);
+    const assignmentIds = [];
+    assignmentsSnapshot.forEach(doc => {
+        assignmentIds.push(doc.id);
+        batch.delete(doc.ref);
+    });
+
+    // 3. Find and delete all submissions for those assignments
+    if (assignmentIds.length > 0) {
+        const submissionsQuery = query(collection(db, 'submissions'), where('assignmentId', 'in', assignmentIds));
+        const submissionsSnapshot = await getDocs(submissionsQuery);
+        submissionsSnapshot.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+    }
+
+    // 4. TODO: Un-enroll students from this course (optional, depending on desired behavior)
+
+    await batch.commit();
+}
+
+
 export const getCourses = async () => {
   const snapshot = await getDocs(collection(db, 'courses'));
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
 export const getCourse = async (id) => {
+  if (!id) return null;
   const courseDoc = await getDoc(doc(db, 'courses', id));
   return courseDoc.exists() ? { id: courseDoc.id, ...courseDoc.data() } : null;
 };
@@ -85,6 +163,28 @@ export const createAssignment = async (assignmentData) => {
   return newAssignment.id;
 };
 
+export const updateAssignment = async (id, assignmentData) => {
+    await updateDoc(doc(db, 'assignments', id), assignmentData);
+}
+
+export const deleteAssignment = async (assignmentId) => {
+    const batch = writeBatch(db);
+    
+    // Delete assignment
+    const assignmentRef = doc(db, 'assignments', assignmentId);
+    batch.delete(assignmentRef);
+    
+    // Delete submissions
+    const submissionsQuery = query(collection(db, 'submissions'), where('assignmentId', '==', assignmentId));
+    const submissionsSnapshot = await getDocs(submissionsQuery);
+    submissionsSnapshot.forEach(doc => {
+        batch.delete(doc.ref);
+    });
+
+    await batch.commit();
+}
+
+
 export const getAssignments = async () => {
   const snapshot = await getDocs(collection(db, 'assignments'));
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -101,6 +201,8 @@ export const getStudentAssignmentsWithStatus = async (studentId) => {
     if(courses.length === 0) return [];
 
     const courseIds = courses.map(c => c.id);
+    if(courseIds.length === 0) return [];
+
     const q = query(collection(db, "assignments"), where("courseId", "in", courseIds));
     const snapshot = await getDocs(q);
     const assignments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -117,6 +219,7 @@ export const getStudentAssignmentsWithStatus = async (studentId) => {
 
 
 export const getAssignment = async (id) => {
+  if (!id) return null;
   const assignmentDoc = await getDoc(doc(db, 'assignments', id));
   return assignmentDoc.exists() ? { id: assignmentDoc.id, ...assignmentDoc.data() } : null;
 };
@@ -126,6 +229,10 @@ export const getAssignment = async (id) => {
 export const createSubmission = async (submissionData) => {
     const newSubmission = await addDoc(collection(db, 'submissions'), submissionData);
     return newSubmission.id;
+}
+
+export const updateSubmissionStatus = async (submissionId, status) => {
+    await updateDoc(doc(db, 'submissions', submissionId), { status });
 }
 
 export const getSubmissions = async (count = 0) => {
@@ -160,6 +267,19 @@ export const getSubmissionsByAssignment = async (assignmentId) => {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 }
 
+export const getStudentSubmissionForAssignment = async (studentId, assignmentId) => {
+    const q = query(
+        collection(db, 'submissions'), 
+        where('studentId', '==', studentId), 
+        where('assignmentId', '==', assignmentId)
+    );
+    const snapshot = await getDocs(q);
+    if (snapshot.empty) {
+        return null;
+    }
+    return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+}
+
 export const getSubmissionsByStudent = async (studentId, assignmentIds) => {
   if (!assignmentIds || assignmentIds.length === 0) return [];
   const q = query(
@@ -172,15 +292,9 @@ export const getSubmissionsByStudent = async (studentId, assignmentIds) => {
 }
 
 export const getStudentAssignmentStatus = async (studentId, assignmentId) => {
-  const q = query(
-    collection(db, 'submissions'), 
-    where('studentId', '==', studentId), 
-    where('assignmentId', '==', assignmentId)
-  );
-  const snapshot = await getDocs(q);
-  if (snapshot.empty) {
+  const submission = await getStudentSubmissionForAssignment(studentId, assignmentId);
+  if (!submission) {
     return 'Pending';
   }
-  const submission = snapshot.docs[0].data();
   return submission.status || 'Submitted';
 }

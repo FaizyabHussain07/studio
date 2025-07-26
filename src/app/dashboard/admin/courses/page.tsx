@@ -7,17 +7,25 @@ import { MoreVertical, PlusCircle, Search, Users, FileText } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { getCourses, getAssignmentsByCourse, getStudentCountForCourse } from "@/lib/services";
+import { getAssignmentsByCourse, getStudentCountForCourse, deleteCourse } from "@/lib/services";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { CourseForm } from "@/components/forms/course-form";
+import { useToast } from "@/hooks/use-toast";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { onSnapshot, collection } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 export default function ManageCoursesPage() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const { toast } = useToast();
 
   useEffect(() => {
-    const fetchCourses = async () => {
-      setLoading(true);
-      try {
-        const courseData = await getCourses();
+    setLoading(true);
+    const unsubscribe = onSnapshot(collection(db, 'courses'), async (snapshot) => {
+        const courseData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         const coursesWithDetails = await Promise.all(
           courseData.map(async (course) => {
             const assignments = await getAssignmentsByCourse(course.id);
@@ -30,14 +38,31 @@ export default function ManageCoursesPage() {
           })
         );
         setCourses(coursesWithDetails);
-      } catch (error) {
-        console.error("Error fetching courses:", error);
-      } finally {
         setLoading(false);
-      }
-    };
-    fetchCourses();
+    });
+
+    return () => unsubscribe();
   }, []);
+
+  const handleEdit = (course) => {
+    setSelectedCourse(course);
+    setIsFormOpen(true);
+  };
+
+  const handleCreate = () => {
+    setSelectedCourse(null);
+    setIsFormOpen(true);
+  };
+
+  const handleDelete = async (courseId) => {
+    try {
+        await deleteCourse(courseId);
+        toast({ title: "Success", description: "Course deleted successfully." });
+    } catch(error) {
+        console.error("Failed to delete course", error);
+        toast({ title: "Error", description: "Could not delete course.", variant: "destructive" });
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -46,12 +71,18 @@ export default function ManageCoursesPage() {
         <p className="text-muted-foreground">Create, edit, and manage all academic and Quranic courses.</p>
       </div>
 
+      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <DialogContent>
+            <CourseForm course={selectedCourse} onFinished={() => setIsFormOpen(false)}/>
+        </DialogContent>
+      </Dialog>
+
       <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="relative w-full sm:w-auto sm:max-w-sm">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Search courses..." className="pl-8" />
           </div>
-          <Button>
+          <Button onClick={handleCreate}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Add Course
           </Button>
@@ -59,14 +90,20 @@ export default function ManageCoursesPage() {
 
       {loading ? <p className="text-center text-muted-foreground">Loading courses...</p> : (
         courses.length === 0 ? (
-          <p className="text-center text-muted-foreground">No courses created yet.</p>
+          <div className="text-center py-16 border-2 border-dashed rounded-lg">
+             <h3 className="text-xl font-semibold">No courses created yet.</h3>
+             <p className="text-muted-foreground mt-2">Get started by adding your first course.</p>
+             <Button onClick={handleCreate} className="mt-4">
+                 <PlusCircle className="mr-2 h-4 w-4" /> Add Course
+             </Button>
+          </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             {courses.map(course => (
               <Card key={course.id} className="flex flex-col">
                 <CardHeader className="p-0">
                   <Image 
-                    src="https://placehold.co/600x400.png"
+                    src={course.imageUrl || "https://placehold.co/600x400.png"}
                     alt={course.name}
                     width={600}
                     height={400}
@@ -78,7 +115,7 @@ export default function ManageCoursesPage() {
                    <div className="flex items-start justify-between">
                       <div>
                           <CardTitle className="font-headline text-xl">{course.name}</CardTitle>
-                          <CardDescription className="mt-1">{course.description}</CardDescription>
+                          <CardDescription className="mt-1 line-clamp-3">{course.description}</CardDescription>
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -89,10 +126,26 @@ export default function ManageCoursesPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem>Edit Course</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEdit(course)}>Edit Course</DropdownMenuItem>
                           <DropdownMenuItem>Manage Students</DropdownMenuItem>
                           <DropdownMenuItem>View Assignments</DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">Delete Course</DropdownMenuItem>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">Delete Course</DropdownMenuItem>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This action cannot be undone. This will permanently delete the course and all associated data.
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDelete(course.id)}>Delete</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </DropdownMenuContent>
                       </DropdownMenu>
                    </div>

@@ -9,13 +9,23 @@ import { MoreHorizontal, PlusCircle, Search } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect } from 'react';
-import { getAssignments, getCourses, getSubmissionsByAssignment, getStudentUsers } from "@/lib/services";
+import { getAssignments, getCourses, getSubmissionsByAssignment, getStudentUsers, deleteAssignment } from "@/lib/services";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { AssignmentForm } from "@/components/forms/assignment-form";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
+import Link from "next/link";
+import { onSnapshot, collection } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 export default function ManageAssignmentsPage() {
   const [assignments, setAssignments] = useState([]);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [studentCount, setStudentCount] = useState(0);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedAssignment, setSelectedAssignment] = useState(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -30,37 +40,51 @@ export default function ManageAssignmentsPage() {
     };
     fetchInitialData();
   }, []);
-
+  
   useEffect(() => {
-    if (studentCount === 0) return; 
-
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const assignmentsData = await getAssignments();
-        
-        const assignmentsWithDetails = await Promise.all(assignmentsData.map(async (assignment) => {
-          const course = courses.find(c => c.id === assignment.courseId);
-          const submissions = await getSubmissionsByAssignment(assignment.id);
-          return {
-            ...assignment,
-            courseName: course ? course.name : "Unknown Course",
-            submissionsCount: `${submissions.length}/${studentCount}`,
-          };
-        }));
-        
-        setAssignments(assignmentsWithDetails);
-      } catch (error) {
-        console.error("Error fetching assignments:", error);
-      } finally {
+    setLoading(true);
+    const unsubAssignments = onSnapshot(collection(db, 'assignments'), async (snapshot) => {
+        const assignmentsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        if (courses.length > 0 && studentCount > 0) {
+            const assignmentsWithDetails = await Promise.all(assignmentsData.map(async (assignment) => {
+              const course = courses.find(c => c.id === assignment.courseId);
+              const submissions = await getSubmissionsByAssignment(assignment.id);
+              return {
+                ...assignment,
+                courseName: course ? course.name : "Unknown Course",
+                submissionsCount: `${submissions.length}/${studentCount}`,
+              };
+            }));
+            setAssignments(assignmentsWithDetails);
+        } else {
+             setAssignments(assignmentsData.map(a => ({...a, courseName: 'N/A', submissionsCount: 'N/A'})));
+        }
         setLoading(false);
-      }
-    };
+    });
 
-    if (courses.length > 0) {
-        fetchData();
-    }
+    return () => unsubAssignments();
   }, [courses, studentCount]);
+
+  const handleEdit = (assignment) => {
+      setSelectedAssignment(assignment);
+      setIsFormOpen(true);
+  }
+
+  const handleCreate = () => {
+      setSelectedAssignment(null);
+      setIsFormOpen(true);
+  }
+  
+  const handleDelete = async (assignmentId) => {
+    try {
+        await deleteAssignment(assignmentId);
+        toast({ title: "Success", description: "Assignment deleted successfully." });
+    } catch (error) {
+        console.error("Failed to delete assignment", error);
+        toast({ title: "Error", description: "Could not delete assignment.", variant: "destructive" });
+    }
+  }
+
 
   return (
     <div className="space-y-8">
@@ -69,6 +93,12 @@ export default function ManageAssignmentsPage() {
         <p className="text-muted-foreground">Oversee all assignments, check submissions, and provide grades.</p>
       </div>
 
+      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <DialogContent>
+          <AssignmentForm courses={courses} assignment={selectedAssignment} onFinished={() => setIsFormOpen(false)} />
+        </DialogContent>
+      </Dialog>
+      
       <Card>
         <CardHeader>
            <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -89,7 +119,7 @@ export default function ManageAssignmentsPage() {
                   </SelectContent>
                 </Select>
              </div>
-             <Button>
+             <Button onClick={handleCreate}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Create Assignment
              </Button>
@@ -131,9 +161,27 @@ export default function ManageAssignmentsPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem>Edit</DropdownMenuItem>
-                            <DropdownMenuItem>View Submissions</DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEdit(assignment)}>Edit</DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                                <Link href={`/dashboard/admin/assignments/${assignment.id}/submissions`}>View Submissions</Link>
+                            </DropdownMenuItem>
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">Delete</DropdownMenuItem>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This action cannot be undone. This will permanently delete the assignment and all associated submissions.
+                                    </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDelete(assignment.id)}>Delete</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
