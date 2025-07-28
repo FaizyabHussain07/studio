@@ -9,8 +9,8 @@ export function Logo({ showText = true }: { showText?: boolean }) {
       <Image 
         src="/WhatsApp_Image_2025-07-07_at_16.40.56_083d1ca9-removebg-preview.png"
         alt="Faizyab Al-Quran Logo" 
-        width={40} 
-        height={40}
+        width={showText ? 40 : 60} 
+        height={showText ? 40 : 60}
         className="object-contain"
         priority
       />
