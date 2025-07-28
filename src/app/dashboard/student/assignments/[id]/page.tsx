@@ -94,6 +94,10 @@ export default function AssignmentDetailPage({ params: { id } }: { params: { id:
           fileDataUrl = await fileToDataUrl(file);
           fileName = file.name;
       }
+      
+      if (!assignmentData.courseId) {
+        throw new Error("Course ID is missing from assignment data.");
+      }
 
       await createSubmission({
           assignmentId: id,
@@ -109,7 +113,7 @@ export default function AssignmentDetailPage({ params: { id } }: { params: { id:
       // Real-time listener will update the submission state
     } catch(error) {
         console.error("Submission failed", error);
-        toast({ title: "Error", description: "Failed to submit assignment.", variant: "destructive" });
+        toast({ title: "Error", description: `Failed to submit assignment. ${error.message}`, variant: "destructive" });
     } finally {
       setIsSubmitting(false);
       setFile(null);
