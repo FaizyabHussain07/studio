@@ -12,6 +12,7 @@ import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { createUser } from '@/lib/services';
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import Image from "next/image";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -72,8 +73,8 @@ export default function SignUpPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-md space-y-6">
-        <div className="flex justify-center">
-          <Logo />
+        <div className="flex justify-center mb-6">
+            <Image src="/logo-circle.png" alt="Faizyab Al-Quran Logo" width={120} height={120} />
         </div>
         <Card>
           <CardHeader className="text-center">
@@ -94,7 +95,7 @@ export default function SignUpPage() {
                 <Label htmlFor="password">Password</Label>
                 <Input id="password" name="password" type="password" required minLength={6} disabled={loading}/>
               </div>
-              <Button type="submit" className="w-full" style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }} disabled={loading}>
+              <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={loading}>
                 {loading ? 'Creating Account...' : 'Sign Up'}
               </Button>
             </form>
@@ -102,7 +103,7 @@ export default function SignUpPage() {
           <CardFooter className="text-center text-sm">
             <p className="w-full">
               Already have an account?{' '}
-              <Link href="/login" className="font-medium text-primary hover:underline">
+              <Link href="/login" className="font-medium text-accent hover:underline">
                 Sign In
               </Link>
             </p>

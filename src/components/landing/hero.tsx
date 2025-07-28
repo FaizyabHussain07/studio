@@ -13,7 +13,7 @@ export default function Hero() {
           Faizyab Al-Quran offers a modern, interactive platform for Quranic and academic learning, tailored for both students and administrators.
         </p>
         <div className="flex flex-col sm:flex-row gap-4">
-          <Button size="lg" style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }} asChild>
+          <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90" asChild>
             <Link href="/signup">Get Started for Free</Link>
           </Button>
           <Button size="lg" variant="outline" asChild>

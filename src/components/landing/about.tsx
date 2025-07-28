@@ -2,7 +2,7 @@ import Image from "next/image";
 
 export default function About() {
   return (
-    <section id="about" className="bg-card py-20 md:py-32">
+    <section id="about" className="bg-secondary/50 py-20 md:py-32">
       <div className="container grid md:grid-cols-2 gap-12 items-center">
         <div className="relative aspect-video">
            <Image

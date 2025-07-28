@@ -13,7 +13,7 @@ import {
   SidebarInset,
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LayoutDashboard, BookOpen, ClipboardList, LogOut, User, HelpCircle } from "lucide-react";
+import { LayoutDashboard, BookOpen, ClipboardList, LogOut, User, GraduationCap } from "lucide-react";
 import { Logo } from "@/components/logo";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,7 @@ const studentNav = [
   { name: "Dashboard", href: "/dashboard/student", icon: LayoutDashboard },
   { name: "My Courses", href: "/dashboard/student/courses", icon: BookOpen },
   { name: "All Assignments", href: "/dashboard/student/assignments", icon: ClipboardList },
-  { name: "Quizzes", href: "/dashboard/student/quizzes", icon: HelpCircle },
+  { name: "Quizzes", href: "/dashboard/student/quizzes", icon: GraduationCap },
 ];
 
 export default function StudentDashboardLayout({
@@ -68,7 +68,7 @@ export default function StudentDashboardLayout({
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center p-2">
             <Logo />
           </div>
         </SidebarHeader>

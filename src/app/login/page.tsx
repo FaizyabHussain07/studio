@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useToast } from "@/hooks/use-toast";
+import Image from "next/image";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -42,8 +43,8 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-md space-y-6">
-        <div className="flex justify-center">
-          <Logo />
+        <div className="flex justify-center mb-6">
+           <Image src="/logo-circle.png" alt="Faizyab Al-Quran Logo" width={120} height={120} />
         </div>
         <Card>
           <CardHeader className="text-center">
@@ -60,7 +61,7 @@ export default function LoginPage() {
                 <Label htmlFor="password">Password</Label>
                 <Input id="password" name="password" type="password" required />
               </div>
-              <Button type="submit" className="w-full" style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }}>
+              <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
                 Sign In
               </Button>
             </form>
@@ -68,7 +69,7 @@ export default function LoginPage() {
           <CardFooter className="text-center text-sm">
             <p className="w-full">
               Don't have an account?{' '}
-              <Link href="/signup" className="font-medium text-primary hover:underline">
+              <Link href="/signup" className="font-medium text-accent hover:underline">
                 Sign Up
               </Link>
             </p>

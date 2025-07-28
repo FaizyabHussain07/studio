@@ -13,7 +13,7 @@ import {
   SidebarInset,
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LayoutDashboard, Users, BookCopy, PenSquare, LogOut, Settings, HelpCircle } from "lucide-react";
+import { LayoutDashboard, Users, BookCopy, PenSquare, LogOut, Settings, HelpCircle, GraduationCap } from "lucide-react";
 import { Logo } from "@/components/logo";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -28,7 +28,7 @@ const adminNav = [
   { name: "Students", href: "/dashboard/admin/students", icon: Users },
   { name: "Courses", href: "/dashboard/admin/courses", icon: BookCopy },
   { name: "Assignments", href: "/dashboard/admin/assignments", icon: PenSquare },
-  { name: "Quizzes", href: "/dashboard/admin/quizzes", icon: HelpCircle },
+  { name: "Quizzes", href: "/dashboard/admin/quizzes", icon: GraduationCap },
 ];
 
 export default function AdminDashboardLayout({
@@ -60,7 +60,7 @@ export default function AdminDashboardLayout({
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center p-2">
             <Logo />
           </div>
         </SidebarHeader>

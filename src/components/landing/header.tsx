@@ -29,11 +29,11 @@ export default function Header() {
 
   return (
     <header className={cn("sticky top-0 z-50 w-full transition-colors duration-300", isScrolled ? "bg-background/80 backdrop-blur-sm border-b" : "bg-transparent")}>
-      <div className="container flex h-16 items-center justify-between">
+      <div className="container flex h-20 items-center justify-between">
         <Logo />
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
           {navLinks.map((link) => (
-            <Link key={link.name} href={link.href} className="hover:text-primary transition-colors">
+            <Link key={link.name} href={link.href} className="hover:text-accent transition-colors">
               {link.name}
             </Link>
           ))}
@@ -42,7 +42,7 @@ export default function Header() {
           <Button variant="ghost" asChild>
             <Link href="/login">Sign In</Link>
           </Button>
-          <Button style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }} asChild>
+          <Button className="bg-primary text-primary-foreground hover:bg-primary/90" asChild>
             <Link href="/signup">Sign Up</Link>
           </Button>
         </div>
@@ -58,7 +58,7 @@ export default function Header() {
               <Logo />
               <nav className="grid gap-4">
                 {navLinks.map((link) => (
-                  <Link key={link.name} href={link.href} className="text-lg font-medium hover:text-primary transition-colors">
+                  <Link key={link.name} href={link.href} className="text-lg font-medium hover:text-accent transition-colors">
                     {link.name}
                   </Link>
                 ))}
@@ -67,7 +67,7 @@ export default function Header() {
                  <Button variant="ghost" asChild>
                     <Link href="/login">Sign In</Link>
                  </Button>
-                 <Button style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }} asChild>
+                 <Button className="bg-primary text-primary-foreground hover:bg-primary/90" asChild>
                     <Link href="/signup">Sign Up</Link>
                  </Button>
               </div>

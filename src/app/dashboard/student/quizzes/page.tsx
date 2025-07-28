@@ -3,12 +3,12 @@
 
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { HelpCircle } from "lucide-react";
+import { GraduationCap } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getStudentQuizzes } from "@/lib/services";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { collection, onSnapshot, doc } from "firebase/firestore";
+import { collection, onSnapshot, doc, query, where } from "firebase/firestore";
 
 export default function AllQuizzesPage() {
   const [quizzes, setQuizzes] = useState([]);
@@ -26,8 +26,10 @@ export default function AllQuizzesPage() {
   useEffect(() => {
     if (!user) return;
     
-    const fetchQuizzes = async () => {
-      setLoading(true);
+    setLoading(true);
+    // Listener for user's courses to trigger re-fetch when they are enrolled/unenrolled
+    const userDocRef = doc(db, "users", user.uid);
+    const unsubscribeUser = onSnapshot(userDocRef, async () => {
       try {
         const studentQuizzes = await getStudentQuizzes(user.uid);
         setQuizzes(studentQuizzes);
@@ -36,17 +38,9 @@ export default function AllQuizzesPage() {
       } finally {
         setLoading(false);
       }
-    };
+    });
 
-    const unsubs = [
-        onSnapshot(collection(db, "quizzes"), fetchQuizzes),
-        onSnapshot(doc(db, "users", user.uid), fetchQuizzes),
-        onSnapshot(collection(db, "courses"), fetchQuizzes)
-    ];
-
-    fetchQuizzes();
-
-    return () => unsubs.forEach(unsub => unsub());
+    return () => unsubscribeUser();
   }, [user]);
 
 
@@ -72,7 +66,7 @@ export default function AllQuizzesPage() {
               return (
                 <li key={quiz.id} className="flex flex-wrap items-center justify-between p-4 hover:bg-secondary/50 transition-colors gap-4">
                   <div className="flex items-center gap-4">
-                    <HelpCircle className="h-5 w-5 text-primary" />
+                    <GraduationCap className="h-5 w-5 text-primary" />
                     <div>
                       <h3 className="font-semibold">{quiz.title}</h3>
                       <p className="text-sm text-muted-foreground">

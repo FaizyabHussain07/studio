@@ -4,9 +4,9 @@
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, PlusCircle } from "lucide-react";
+import { MoreHorizontal, PlusCircle, GraduationCap } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { getCourses, deleteQuiz } from "@/lib/services";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { QuizForm } from "@/components/forms/quiz-form";
@@ -24,37 +24,32 @@ export default function ManageQuizzesPage() {
   const [selectedQuiz, setSelectedQuiz] = useState(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const fetchCourses = async () => {
-        const coursesData = await getCourses();
-        setCourses(coursesData);
-    };
-    fetchCourses();
-  }, []);
-  
-  useEffect(() => {
-    setLoading(true);
-    const unsubQuizzes = onSnapshot(collection(db, 'quizzes'), async (snapshot) => {
-        const quizzesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        
-        const currentCourses = await getCourses();
-        if (currentCourses.length > 0) {
-            const quizzesWithCourseNames = quizzesData.map(quiz => {
-              const course = currentCourses.find(c => c.id === quiz.courseId);
-              return {
-                ...quiz,
-                courseName: course ? course.name : "Unknown Course",
-              };
-            });
-            setQuizzes(quizzesWithCourseNames);
-        } else {
-            setQuizzes(quizzesData.map(q => ({...q, courseName: 'N/A'})));
-        }
+   useEffect(() => {
+    const unsubCourses = onSnapshot(collection(db, 'courses'), snapshot => {
+        setCourses(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+
+    const unsubQuizzes = onSnapshot(collection(db, 'quizzes'), snapshot => {
+        setQuizzes(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
         setLoading(false);
     });
 
-    return () => unsubQuizzes();
+    return () => {
+        unsubCourses();
+        unsubQuizzes();
+    };
   }, []);
+
+  const processedQuizzes = useMemo(() => {
+    return quizzes.map(quiz => {
+      const course = courses.find(c => c.id === quiz.courseId);
+      return {
+        ...quiz,
+        courseName: course ? course.name : "Unknown Course",
+      };
+    });
+  }, [quizzes, courses]);
+
 
   const handleEdit = (quiz) => {
       setSelectedQuiz(quiz);
@@ -99,7 +94,7 @@ export default function ManageQuizzesPage() {
         <CardHeader>
            <div className="flex items-center justify-between">
              <h2 className="text-xl font-semibold">All Quizzes</h2>
-             <Button onClick={handleCreate}>
+             <Button onClick={handleCreate} variant="outline">
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Create Quiz
              </Button>
@@ -119,15 +114,15 @@ export default function ManageQuizzesPage() {
               <TableBody>
                 {loading ? (
                   <TableRow><TableCell colSpan={4} className="text-center">Loading quizzes...</TableCell></TableRow>
-                ) : quizzes.length === 0 ? (
+                ) : processedQuizzes.length === 0 ? (
                   <TableRow><TableCell colSpan={4} className="text-center">No quizzes found.</TableCell></TableRow>
                 ) : (
-                  quizzes.map((quiz) => (
+                  processedQuizzes.map((quiz) => (
                     <TableRow key={quiz.id}>
                       <TableCell className="font-medium">{quiz.title}</TableCell>
                       <TableCell>{quiz.courseName}</TableCell>
                       <TableCell>
-                        <a href={quiz.externalUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                        <a href={quiz.externalUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                             Take Quiz
                         </a>
                       </TableCell>

@@ -6,9 +6,9 @@ import { Textarea } from "@/components/ui/textarea";
 
 export default function Contact() {
   return (
-    <section id="contact" className="bg-card py-20 md:py-32">
+    <section id="contact" className="bg-secondary/50 py-20 md:py-32">
       <div className="container">
-        <Card className="max-w-2xl mx-auto shadow-lg">
+        <Card className="max-w-2xl mx-auto shadow-lg border-border/50">
           <CardHeader className="text-center">
             <CardTitle className="font-headline text-3xl md:text-4xl">Contact Us</CardTitle>
             <CardDescription className="text-lg">
@@ -31,7 +31,7 @@ export default function Contact() {
                 <Label htmlFor="message">Message</Label>
                 <Textarea id="message" placeholder="Enter your message" className="min-h-[120px]" />
               </div>
-              <Button type="submit" className="w-full" style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }}>Send Message</Button>
+              <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">Send Message</Button>
             </form>
           </CardContent>
         </Card>
