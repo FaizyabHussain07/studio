@@ -7,84 +7,65 @@ import { Input } from "@/components/ui/input";
 import { MoreVertical, PlusCircle, Search, Users, FileText } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import Image from "next/image";
-import { useState, useEffect } from "react";
-import { getAssignmentsByCourse, deleteCourse, getQuizzesByCourse } from "@/lib/services";
+import { useState, useEffect, useMemo } from "react";
+import { deleteCourse } from "@/lib/services";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CourseForm } from "@/components/forms/course-form";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { onSnapshot, collection, query, where } from "firebase/firestore";
+import { onSnapshot, collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { getDocs } from "firebase/firestore";
 
 export default function ManageCoursesPage() {
   const [courses, setCourses] = useState([]);
   const [students, setStudents] = useState([]);
+  const [assignments, setAssignments] = useState([]);
+  const [quizzes, setQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    // Listener for students
-    const qStudents = query(collection(db, "users"), where("role", "==", "student"));
-    const unsubStudents = onSnapshot(qStudents, (snapshot) => {
-        const studentData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setStudents(studentData);
-    });
-
-    // Combined listener for courses, assignments, and quizzes
-    const unsubCourses = onSnapshot(collection(db, 'courses'), async (coursesSnapshot) => {
-      setLoading(true);
-      try {
-        const courseData = coursesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        
-        // Fetch all assignments and quizzes in parallel once
-        const assignmentsSnapshot = await getDocs(collection(db, 'assignments'));
-        const quizzesSnapshot = await getDocs(collection(db, 'quizzes'));
-        
-        const assignmentsByCourse = {};
-        assignmentsSnapshot.forEach(doc => {
-            const assignment = doc.data();
-            if (!assignmentsByCourse[assignment.courseId]) {
-                assignmentsByCourse[assignment.courseId] = [];
-            }
-            assignmentsByCourse[assignment.courseId].push(assignment);
-        });
-
-        const quizzesByCourse = {};
-        quizzesSnapshot.forEach(doc => {
-            const quiz = doc.data();
-            if (!quizzesByCourse[quiz.courseId]) {
-                quizzesByCourse[quiz.courseId] = [];
-            }
-            quizzesByCourse[quiz.courseId].push(quiz);
-        });
-
-        // Map the counts to the courses
-        const coursesWithDetails = courseData.map(course => {
-          return {
-            ...course,
-            assignmentCount: assignmentsByCourse[course.id]?.length || 0,
-            quizCount: quizzesByCourse[course.id]?.length || 0,
-            studentCount: course.studentIds?.length || 0
-          };
-        });
-
-        setCourses(coursesWithDetails);
-      } catch (error) {
-        console.error("Error processing course details:", error);
-        toast({ title: "Error", description: "Could not load course details.", variant: "destructive" });
-      } finally {
+    setLoading(true);
+    const unsubs = [
+      onSnapshot(query(collection(db, "users"), where("role", "==", "student")), snapshot => {
+        setStudents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      }),
+      onSnapshot(collection(db, 'courses'), snapshot => {
+        setCourses(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
         setLoading(false);
-      }
-    });
+      }),
+      onSnapshot(collection(db, 'assignments'), snapshot => {
+        setAssignments(snapshot.docs.map(doc => doc.data()));
+      }),
+      onSnapshot(collection(db, 'quizzes'), snapshot => {
+        setQuizzes(snapshot.docs.map(doc => doc.data()));
+      }),
+    ];
 
-    return () => {
-        unsubCourses();
-        unsubStudents();
-    };
-  }, [toast]);
+    return () => unsubs.forEach(unsub => unsub());
+  }, []);
+
+  const coursesWithDetails = useMemo(() => {
+      const assignmentsByCourse = assignments.reduce((acc, assignment) => {
+          acc[assignment.courseId] = (acc[assignment.courseId] || 0) + 1;
+          return acc;
+      }, {});
+
+      const quizzesByCourse = quizzes.reduce((acc, quiz) => {
+          acc[quiz.courseId] = (acc[quiz.courseId] || 0) + 1;
+          return acc;
+      }, {});
+      
+      return courses.map(course => ({
+        ...course,
+        assignmentCount: assignmentsByCourse[course.id] || 0,
+        quizCount: quizzesByCourse[course.id] || 0,
+        studentCount: course.studentIds?.length || 0,
+      }));
+  }, [courses, assignments, quizzes]);
+
 
   const handleEdit = (course) => {
     setSelectedCourse(course);
@@ -137,7 +118,7 @@ export default function ManageCoursesPage() {
       </div>
 
       {loading ? <p className="text-center text-muted-foreground py-8">Loading courses...</p> : (
-        courses.length === 0 ? (
+        coursesWithDetails.length === 0 ? (
           <div className="text-center py-16 border-2 border-dashed rounded-lg">
              <h3 className="text-xl font-semibold">No courses created yet.</h3>
              <p className="text-muted-foreground mt-2">Get started by adding your first course.</p>
@@ -147,7 +128,7 @@ export default function ManageCoursesPage() {
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {courses.map(course => (
+            {coursesWithDetails.map(course => (
               <Card key={course.id} className="flex flex-col">
                 <CardHeader className="p-0">
                   <Image 
@@ -222,5 +203,3 @@ export default function ManageCoursesPage() {
     </div>
   );
 }
-
-    

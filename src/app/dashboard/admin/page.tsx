@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -5,8 +6,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Users, BookCopy, CheckSquare, HelpCircle } from "lucide-react";
 import { useState, useEffect } from "react";
-import { getStudentUsers, getCourses, getSubmissions } from "@/lib/services";
-import { onSnapshot, collection, query, where } from "firebase/firestore";
+import { getSubmissions } from "@/lib/services";
+import { onSnapshot, collection, query, where, getCountFromServer } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 
@@ -21,37 +22,46 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
+    const fetchInitialCounts = async () => {
+        setLoading(true);
+        try {
+            const [studentsSnap, coursesSnap, submissionsSnap, quizzesSnap] = await Promise.all([
+                getCountFromServer(query(collection(db, "users"), where("role", "==", "student"))),
+                getCountFromServer(collection(db, "courses")),
+                getCountFromServer(collection(db, "submissions")),
+                getCountFromServer(collection(db, "quizzes"))
+            ]);
 
-    const qStudents = query(collection(db, "users"), where("role", "==", "student"));
-    const unsubStudents = onSnapshot(qStudents, (snapshot) => {
-      setStats(prev => ({ ...prev, students: {...prev.students, value: snapshot.size.toString()} }));
-      setLoading(false);
-    });
-    
-    const qCourses = collection(db, "courses");
-    const unsubCourses = onSnapshot(qCourses, (snapshot) => {
-      setStats(prev => ({ ...prev, courses: {...prev.courses, value: snapshot.size.toString()} }));
-    });
+            setStats({
+                students: { ...stats.students, value: studentsSnap.data().count.toString() },
+                courses: { ...stats.courses, value: coursesSnap.data().count.toString() },
+                submissions: { ...stats.submissions, value: submissionsSnap.data().count.toString() },
+                quizzes: { ...stats.quizzes, value: quizzesSnap.data().count.toString() }
+            });
 
-    const qSubmissions = collection(db, "submissions");
-    const unsubSubmissions = onSnapshot(qSubmissions, async (snapshot) => {
-      setStats(prev => ({ ...prev, submissions: {...prev.submissions, value: snapshot.size.toString()} }));
-       const submissionsData = await getSubmissions(5); // Get 5 most recent
-       setRecentSubmissions(submissionsData);
-    });
-    
-    const qQuizzes = collection(db, "quizzes");
-    const unsubQuizzes = onSnapshot(qQuizzes, (snapshot) => {
-        setStats(prev => ({ ...prev, quizzes: {...prev.quizzes, value: snapshot.size.toString()} }));
-    });
-
-    return () => {
-      unsubStudents();
-      unsubCourses();
-      unsubSubmissions();
-      unsubQuizzes();
+            const submissionsData = await getSubmissions(5);
+            setRecentSubmissions(submissionsData);
+        } catch (error) {
+            console.error("Error fetching initial counts", error);
+        } finally {
+            setLoading(false);
+        }
     };
+    fetchInitialCounts();
+
+    const unsubmissions = [
+        onSnapshot(query(collection(db, "users"), where("role", "==", "student")), (snap) => setStats(prev => ({ ...prev, students: {...prev.students, value: snap.size.toString()} }))),
+        onSnapshot(collection(db, "courses"), (snap) => setStats(prev => ({ ...prev, courses: {...prev.courses, value: snap.size.toString()} }))),
+        onSnapshot(collection(db, "quizzes"), (snap) => setStats(prev => ({ ...prev, quizzes: {...prev.quizzes, value: snap.size.toString()} }))),
+        onSnapshot(collection(db, "submissions"), async (snap) => {
+            setStats(prev => ({ ...prev, submissions: {...prev.submissions, value: snap.size.toString()} }));
+            const submissionsData = await getSubmissions(5);
+            setRecentSubmissions(submissionsData);
+        })
+    ];
+    
+    return () => unsubmissions.forEach(unsub => unsub());
+
   }, []);
 
   return (

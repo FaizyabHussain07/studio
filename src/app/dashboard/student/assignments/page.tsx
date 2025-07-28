@@ -10,7 +10,7 @@ import { getStudentAssignmentsWithStatus } from "@/lib/services";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { Badge } from "@/components/ui/badge";
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, onSnapshot, query, where, doc } from "firebase/firestore";
 
 export default function AllAssignmentsPage() {
   const [assignments, setAssignments] = useState([]);
@@ -41,14 +41,16 @@ export default function AllAssignmentsPage() {
       }
     };
     
-    // Listen for changes that would affect assignments
-    const unsubs = [
-        onSnapshot(collection(db, 'assignments'), fetchAssignments),
-        onSnapshot(collection(db, 'submissions'), fetchAssignments),
-        onSnapshot(collection(db, 'courses'), fetchAssignments),
-    ];
+    fetchAssignments(); 
 
-    fetchAssignments(); // Initial fetch
+    const userDocRef = doc(db, 'users', user.uid);
+    const submissionsQuery = query(collection(db, 'submissions'), where('studentId', '==', user.uid));
+
+    const unsubs = [
+        onSnapshot(userDocRef, fetchAssignments),
+        onSnapshot(collection(db, 'assignments'), fetchAssignments),
+        onSnapshot(submissionsQuery, fetchAssignments),
+    ];
     
     return () => unsubs.forEach(unsub => unsub());
   }, [user]);

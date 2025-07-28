@@ -6,13 +6,13 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowRight, BookText, FileText, CheckCircle2, Circle, HelpCircle } from "lucide-react";
+import { ArrowRight, FileText, HelpCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getStudentCoursesWithProgress, getStudentAssignmentsWithStatus, getStudentQuizzes } from "@/lib/services";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import Image from "next/image";
-import { onSnapshot, doc, collection, query, where } from "firebase/firestore";
+import { onSnapshot, collection, query, where, doc } from "firebase/firestore";
 
 export default function StudentDashboardPage() {
   const [courses, setCourses] = useState([]);
@@ -37,24 +37,16 @@ export default function StudentDashboardPage() {
     setLoading(true);
 
     const fetchData = async () => {
-      console.log("Fetching all dashboard data for user:", user.uid);
       try {
         const [studentCourses, studentAssignments, studentQuizzes] = await Promise.all([
           getStudentCoursesWithProgress(user.uid),
           getStudentAssignmentsWithStatus(user.uid),
           getStudentQuizzes(user.uid)
         ]);
-
-        setCourses(studentCourses.slice(0, 3)); 
-
-        const upcomingAssignments = studentAssignments
-            .filter(a => a.status === 'Pending' || a.status === 'Missing')
-            .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
-            .slice(0, 3);
-        setAssignments(upcomingAssignments);
         
+        setCourses(studentCourses);
+        setAssignments(studentAssignments);
         setQuizzes(studentQuizzes);
-
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       } finally {
@@ -62,29 +54,29 @@ export default function StudentDashboardPage() {
       }
     };
     
-    // Initial fetch
     fetchData();
 
-    // Set up listeners for real-time updates on all relevant collections
-    const collectionsToWatch = ['users', 'courses', 'assignments', 'submissions', 'quizzes'];
-    const unsubs = collectionsToWatch.map(col => {
-      let q = query(collection(db, col));
-      // For user-specific collections, we only need to listen to the current user's documents
-      if (col === 'users') q = query(collection(db, col), where("uid", "==", user.uid));
-      if (col === 'submissions') q = query(collection(db, col), where("studentId", "==", user.uid));
-      
-      return onSnapshot(q, (snapshot) => {
-        console.log(`Change detected in ${col}, refetching all dashboard data.`);
-        fetchData();
-      });
-    });
+    const userDocRef = doc(db, 'users', user.uid);
+    const unsubs = [
+        onSnapshot(userDocRef, fetchData),
+        onSnapshot(collection(db, 'courses'), fetchData),
+        onSnapshot(collection(db, 'assignments'), fetchData),
+        onSnapshot(query(collection(db, 'submissions'), where("studentId", "==", user.uid)), fetchData),
+        onSnapshot(collection(db, 'quizzes'), fetchData)
+    ];
     
     return () => {
-      console.log("Cleaning up dashboard listeners.");
       unsubs.forEach(unsub => unsub());
     };
 
   }, [user]);
+
+  const upcomingAssignments = assignments
+    .filter(a => a.status === 'Pending' || a.status === 'Missing')
+    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
+    .slice(0, 3);
+  
+  const topCourses = courses.slice(0, 3);
 
   if (loading) {
     return <div className="text-center p-8">Loading dashboard...</div>;
@@ -103,9 +95,9 @@ export default function StudentDashboardPage() {
             <Button variant="link" asChild><Link href="/dashboard/student/courses">View All</Link></Button>
         </div>
         
-        {courses.length > 0 ? (
+        {topCourses.length > 0 ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {courses.map(course => (
+            {topCourses.map(course => (
               <Card key={course.id} className="flex flex-col">
                 <CardHeader className="p-0">
                   <Image
@@ -156,7 +148,7 @@ export default function StudentDashboardPage() {
             <Card>
               <CardContent className="p-0">
                 <ul className="divide-y">
-                  {assignments.length > 0 ? assignments.map(assignment => (
+                  {upcomingAssignments.length > 0 ? upcomingAssignments.map(assignment => (
                     <li key={assignment.id} className="flex items-center justify-between p-4 hover:bg-secondary/50">
                       <div className="flex items-center gap-4">
                         <FileText className="h-6 w-6 text-primary" />

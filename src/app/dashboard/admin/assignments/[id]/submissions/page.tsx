@@ -193,5 +193,3 @@ export default function ViewSubmissionsPage({ params }: { params: { id: string }
     </div>
   );
 }
-
-    

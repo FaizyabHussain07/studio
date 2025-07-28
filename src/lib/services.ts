@@ -1,10 +1,6 @@
 
-
-
-
-
 import { db } from './firebase';
-import { collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, query, where, documentId, orderBy, limit, writeBatch, setDoc, onSnapshot, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, query, where, documentId, orderBy, limit, writeBatch, setDoc, onSnapshot, arrayUnion, arrayRemove, getCountFromServer } from 'firebase/firestore';
 
 // User Management
 export const createUser = async (userData) => {
@@ -83,14 +79,12 @@ export const deleteCourse = async (courseId) => {
     const courseRef = doc(db, 'courses', courseId);
     batch.delete(courseRef);
 
-    // Remove course from all users who are enrolled
     const usersQuery = query(collection(db, 'users'), where('courses', 'array-contains', courseId));
     const usersSnapshot = await getDocs(usersQuery);
     usersSnapshot.forEach(userDoc => {
         const userRef = doc(db, 'users', userDoc.id);
         batch.update(userRef, { courses: arrayRemove(courseId) });
     });
-
 
     const assignmentsQuery = query(collection(db, 'assignments'), where('courseId', '==', courseId));
     const assignmentsSnapshot = await getDocs(assignmentsQuery);
@@ -114,7 +108,6 @@ export const deleteCourse = async (courseId) => {
         }
     }
     
-    // Delete quizzes associated with the course
     const quizzesQuery = query(collection(db, 'quizzes'), where('courseId', '==', courseId));
     const quizzesSnapshot = await getDocs(quizzesQuery);
     quizzesSnapshot.forEach(doc => {
@@ -146,7 +139,6 @@ export const getStudentCourses = async (studentId) => {
   if (courseIds.length === 0) return [];
   
   const courses = [];
-  // Firestore 'in' query supports a maximum of 30 elements.
   for (let i = 0; i < courseIds.length; i += 30) {
       const chunk = courseIds.slice(i, i + 30);
       if (chunk.length > 0) {
@@ -162,22 +154,37 @@ export const getStudentCoursesWithProgress = async (studentId) => {
   const courses = await getStudentCourses(studentId);
   if (courses.length === 0) return [];
   
-  const coursesWithProgress = await Promise.all(
-    courses.map(async (course) => {
-      const assignments = await getAssignmentsByCourse(course.id);
-      if(assignments.length === 0) return {...course, progress: 0};
+  const courseIds = courses.map(c => c.id);
+  const assignments = await getAssignmentsByCourses(courseIds);
+  const assignmentIds = assignments.map(a => a.id);
+  const submissions = await getSubmissionsByStudent(studentId, assignmentIds);
 
-      const assignmentIds = assignments.map(a => a.id);
-      const submissions = await getSubmissionsByStudent(studentId, assignmentIds);
+  const assignmentsByCourse = assignments.reduce((acc, a) => {
+      if (!acc[a.courseId]) acc[a.courseId] = [];
+      acc[a.courseId].push(a);
+      return acc;
+  }, {});
+
+  const submissionsByCourse = submissions.reduce((acc, s) => {
+      const assignment = assignments.find(a => a.id === s.assignmentId);
+      if (assignment) {
+          if(!acc[assignment.courseId]) acc[assignment.courseId] = [];
+          acc[assignment.courseId].push(s);
+      }
+      return acc;
+  }, {});
+  
+  return courses.map(course => {
+      const courseAssignments = assignmentsByCourse[course.id] || [];
+      const courseSubmissions = submissionsByCourse[course.id] || [];
+
+      if(courseAssignments.length === 0) return {...course, progress: 0};
       
-      const completedCount = submissions.filter(s => s.status === 'Submitted' || s.status === 'Graded').length;
-
-      const progress = assignments.length > 0 ? Math.round((completedCount / assignments.length) * 100) : 0;
+      const completedCount = courseSubmissions.filter(s => s.status === 'Submitted' || s.status === 'Graded').length;
+      const progress = Math.round((completedCount / courseAssignments.length) * 100);
       
       return { ...course, progress };
-    })
-  );
-  return coursesWithProgress;
+  });
 }
 
 
@@ -219,13 +226,8 @@ export const getAssignmentsByCourse = async (courseId) => {
     return assignments.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
 }
 
-export const getStudentAssignmentsWithStatus = async (studentId) => {
-    const courses = await getStudentCourses(studentId);
-    if(courses.length === 0) return [];
-
-    const courseIds = courses.map(c => c.id);
-    if(courseIds.length === 0) return [];
-
+const getAssignmentsByCourses = async (courseIds) => {
+    if (!courseIds || courseIds.length === 0) return [];
     const assignments = [];
     for (let i = 0; i < courseIds.length; i += 30) {
         const chunk = courseIds.slice(i, i + 30);
@@ -235,15 +237,28 @@ export const getStudentAssignmentsWithStatus = async (studentId) => {
             snapshot.forEach(doc => assignments.push({ id: doc.id, ...doc.data() }));
         }
     }
+    return assignments;
+}
 
-    const assignmentsWithStatus = await Promise.all(
-        assignments.map(async (assignment) => {
-            const status = await getStudentAssignmentStatus(studentId, assignment.id);
-            const course = courses.find(c => c.id === assignment.courseId);
-            return {...assignment, status, courseName: course?.name || 'Unknown' };
-        })
-    );
-    return assignmentsWithStatus;
+export const getStudentAssignmentsWithStatus = async (studentId) => {
+    const courses = await getStudentCourses(studentId);
+    if(courses.length === 0) return [];
+
+    const assignments = await getAssignmentsByCourses(courses.map(c => c.id));
+    const assignmentIds = assignments.map(a => a.id);
+    const submissions = await getSubmissionsByStudent(studentId, assignmentIds);
+    
+    return assignments.map(assignment => {
+        const submission = submissions.find(s => s.assignmentId === assignment.id);
+        const course = courses.find(c => c.id === assignment.courseId);
+        let status = 'Pending';
+        if (submission) {
+            status = submission.status || 'Submitted';
+        } else if (new Date() > new Date(assignment.dueDate)) {
+            status = 'Missing';
+        }
+        return {...assignment, status, courseName: course?.name || 'Unknown' };
+    });
 }
 
 
@@ -390,6 +405,15 @@ export const getStudentQuizzes = async (studentId) => {
     if(courses.length === 0) return [];
 
     const courseIds = courses.map(c => c.id);
+    const quizzes = await getQuizzesByCourses(courseIds);
+
+    return quizzes.map(quiz => {
+        const course = courses.find(c => c.id === quiz.courseId);
+        return {...quiz, courseName: course?.name || 'Unknown' };
+    });
+}
+
+const getQuizzesByCourses = async (courseIds) => {
     if(courseIds.length === 0) return [];
 
     const quizzes = [];
@@ -399,9 +423,7 @@ export const getStudentQuizzes = async (studentId) => {
             const q = query(collection(db, "quizzes"), where("courseId", "in", chunk));
             const snapshot = await getDocs(q);
             snapshot.forEach(doc => {
-                const quiz = { id: doc.id, ...doc.data() };
-                const course = courses.find(c => c.id === quiz.courseId);
-                quizzes.push({...quiz, courseName: course?.name || 'Unknown' });
+                quizzes.push({ id: doc.id, ...doc.data() });
             });
         }
     }

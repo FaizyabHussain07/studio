@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
@@ -8,69 +9,72 @@ import { Input } from "@/components/ui/input";
 import { MoreHorizontal, PlusCircle, Search } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { getCourses, getSubmissionsByAssignment, getStudentUsers, deleteAssignment } from "@/lib/services";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AssignmentForm } from "@/components/forms/assignment-form";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
-import { onSnapshot, collection } from "firebase/firestore";
+import { onSnapshot, collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 export default function ManageAssignmentsPage() {
   const [assignments, setAssignments] = useState([]);
   const [courses, setCourses] = useState([]);
+  const [submissions, setSubmissions] = useState([]);
+  const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [studentCount, setStudentCount] = useState(0);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedAssignment, setSelectedAssignment] = useState(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    const fetchInitialData = async () => {
+    const fetchStaticData = async () => {
         try {
-            const coursesData = await getCourses();
+            const [coursesData, studentsData] = await Promise.all([ getCourses(), getStudentUsers() ]);
             setCourses(coursesData);
-            const students = await getStudentUsers();
-            setStudentCount(students.length);
+            setStudents(studentsData);
         } catch (error) {
             console.error("Error fetching initial data:", error);
+            toast({ title: "Error", description: "Could not load initial data.", variant: "destructive" });
         }
     };
-    fetchInitialData();
-  }, []);
-  
-  useEffect(() => {
-    setLoading(true);
-    const unsubAssignments = onSnapshot(collection(db, 'assignments'), async (snapshot) => {
-        const assignmentsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        
-        // Ensure courses and studentCount are available before processing
-        const currentCourses = await getCourses();
-        const students = await getStudentUsers();
-        setCourses(currentCourses);
-        setStudentCount(students.length);
+    fetchStaticData();
 
-        if (currentCourses.length > 0) {
-            const assignmentsWithDetails = await Promise.all(assignmentsData.map(async (assignment) => {
-              const course = currentCourses.find(c => c.id === assignment.courseId);
-              const submissions = await getSubmissionsByAssignment(assignment.id);
-              return {
-                ...assignment,
-                courseName: course ? course.name : "Unknown Course",
-                submissionsCount: `${submissions.length}/${students.length}`,
-              };
-            }));
-            setAssignments(assignmentsWithDetails);
-        } else {
-             setAssignments(assignmentsData.map(a => ({...a, courseName: 'N/A', submissionsCount: 'N/A'})));
-        }
+    const unsubAssignments = onSnapshot(collection(db, 'assignments'), snapshot => {
+        setAssignments(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
         setLoading(false);
     });
+    
+    const unsubSubmissions = onSnapshot(collection(db, 'submissions'), snapshot => {
+        setSubmissions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
 
-    return () => unsubAssignments();
-  }, []);
+    return () => {
+        unsubAssignments();
+        unsubSubmissions();
+    };
+  }, [toast]);
+  
+  const processedAssignments = useMemo(() => {
+    if (loading || courses.length === 0) return [];
+    
+    const submissionsByAssignment = submissions.reduce((acc, sub) => {
+        acc[sub.assignmentId] = (acc[sub.assignmentId] || 0) + 1;
+        return acc;
+    }, {});
+    
+    return assignments.map(assignment => {
+        const course = courses.find(c => c.id === assignment.courseId);
+        const submissionCount = submissionsByAssignment[assignment.id] || 0;
+        return {
+            ...assignment,
+            courseName: course ? course.name : "Unknown Course",
+            submissionsCount: `${submissionCount}/${students.length}`,
+        };
+    });
+  }, [assignments, courses, submissions, students, loading]);
 
   const handleEdit = (assignment) => {
       setSelectedAssignment(assignment);
@@ -153,10 +157,10 @@ export default function ManageAssignmentsPage() {
               <TableBody>
                 {loading ? (
                   <TableRow><TableCell colSpan={5} className="text-center">Loading assignments...</TableCell></TableRow>
-                ) : assignments.length === 0 ? (
+                ) : processedAssignments.length === 0 ? (
                   <TableRow><TableCell colSpan={5} className="text-center">No assignments found.</TableCell></TableRow>
                 ) : (
-                  assignments.map((assignment) => (
+                  processedAssignments.map((assignment) => (
                     <TableRow key={assignment.id}>
                       <TableCell className="font-medium">{assignment.title}</TableCell>
                       <TableCell>{assignment.courseName}</TableCell>

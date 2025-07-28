@@ -8,15 +8,16 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { FileText, ArrowLeft, CheckCircle2, XCircle, FileWarning } from "lucide-react";
 import { useState, useEffect } from "react";
-import { getCourse, getAssignmentsByCourse, getStudentAssignmentStatus } from "@/lib/services";
+import { getCourse, getAssignmentsByCourse, getStudentAssignmentStatus, getSubmissionsByStudent } from "@/lib/services";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { collection, onSnapshot, query, where, doc } from "firebase/firestore";
 
 export default function CourseDetailPage({ params }: { params: { id: string } }) {
   const [user, setUser] = useState<User | null>(null);
   const [courseData, setCourseData] = useState(null);
   const [assignments, setAssignments] = useState([]);
+  const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,80 +28,80 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
   }, []);
 
   useEffect(() => {
-    if (!user || !params.id) return;
-    
+    if (!params.id) return;
     setLoading(true);
 
-    const fetchCourseData = async () => {
-      console.log("Fetching course data for course:", params.id);
-      try {
-        const course = await getCourse(params.id);
-        if (course) {
-          const courseAssignments = await getAssignmentsByCourse(params.id);
-          
-          const assignmentsWithStatus = await Promise.all(
-            courseAssignments.map(async (assignment) => {
-              const status = await getStudentAssignmentStatus(user.uid, assignment.id);
-              return { ...assignment, status };
-            })
-          );
-          
-          const submittedOrGradedCount = assignmentsWithStatus.filter(a => a.status === 'Submitted' || a.status === 'Graded').length;
-          const progress = courseAssignments.length > 0 ? Math.round((submittedOrGradedCount / courseAssignments.length) * 100) : 0;
-
-          setCourseData({...course, progress });
-          setAssignments(assignmentsWithStatus);
-        }
-      } catch (error) {
-        console.error("Error fetching course data:", error);
-      } finally {
-        setLoading(false);
+    const unsubCourse = onSnapshot(doc(db, "courses", params.id), (doc) => {
+      if (doc.exists()) {
+        setCourseData({ id: doc.id, ...doc.data() });
+      } else {
+        console.error("Course not found");
       }
-    };
+      setLoading(false);
+    });
     
-    // Initial fetch
-    fetchCourseData();
-
-    // Listen to changes in this course's assignments and the student's submissions
     const assignmentsQuery = query(collection(db, "assignments"), where("courseId", "==", params.id));
-    const submissionsQuery = query(collection(db, "submissions"), where("studentId", "==", user.uid));
-
     const unsubAssignments = onSnapshot(assignmentsQuery, (snapshot) => {
-        console.log("Change detected in assignments, refetching course data.");
-        fetchCourseData();
+        const assignmentsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setAssignments(assignmentsData);
     });
-    const unsubSubmissions = onSnapshot(submissionsQuery, (snapshot) => {
-        console.log("Change detected in submissions, refetching course data.");
-        fetchCourseData();
-    });
-    
+
     return () => {
+        unsubCourse();
         unsubAssignments();
-        unsubSubmissions();
     };
 
-  }, [params.id, user]);
+  }, [params.id]);
+
+  useEffect(() => {
+    if (!user || assignments.length === 0) return;
+    
+    const assignmentIds = assignments.map(a => a.id);
+    const submissionsQuery = query(collection(db, "submissions"), where("studentId", "==", user.uid), where('assignmentId', 'in', assignmentIds));
+    
+    const unsubSubmissions = onSnapshot(submissionsQuery, (snapshot) => {
+        setSubmissions(snapshot.docs.map(doc => ({id: doc.id, ...doc.data()})));
+    });
+
+    return () => unsubSubmissions();
+  }, [user, assignments])
   
-  const getStatusInfo = (status) => {
-    switch (status) {
-      case 'Graded':
-        return { icon: <CheckCircle2 className="h-6 w-6 text-green-500 flex-shrink-0" />, badge: 'default', badgeText: 'Graded' };
-      case 'Submitted':
-        return { icon: <CheckCircle2 className="h-6 w-6 text-blue-500 flex-shrink-0" />, badge: 'secondary', badgeText: 'Submitted' };
-      case 'Missing':
-         return { icon: <XCircle className="h-6 w-6 text-red-500 flex-shrink-0" />, badge: 'destructive', badgeText: 'Missing' };
-       case 'Needs Revision':
-         return { icon: <FileWarning className="h-6 w-6 text-yellow-500 flex-shrink-0" />, badge: 'outline', badgeText: 'Revision' };
-      default:
-        return { icon: <FileText className="h-6 w-6 text-primary flex-shrink-0" />, badge: 'outline', badgeText: 'Pending' };
+  
+  const getStatusInfo = (assignment) => {
+    const submission = submissions.find(s => s.assignmentId === assignment.id);
+
+    if (submission) {
+        switch (submission.status) {
+            case 'Graded':
+                return { icon: <CheckCircle2 className="h-6 w-6 text-green-500 flex-shrink-0" />, badge: 'default', badgeText: 'Graded' };
+            case 'Submitted':
+                return { icon: <CheckCircle2 className="h-6 w-6 text-blue-500 flex-shrink-0" />, badge: 'secondary', badgeText: 'Submitted' };
+            case 'Needs Revision':
+                return { icon: <FileWarning className="h-6 w-6 text-yellow-500 flex-shrink-0" />, badge: 'outline', badgeText: 'Revision' };
+            default:
+                return { icon: <CheckCircle2 className="h-6 w-6 text-blue-500 flex-shrink-0" />, badge: 'secondary', badgeText: 'Submitted' };
+        }
     }
+    
+    if (new Date() > new Date(assignment.dueDate)) {
+        return { icon: <XCircle className="h-6 w-6 text-red-500 flex-shrink-0" />, badge: 'destructive', badgeText: 'Missing' };
+    }
+    
+    return { icon: <FileText className="h-6 w-6 text-primary flex-shrink-0" />, badge: 'outline', badgeText: 'Pending' };
   };
 
+  const calculateProgress = () => {
+      if (assignments.length === 0) return 0;
+      const completedCount = submissions.filter(s => s.status === 'Submitted' || s.status === 'Graded').length;
+      return Math.round((completedCount / assignments.length) * 100);
+  }
 
   if (loading || !courseData) {
     return <div className="flex justify-center items-center h-full p-8">Loading course details...</div>;
   }
   
+  const progress = calculateProgress();
+
   return (
     <div className="space-y-8">
       <div>
@@ -118,8 +119,8 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
             <CardTitle>Your Progress</CardTitle>
         </CardHeader>
         <CardContent>
-            <Progress value={courseData.progress} className="h-3" />
-            <p className="text-md text-muted-foreground mt-2">{courseData.progress}% of course completed</p>
+            <Progress value={progress} className="h-3" />
+            <p className="text-md text-muted-foreground mt-2">{progress}% of course completed</p>
         </CardContent>
       </Card>
 
@@ -131,7 +132,7 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
         <CardContent className="p-0">
           <ul className="divide-y">
             {assignments.length > 0 ? assignments.map(assignment => {
-              const { icon, badge, badgeText } = getStatusInfo(assignment.status);
+              const { icon, badge, badgeText } = getStatusInfo(assignment);
               return (
                 <li key={assignment.id} className="flex items-center justify-between p-4 hover:bg-secondary/50 transition-colors flex-wrap gap-4">
                   <div className="flex items-center gap-4">
