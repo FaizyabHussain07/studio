@@ -56,6 +56,8 @@ export default function StudentDashboardPage() {
     
     fetchData();
 
+    // Re-fetch all data when any of these collections change.
+    // This is a simple but effective way to keep the dashboard up-to-date.
     const userDocRef = doc(db, 'users', user.uid);
     const unsubs = [
         onSnapshot(userDocRef, fetchData),

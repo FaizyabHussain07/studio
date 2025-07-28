@@ -23,7 +23,7 @@ export default function Hero() {
       </div>
       <div className="relative aspect-[4/3] rounded-xl overflow-hidden shadow-2xl">
         <Image
-          src="/hero-image.jpg"
+          src="https://placehold.co/800x600.png"
           alt="A student engaged in learning with books and a laptop"
           fill
           className="object-cover"

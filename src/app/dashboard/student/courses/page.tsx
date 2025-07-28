@@ -32,34 +32,47 @@ export default function StudentCoursesPage() {
     setLoading(true);
 
     const userDocRef = doc(db, 'users', user.uid);
-    const unsubs: (() => void)[] = [];
-
-    const userUnsub = onSnapshot(userDocRef, (userDoc) => {
+    
+    // This is the key change: a single listener on the user document.
+    const unsubUser = onSnapshot(userDocRef, (userDoc) => {
         const userData = userDoc.data();
         const courseIds = userData?.courses || [];
 
-        // Unsubscribe from previous course listeners if they exist
-        unsubs.forEach(unsub => unsub());
-        unsubs.length = 0; // Clear the array
+        // Clear existing listeners and data when user's courses change
+        // This is handled implicitly by re-running the effect, but good practice
+        setCourses([]);
+        setAssignments([]);
+        setSubmissions([]);
 
         if (courseIds.length > 0) {
+            // Fetch all related data based on the new courseIds
+            // 1. Fetch courses
             const coursesQuery = query(collection(db, 'courses'), where(documentId(), 'in', courseIds));
-            unsubs.push(onSnapshot(coursesQuery, (coursesSnap) => {
+            const unsubCourses = onSnapshot(coursesQuery, (coursesSnap) => {
                 setCourses(coursesSnap.docs.map(d => ({ id: d.id, ...d.data() })));
                 setLoading(false);
-            }));
+            });
 
+            // 2. Fetch assignments for those courses
             const assignmentsQuery = query(collection(db, "assignments"), where('courseId', 'in', courseIds));
-            unsubs.push(onSnapshot(assignmentsQuery, (snap) => {
+            const unsubAssignments = onSnapshot(assignmentsQuery, (snap) => {
                 setAssignments(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-            }));
+            });
             
+            // 3. Fetch student's submissions for those courses
             const submissionsQuery = query(collection(db, "submissions"), where('studentId', '==', user.uid), where('courseId', 'in', courseIds));
-            unsubs.push(onSnapshot(submissionsQuery, (snap) => {
+            const unsubSubmissions = onSnapshot(submissionsQuery, (snap) => {
                 setSubmissions(snap.docs.map(d => ({id: d.id, ...d.data()})));
-            }));
+            });
 
+            // Return a cleanup function that unsubscribes from all new listeners
+            return () => {
+                unsubCourses();
+                unsubAssignments();
+                unsubSubmissions();
+            };
         } else {
+            // If user has no courses, stop loading and clear data
             setCourses([]);
             setAssignments([]);
             setSubmissions([]);
@@ -67,9 +80,8 @@ export default function StudentCoursesPage() {
         }
     });
 
-    unsubs.push(userUnsub);
-
-    return () => unsubs.forEach(unsub => unsub());
+    // Cleanup the main user listener when the component unmounts or user changes
+    return () => unsubUser();
   }, [user]);
 
   const coursesWithProgress = useMemo(() => {
@@ -106,7 +118,7 @@ export default function StudentCoursesPage() {
               <CardHeader className="p-0">
                 <div className="relative aspect-video">
                     <Image
-                      src={course.imageUrl || "/course-placeholder.jpg"}
+                      src={course.imageUrl || "https://placehold.co/600x400.png"}
                       fill
                       alt={course.name}
                       className="rounded-t-lg object-cover"

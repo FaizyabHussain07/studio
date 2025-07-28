@@ -6,7 +6,7 @@ export default function About() {
       <div className="container grid md:grid-cols-2 gap-12 items-center">
         <div className="relative aspect-square md:aspect-[4/5] rounded-xl overflow-hidden shadow-lg">
            <Image
-            src="/founder.jpg"
+            src="https://placehold.co/400x500.png"
             alt="Founder of Faizyab Al-Quran"
             fill
             className="object-cover"
