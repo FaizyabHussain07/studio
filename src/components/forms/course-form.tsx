@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useForm } from "react-hook-form";
@@ -57,6 +58,8 @@ export function CourseForm({ course, students, onFinished }) {
           name: data.name,
           description: data.description,
           imageUrl: data.imageUrl,
+          enrolledStudentIds: data.enrolledStudentIds || [],
+          completedStudentIds: data.completedStudentIds || [],
       };
       
       const enrolledIds = data.enrolledStudentIds || [];
@@ -67,8 +70,8 @@ export function CourseForm({ course, students, onFinished }) {
         await updateUserCourses(course.id, enrolledIds, completedIds);
         toast({ title: "Success", description: "Course updated successfully." });
       } else {
-        const newCourseId = await createCourse(coursePayload);
-        await updateUserCourses(newCourseId, enrolledIds, completedIds);
+        const newCourse = await createCourse(coursePayload);
+        await updateUserCourses(newCourse, enrolledIds, completedIds);
         toast({ title: "Success", description: "Course created successfully." });
       }
       onFinished();

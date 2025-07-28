@@ -8,7 +8,7 @@ import { MoreVertical, PlusCircle, Search, Users, FileText, BookOpen } from "luc
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import Image from "next/image";
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { deleteCourse, getCourses as fetchCourses } from "@/lib/services";
+import { deleteCourse } from "@/lib/services";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CourseForm } from "@/components/forms/course-form";
 import { useToast } from "@/hooks/use-toast";
@@ -26,42 +26,39 @@ export default function ManageCoursesPage() {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const { toast } = useToast();
   
-  const getCourses = useCallback(async () => {
+  const getCoursesAndStudents = useCallback(async () => {
     setLoading(true);
     try {
-        const coursesData = await fetchCourses();
-        setCourses(coursesData);
+        const studentQuery = query(collection(db, "users"), where("role", "==", "student"));
+        const studentsSnapshot = await getDocs(studentQuery);
+        setStudents(studentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        
+        const coursesSnapshot = await getDocs(collection(db, "courses"));
+        setCourses(coursesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     } catch (error) {
-        console.error("Error fetching courses", error);
-        toast({ title: "Error", description: "Could not load courses.", variant: "destructive" });
+        console.error("Error fetching data", error);
+        toast({ title: "Error", description: "Could not load courses or students.", variant: "destructive" });
     } finally {
         setLoading(false);
     }
   }, [toast]);
 
   useEffect(() => {
-    getCourses();
-
-    const studentQuery = query(collection(db, "users"), where("role", "==", "student"));
-    const assignmentsQuery = collection(db, 'assignments');
-    const quizzesQuery = collection(db, 'quizzes');
+    getCoursesAndStudents();
 
     const unsubs = [
-      onSnapshot(studentQuery, snapshot => {
-        setStudents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-        getCourses(); // Re-fetch courses when students change
-      }),
-      onSnapshot(collection(db, 'courses'), getCourses),
-      onSnapshot(assignmentsQuery, snapshot => {
+      onSnapshot(collection(db, 'users'), getCoursesAndStudents),
+      onSnapshot(collection(db, 'courses'), getCoursesAndStudents),
+      onSnapshot(collection(db, 'assignments'), snapshot => {
         setAssignments(snapshot.docs.map(doc => ({id: doc.id, ...doc.data()})));
       }),
-      onSnapshot(quizzesQuery, snapshot => {
+      onSnapshot(collection(db, 'quizzes'), snapshot => {
         setQuizzes(snapshot.docs.map(doc => ({id: doc.id, ...doc.data()})));
       }),
     ];
 
     return () => unsubs.forEach(unsub => unsub());
-  }, [getCourses]);
+  }, [getCoursesAndStudents]);
   
   const coursesWithDetails = useMemo(() => {
     return courses.map(course => {
@@ -101,7 +98,6 @@ export default function ManageCoursesPage() {
   
   const onFormFinished = () => {
       setIsFormOpen(false);
-      getCourses();
   }
 
   return (
