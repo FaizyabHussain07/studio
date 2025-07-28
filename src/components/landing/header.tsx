@@ -30,7 +30,7 @@ export default function Header() {
   return (
     <header className={cn("sticky top-0 z-50 w-full transition-colors duration-300", isScrolled ? "bg-background/80 backdrop-blur-sm border-b" : "bg-transparent")}>
       <div className="container flex h-20 items-center justify-between">
-        <Logo />
+        <Logo showText={true} />
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
           {navLinks.map((link) => (
             <Link key={link.name} href={link.href} className="hover:text-accent transition-colors">
@@ -55,7 +55,7 @@ export default function Header() {
           </SheetTrigger>
           <SheetContent side="right">
             <div className="flex flex-col gap-6 p-6">
-              <Logo />
+              <Logo showText={true} />
               <nav className="grid gap-4">
                 {navLinks.map((link) => (
                   <Link key={link.name} href={link.href} className="text-lg font-medium hover:text-accent transition-colors">

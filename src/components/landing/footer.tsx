@@ -8,7 +8,7 @@ export default function Footer() {
     <footer className="bg-background border-t">
       <div className="container py-8">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <Logo />
+          <Logo showText={true} />
           <p className="text-sm text-muted-foreground">
             © {new Date().getFullYear()} Faizyab Al-Quran. All rights reserved.
           </p>

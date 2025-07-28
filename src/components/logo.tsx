@@ -1,8 +1,9 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
-export function Logo() {
+export function Logo({ showText = true }: { showText?: boolean }) {
   return (
     <Link href="/" className="flex items-center gap-2" prefetch={false}>
       <Image 
@@ -13,7 +14,7 @@ export function Logo() {
         className="object-contain"
         priority
       />
-       <span className="font-headline text-xl font-bold">Faizyab Al-Quran</span>
+       {showText && <span className="font-headline text-xl font-bold">Faizyab Al-Quran</span>}
     </Link>
   );
 }

@@ -61,7 +61,7 @@ export default function AdminDashboardLayout({
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center justify-center p-2">
-            <Logo />
+            <Logo showText={false} />
           </div>
         </SidebarHeader>
         <SidebarContent>
