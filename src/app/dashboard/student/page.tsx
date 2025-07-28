@@ -102,14 +102,15 @@ export default function StudentDashboardPage() {
             {topCourses.map(course => (
               <Card key={course.id} className="flex flex-col">
                 <CardHeader className="p-0">
-                  <Image
-                    src={course.imageUrl || "/course-placeholder.jpg"}
-                    width={600}
-                    height={400}
-                    alt={course.name}
-                    className="rounded-t-lg object-cover aspect-video"
-                    data-ai-hint="book course"
-                  />
+                  <div className="relative w-full aspect-video">
+                    <Image
+                      src={course.imageUrl || "/course-placeholder.jpg"}
+                      fill
+                      alt={course.name}
+                      className="rounded-t-lg object-cover"
+                      data-ai-hint="book course"
+                    />
+                  </div>
                 </CardHeader>
                 <CardContent className="p-6 flex-grow">
                   <CardTitle className="font-headline text-xl mb-2">{course.name}</CardTitle>
