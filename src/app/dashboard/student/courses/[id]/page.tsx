@@ -92,17 +92,15 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
     return { icon: <FileText className="h-6 w-6 text-primary flex-shrink-0" />, badge: 'outline', badgeText: 'Pending' };
   };
 
-  const calculateProgress = () => {
-      if (assignments.length === 0) return 0;
-      const completedCount = submissions.filter(s => s.status === 'Submitted' || s.status === 'Graded').length;
-      return Math.round((completedCount / assignments.length) * 100);
-  }
-
   if (loading || !courseData) {
     return <div className="flex justify-center items-center h-full p-8">Loading course details...</div>;
   }
   
-  const progress = calculateProgress();
+  const courseStatus = courseData.completedStudentIds?.includes(user?.uid) 
+    ? 'Completed' 
+    : courseData.enrolledStudentIds?.includes(user?.uid) 
+    ? 'In Progress' 
+    : 'Not Enrolled';
 
   return (
     <div className="space-y-8">
@@ -116,13 +114,29 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
         <p className="text-muted-foreground mt-2">{courseData.description}</p>
       </div>
       
-      <Card>
+       <Card>
         <CardHeader>
-            <CardTitle>Your Progress</CardTitle>
+          <CardTitle>Course Status</CardTitle>
         </CardHeader>
         <CardContent>
-            <Progress value={progress} className="h-3" />
-            <p className="text-md text-muted-foreground mt-2">{progress}% of course completed</p>
+          {courseStatus === 'In Progress' && (
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-blue-500" />
+              <p className="text-md text-muted-foreground">You are currently enrolled. Keep up the great work!</p>
+            </div>
+          )}
+          {courseStatus === 'Completed' && (
+             <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-green-500" />
+              <p className="text-md text-muted-foreground">Congratulations! You have completed this course.</p>
+            </div>
+          )}
+           {courseStatus === 'Not Enrolled' && (
+             <div className="flex items-center gap-2">
+                <XCircle className="h-5 w-5 text-red-500" />
+                <p className="text-md text-muted-foreground">You are not currently enrolled in this course.</p>
+             </div>
+          )}
         </CardContent>
       </Card>
 
