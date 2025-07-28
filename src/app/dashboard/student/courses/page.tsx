@@ -12,6 +12,7 @@ import Image from "next/image";
 import { onSnapshot, doc, collection, query, where, documentId } from "firebase/firestore";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getStudentCourses } from "@/lib/services";
 
 export default function StudentCoursesPage() {
   const [courses, setCourses] = useState([]);
@@ -28,39 +29,35 @@ export default function StudentCoursesPage() {
   
   useEffect(() => {
     if (!user) return;
+
     setLoading(true);
 
     const userDocRef = doc(db, 'users', user.uid);
-    
-    const unsubUser = onSnapshot(userDocRef, (userDoc) => {
-        const userData = userDoc.data();
-        const courseEnrollments = userData?.courses || []; // Array of {courseId, status}
+    const coursesColRef = collection(db, 'courses');
 
-        if (courseEnrollments.length > 0) {
-            const courseIds = courseEnrollments.map(c => c.courseId);
-            const coursesQuery = query(collection(db, 'courses'), where(documentId(), 'in', courseIds));
-            
-            const unsubCourses = onSnapshot(coursesQuery, (coursesSnap) => {
-                const coursesData = coursesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-                const coursesWithStatus = coursesData.map(course => {
-                    const enrollment = courseEnrollments.find(e => e.courseId === course.id);
-                    return { ...course, status: enrollment?.status || 'enrolled' };
-                });
-                setCourses(coursesWithStatus);
-                setLoading(false);
-            });
-
-            return () => unsubCourses();
-        } else {
-            setCourses([]);
+    // This listener will refetch courses whenever the user document changes (e.g., new enrollment)
+    // or when the courses collection changes.
+    const fetchCourses = async () => {
+        try {
+            const studentCourses = await getStudentCourses(user.uid);
+            setCourses(studentCourses);
+        } catch (error) {
+            console.error("Failed to fetch student courses:", error);
+            setCourses([]); // Clear courses on error
+        } finally {
             setLoading(false);
         }
-    }, (error) => {
-        console.error("Error listening to user document:", error);
-        setLoading(false);
-    });
+    }
+    
+    fetchCourses(); // Initial fetch
 
-    return () => unsubUser();
+    const unsubUser = onSnapshot(userDocRef, fetchCourses);
+    const unsubCourses = onSnapshot(coursesColRef, fetchCourses);
+
+    return () => {
+      unsubUser();
+      unsubCourses();
+    };
   }, [user]);
 
   if (loading) {
