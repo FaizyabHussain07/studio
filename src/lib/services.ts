@@ -2,6 +2,7 @@
 
 
 
+
 import { db } from './firebase';
 import { collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, query, where, documentId, orderBy, limit, writeBatch, setDoc, onSnapshot, arrayUnion, arrayRemove } from 'firebase/firestore';
 
@@ -212,9 +213,10 @@ export const getAssignments = async () => {
 };
 
 export const getAssignmentsByCourse = async (courseId) => {
-    const q = query(collection(db, "assignments"), where("courseId", "==", courseId), orderBy("dueDate", "asc"));
+    const q = query(collection(db, "assignments"), where("courseId", "==", courseId));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const assignments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    return assignments.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
 }
 
 export const getStudentAssignmentsWithStatus = async (studentId) => {
