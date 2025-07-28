@@ -108,7 +108,6 @@ export default function StudentDashboardPage() {
                       fill
                       alt={course.name}
                       className="rounded-t-lg object-cover"
-                      data-ai-hint="book course"
                     />
                   </div>
                 </CardHeader>

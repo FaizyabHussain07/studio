@@ -140,7 +140,6 @@ export default function ManageCoursesPage() {
                       alt={course.name}
                       fill
                       className="rounded-t-lg object-cover"
-                      data-ai-hint="book course"
                     />
                   </div>
                 </CardHeader>

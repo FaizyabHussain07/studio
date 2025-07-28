@@ -10,7 +10,6 @@ export default function About() {
             alt="Founder of Faizyab Al-Quran"
             fill
             className="object-cover"
-            data-ai-hint="portrait man"
           />
         </div>
         <div className="space-y-4">
