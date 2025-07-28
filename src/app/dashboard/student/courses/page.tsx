@@ -34,51 +34,30 @@ export default function StudentCoursesPage() {
     }
     
     setLoading(true);
-    const userRef = doc(db, "users", user.uid);
     
-    // This listener will react to any changes in the student's own data (like course enrollment)
-    const unsubUser = onSnapshot(userRef, async (userDoc) => {
+    // This is the primary listener. When the student's own user document changes (e.g., they are enrolled in a new course),
+    // it triggers a full refetch of all their courses and progress.
+    const userDocRef = doc(db, "users", user.uid);
+    const unsubscribeUser = onSnapshot(userDocRef, async () => {
+        console.log("User document updated, refetching courses.");
         try {
             const studentCourses = await getStudentCoursesWithProgress(user.uid);
             setCourses(studentCourses);
         } catch (error) {
             console.error("Error fetching courses with progress: ", error);
-            setCourses([]); // Clear courses on error
+            setCourses([]);
         } finally {
-            setLoading(false);
-        }
-    });
-
-    // We also need listeners for assignments and submissions to keep progress real-time
-    const assignmentsQuery = collection(db, "assignments");
-    const submissionsQuery = query(collection(db, "submissions"), where("studentId", "==", user.uid));
-
-    const unsubAssignments = onSnapshot(assignmentsQuery, async () => {
-         try {
-            const studentCourses = await getStudentCoursesWithProgress(user.uid);
-            setCourses(studentCourses);
-        } catch (error) {
-            console.error("Error fetching courses on assignment change: ", error);
+            // We only stop loading when the initial fetch is done.
+            if(loading) setLoading(false);
         }
     });
     
-    const unsubSubmissions = onSnapshot(submissionsQuery, async () => {
-        try {
-            const studentCourses = await getStudentCoursesWithProgress(user.uid);
-            setCourses(studentCourses);
-        } catch (error) {
-            console.error("Error fetching courses on submission change: ", error);
-        }
-    });
-
-
     return () => {
-        unsubUser();
-        unsubAssignments();
-        unsubSubmissions();
+        unsubscribeUser();
     };
 
   }, [user]);
+
 
   if (loading) {
     return <div className="text-center p-8">Loading your courses...</div>;
