@@ -1,4 +1,5 @@
 
+
 import { db } from './firebase';
 import { collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, query, where, documentId, orderBy, limit, writeBatch, setDoc, onSnapshot, arrayUnion, arrayRemove, getCountFromServer } from 'firebase/firestore';
 
@@ -180,9 +181,11 @@ export const getStudentCourses = async (studentId) => {
   if (!user || !user.courses || user.courses.length === 0) {
     return [];
   }
-  const courseEnrollments = user.courses; // This is now an array of {courseId, status}
-  
-  if (courseEnrollments.length === 0) return [];
+  const courseEnrollments = user.courses.filter(c => c.courseId); // Filter out any invalid entries
+
+  if (courseEnrollments.length === 0) {
+    return [];
+  }
   
   const courseIds = courseEnrollments.map(c => c.courseId);
   
