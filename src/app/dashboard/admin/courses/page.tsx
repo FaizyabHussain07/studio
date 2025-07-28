@@ -4,10 +4,10 @@
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MoreVertical, PlusCircle, Search, Users, FileText } from "lucide-react";
+import { MoreVertical, PlusCircle, Search, Users, FileText, BookOpen } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import Image from "next/image";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { deleteCourse } from "@/lib/services";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CourseForm } from "@/components/forms/course-form";
@@ -28,42 +28,44 @@ export default function ManageCoursesPage() {
 
   useEffect(() => {
     setLoading(true);
+    
+    const studentQuery = query(collection(db, "users"), where("role", "==", "student"));
+    const coursesQuery = collection(db, 'courses');
+    const assignmentsQuery = collection(db, 'assignments');
+    const quizzesQuery = collection(db, 'quizzes');
+
     const unsubs = [
-      onSnapshot(query(collection(db, "users"), where("role", "==", "student")), snapshot => {
+      onSnapshot(studentQuery, snapshot => {
         setStudents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       }),
-      onSnapshot(collection(db, 'courses'), snapshot => {
+      onSnapshot(coursesQuery, snapshot => {
         setCourses(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
         setLoading(false);
       }),
-      onSnapshot(collection(db, 'assignments'), snapshot => {
-        setAssignments(snapshot.docs.map(doc => doc.data()));
+      onSnapshot(assignmentsQuery, snapshot => {
+        setAssignments(snapshot.docs.map(doc => ({id: doc.id, ...doc.data()})));
       }),
-      onSnapshot(collection(db, 'quizzes'), snapshot => {
-        setQuizzes(snapshot.docs.map(doc => doc.data()));
+      onSnapshot(quizzesQuery, snapshot => {
+        setQuizzes(snapshot.docs.map(doc => ({id: doc.id, ...doc.data()})));
       }),
     ];
 
     return () => unsubs.forEach(unsub => unsub());
   }, []);
-
+  
   const coursesWithDetails = useMemo(() => {
-      const assignmentsByCourse = assignments.reduce((acc, assignment) => {
-          acc[assignment.courseId] = (acc[assignment.courseId] || 0) + 1;
-          return acc;
-      }, {});
-
-      const quizzesByCourse = quizzes.reduce((acc, quiz) => {
-          acc[quiz.courseId] = (acc[quiz.courseId] || 0) + 1;
-          return acc;
-      }, {});
-      
-      return courses.map(course => ({
-        ...course,
-        assignmentCount: assignmentsByCourse[course.id] || 0,
-        quizCount: quizzesByCourse[course.id] || 0,
-        studentCount: course.studentIds?.length || 0,
-      }));
+    return courses.map(course => {
+        const studentCount = course.studentIds?.length || 0;
+        const assignmentCount = assignments.filter(a => a.courseId === course.id).length;
+        const quizCount = quizzes.filter(q => q.courseId === course.id).length;
+        
+        return {
+            ...course,
+            studentCount,
+            assignmentCount,
+            quizCount,
+        };
+    });
   }, [courses, assignments, quizzes]);
 
 
@@ -119,26 +121,28 @@ export default function ManageCoursesPage() {
 
       {loading ? <p className="text-center text-muted-foreground py-8">Loading courses...</p> : (
         coursesWithDetails.length === 0 ? (
-          <div className="text-center py-16 border-2 border-dashed rounded-lg">
-             <h3 className="text-xl font-semibold">No courses created yet.</h3>
+          <div className="text-center py-16 border-2 border-dashed rounded-lg bg-card">
+             <BookOpen className="mx-auto h-12 w-12 text-muted-foreground" />
+             <h3 className="text-xl font-semibold mt-4">No courses created yet.</h3>
              <p className="text-muted-foreground mt-2">Get started by adding your first course.</p>
-             <Button onClick={handleCreate} className="mt-4">
+             <Button onClick={handleCreate} className="mt-6">
                  <PlusCircle className="mr-2 h-4 w-4" /> Add Course
              </Button>
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             {coursesWithDetails.map(course => (
-              <Card key={course.id} className="flex flex-col">
+              <Card key={course.id} className="flex flex-col hover:shadow-lg transition-shadow duration-300">
                 <CardHeader className="p-0">
-                  <Image 
-                    src={course.imageUrl || "https://placehold.co/600x400.png"}
-                    alt={course.name}
-                    width={600}
-                    height={400}
-                    className="rounded-t-lg object-cover aspect-video"
-                    data-ai-hint="education learning"
-                  />
+                  <div className="relative aspect-video">
+                    <Image 
+                      src={course.imageUrl || "/course-placeholder.jpg"}
+                      alt={course.name}
+                      fill
+                      className="rounded-t-lg object-cover"
+                      data-ai-hint="education learning"
+                    />
+                  </div>
                 </CardHeader>
                 <CardContent className="flex-grow p-6 space-y-4">
                    <div className="flex items-start justify-between">
@@ -181,18 +185,18 @@ export default function ManageCoursesPage() {
                       </DropdownMenu>
                    </div>
                 </CardContent>
-                <CardFooter className="flex items-center justify-between text-sm text-muted-foreground border-t pt-4">
-                  <div className="flex items-center gap-1">
+                <CardFooter className="flex items-center justify-between text-sm text-muted-foreground border-t pt-4 bg-secondary/50">
+                  <div className="flex items-center gap-1.5" title={`${course.studentCount} Student(s)`}>
                       <Users className="h-4 w-4" />
-                      <span>{course.studentCount} Student{course.studentCount !== 1 ? 's' : ''}</span>
+                      <span>{course.studentCount}</span>
                   </div>
-                   <div className="flex items-center gap-1">
+                   <div className="flex items-center gap-1.5" title={`${course.assignmentCount} Assignment(s)`}>
                       <FileText className="h-4 w-4" />
-                      <span>{course.assignmentCount} Assignment{course.assignmentCount !== 1 ? 's' : ''}</span>
+                      <span>{course.assignmentCount}</span>
                    </div>
-                   <div className="flex items-center gap-1">
+                   <div className="flex items-center gap-1.5" title={`${course.quizCount} Quizz(es)`}>
                       <FileText className="h-4 w-4" />
-                      <span>{course.quizCount} Quiz{course.quizCount !== 1 ? 's' : ''}</span>
+                      <span>{course.quizCount}</span>
                    </div>
                 </CardFooter>
               </Card>

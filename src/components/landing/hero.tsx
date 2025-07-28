@@ -21,14 +21,14 @@ export default function Hero() {
           </Button>
         </div>
       </div>
-      <div className="relative">
+      <div className="relative aspect-[4/3] rounded-xl overflow-hidden shadow-2xl">
         <Image
-          src="/logo.png"
-          alt="Quran learning platform"
-          width={600}
-          height={400}
-          className="rounded-xl"
+          src="/hero-image.jpg"
+          alt="A student engaged in learning with books and a laptop"
+          fill
+          className="object-cover"
           priority
+          data-ai-hint="learning education"
         />
       </div>
     </section>
