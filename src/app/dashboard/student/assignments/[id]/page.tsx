@@ -14,7 +14,8 @@ import { useToast } from "@/hooks/use-toast";
 import { onAuthStateChanged } from "firebase/auth";
 import { Textarea } from "@/components/ui/textarea";
 
-export default function AssignmentDetailPage({ params: { id } }: { params: { id:string } }) {
+export default function AssignmentDetailPage({ params }: { params: { id:string } }) {
+  const { id } = params;
   const [assignmentData, setAssignmentData] = useState(null);
   const [courseName, setCourseName] = useState("");
   const [loading, setLoading] = useState(true);
@@ -52,7 +53,6 @@ export default function AssignmentDetailPage({ params: { id } }: { params: { id:
     };
     fetchInitialData();
     
-    // Listen for real-time updates on submission
     const unsubSubmission = getStudentSubmissionForAssignment(user.uid, id, (sub) => {
         setSubmission(sub);
         if (sub?.textSubmission) {
@@ -110,7 +110,6 @@ export default function AssignmentDetailPage({ params: { id } }: { params: { id:
           courseId: assignmentData.courseId,
       });
       toast({ title: "Success", description: "Assignment submitted successfully!" });
-      // Real-time listener will update the submission state
     } catch(error) {
         console.error("Submission failed", error);
         toast({ title: "Error", description: `Failed to submit assignment. ${error.message}`, variant: "destructive" });

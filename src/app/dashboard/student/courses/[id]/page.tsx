@@ -14,7 +14,8 @@ import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { collection, onSnapshot, query, where, doc } from "firebase/firestore";
 
-export default function CourseDetailPage({ params: { id } }: { params: { id: string } }) {
+export default function CourseDetailPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   const [user, setUser] = useState<User | null>(null);
   const [courseData, setCourseData] = useState(null);
   const [assignments, setAssignments] = useState([]);
