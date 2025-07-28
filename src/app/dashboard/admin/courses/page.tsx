@@ -16,6 +16,14 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { onSnapshot, collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
+// Helper to check if a URL is valid and from an allowed source.
+const isValidImageUrl = (url) => {
+    if (!url || typeof url !== 'string') return false;
+    // For this app, we'll consider relative paths (local images) and placehold.co links valid.
+    // We disallow file:// protocol and other absolute URLs for security unless whitelisted.
+    return url.startsWith('/') || url.startsWith('https://placehold.co');
+}
+
 export default function ManageCoursesPage() {
   const [courses, setCourses] = useState([]);
   const [students, setStudents] = useState([]);
@@ -142,75 +150,78 @@ export default function ManageCoursesPage() {
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {coursesWithDetails.map(course => (
-              <Card key={course.id} className="flex flex-col hover:shadow-lg transition-shadow duration-300">
-                <CardHeader className="p-0">
-                  <div className="relative aspect-video">
-                    <Image 
-                      src={course.imageUrl || "/quran img 5.jpg"}
-                      alt={course.name}
-                      fill
-                      className="rounded-t-lg object-cover"
-                    />
-                  </div>
-                </CardHeader>
-                <CardContent className="flex-grow p-6 space-y-4">
-                   <div className="flex items-start justify-between">
-                      <div>
-                          <CardTitle className="font-headline text-xl">{course.name}</CardTitle>
-                          <CardDescription className="mt-1 line-clamp-3">{course.description}</CardDescription>
+            {coursesWithDetails.map(course => {
+                const imageUrl = isValidImageUrl(course.imageUrl) ? course.imageUrl : 'https://placehold.co/600x400.png';
+                return (
+                  <Card key={course.id} className="flex flex-col hover:shadow-lg transition-shadow duration-300">
+                    <CardHeader className="p-0">
+                      <div className="relative aspect-video">
+                        <Image 
+                          src={imageUrl}
+                          alt={course.name}
+                          fill
+                          className="rounded-t-lg object-cover"
+                        />
                       </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem onClick={() => handleEdit(course)}>Edit Course</DropdownMenuItem>
-                          <DropdownMenuItem>Manage Students</DropdownMenuItem>
-                          <DropdownMenuItem>View Assignments</DropdownMenuItem>
-                           <DropdownMenuItem>View Quizzes</DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive cursor-pointer">Delete Course</DropdownMenuItem>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    This action cannot be undone. This will permanently delete the course and all associated data.
-                                </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDelete(course.id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                   </div>
-                </CardContent>
-                <CardFooter className="flex items-center justify-between text-sm text-muted-foreground border-t pt-4 bg-secondary/50">
-                  <div className="flex items-center gap-1.5" title={`${course.studentCount} Student(s)`}>
-                      <Users className="h-4 w-4" />
-                      <span>{course.studentCount}</span>
-                  </div>
-                   <div className="flex items-center gap-1.5" title={`${course.assignmentCount} Assignment(s)`}>
-                      <FileText className="h-4 w-4" />
-                      <span>{course.assignmentCount}</span>
-                   </div>
-                   <div className="flex items-center gap-1.5" title={`${course.quizCount} Quizz(es)`}>
-                      <FileText className="h-4 w-4" />
-                      <span>{course.quizCount}</span>
-                   </div>
-                </CardFooter>
-              </Card>
-            ))}
+                    </CardHeader>
+                    <CardContent className="flex-grow p-6 space-y-4">
+                       <div className="flex items-start justify-between">
+                          <div>
+                              <CardTitle className="font-headline text-xl">{course.name}</CardTitle>
+                              <CardDescription className="mt-1 line-clamp-3">{course.description}</CardDescription>
+                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuItem onClick={() => handleEdit(course)}>Edit Course</DropdownMenuItem>
+                              <DropdownMenuItem>Manage Students</DropdownMenuItem>
+                              <DropdownMenuItem>View Assignments</DropdownMenuItem>
+                               <DropdownMenuItem>View Quizzes</DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive cursor-pointer">Delete Course</DropdownMenuItem>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This action cannot be undone. This will permanently delete the course and all associated data.
+                                    </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDelete(course.id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                       </div>
+                    </CardContent>
+                    <CardFooter className="flex items-center justify-between text-sm text-muted-foreground border-t pt-4 bg-secondary/50">
+                      <div className="flex items-center gap-1.5" title={`${course.studentCount} Student(s)`}>
+                          <Users className="h-4 w-4" />
+                          <span>{course.studentCount}</span>
+                      </div>
+                       <div className="flex items-center gap-1.5" title={`${course.assignmentCount} Assignment(s)`}>
+                          <FileText className="h-4 w-4" />
+                          <span>{course.assignmentCount}</span>
+                       </div>
+                       <div className="flex items-center gap-1.5" title={`${course.quizCount} Quizz(es)`}>
+                          <FileText className="h-4 w-4" />
+                          <span>{course.quizCount}</span>
+                       </div>
+                    </CardFooter>
+                  </Card>
+                )
+            })}
           </div>
         )
       )}
