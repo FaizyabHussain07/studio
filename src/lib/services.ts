@@ -61,15 +61,15 @@ export const updateCourse = async (id, courseData) => {
 export const updateUserCourses = async (courseId, enrolledStudentIds, completedStudentIds) => {
     const batch = writeBatch(db);
     const courseRef = doc(db, 'courses', courseId);
-    
+
     // Update the course document with the new lists of student IDs
-    batch.update(courseRef, { 
+    batch.update(courseRef, {
         enrolledStudentIds: enrolledStudentIds,
         completedStudentIds: completedStudentIds
     });
-    
+
     const allStudentsSnapshot = await getDocs(query(collection(db, "users"), where("role", "==", "student")));
-    const allStudents = allStudentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const allStudents = allStudentsSnapshot.docs.map(studentDoc => ({ id: studentDoc.id, ...studentDoc.data() }));
 
     for (const student of allStudents) {
         const studentRef = doc(db, 'users', student.id);
@@ -78,22 +78,16 @@ export const updateUserCourses = async (courseId, enrolledStudentIds, completedS
         const isEnrolled = enrolledStudentIds.includes(student.id);
         const isCompleted = completedStudentIds.includes(student.id);
         
-        if (isEnrolled) {
-             if (currentEnrollment) { // If enrollment exists, remove old one before adding new
-                 batch.update(studentRef, { courses: arrayRemove(currentEnrollment) });
-             }
-             batch.update(studentRef, { courses: arrayUnion({ courseId, status: 'enrolled' }) });
+        // Remove existing enrollment object regardless of status
+        if (currentEnrollment) {
+            batch.update(studentRef, { courses: arrayRemove(currentEnrollment) });
+        }
 
+        // Add the new, correct enrollment object if they are in one of the lists
+        if (isEnrolled) {
+             batch.update(studentRef, { courses: arrayUnion({ courseId, status: 'enrolled' }) });
         } else if (isCompleted) {
-             if (currentEnrollment) { // If enrollment exists, remove old one before adding new
-                 batch.update(studentRef, { courses: arrayRemove(currentEnrollment) });
-             }
              batch.update(studentRef, { courses: arrayUnion({ courseId, status: 'completed' }) });
-        } else {
-            // If not in either list, remove any existing enrollment
-            if (currentEnrollment) {
-                batch.update(studentRef, { courses: arrayRemove(currentEnrollment) });
-            }
         }
     }
 
