@@ -97,7 +97,7 @@ export default function AssignmentDetailPage({ params }: { params: { id:string }
       }
 
       await createSubmission({
-          assignmentId: assignmentData.id,
+          assignmentId: id,
           studentId: user.uid,
           submissionDate: new Date().toISOString(),
           status: 'Submitted',
