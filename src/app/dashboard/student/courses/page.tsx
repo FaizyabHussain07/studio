@@ -11,7 +11,7 @@ import { getStudentCoursesWithProgress } from "@/lib/services";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import Image from "next/image";
-import { onSnapshot, doc, collection } from "firebase/firestore";
+import { onSnapshot, doc, collection, query, where } from "firebase/firestore";
 
 export default function StudentCoursesPage() {
   const [courses, setCourses] = useState([]);
@@ -21,38 +21,62 @@ export default function StudentCoursesPage() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
+      if (!currentUser) {
+          setLoading(false);
+      }
     });
     return () => unsubscribe();
   }, []);
 
   useEffect(() => {
     if (!user) {
-        setLoading(false);
         return;
     }
     
-    const fetchData = async () => {
-        setLoading(true);
+    setLoading(true);
+    const userRef = doc(db, "users", user.uid);
+    
+    // This listener will react to any changes in the student's own data (like course enrollment)
+    const unsubUser = onSnapshot(userRef, async (userDoc) => {
         try {
             const studentCourses = await getStudentCoursesWithProgress(user.uid);
             setCourses(studentCourses);
         } catch (error) {
-            console.error("Error fetching courses: ", error);
-            setCourses([]);
+            console.error("Error fetching courses with progress: ", error);
+            setCourses([]); // Clear courses on error
         } finally {
             setLoading(false);
         }
-    }
+    });
 
-    const unsubs = [
-        onSnapshot(doc(db, "users", user.uid), fetchData),
-        onSnapshot(collection(db, "assignments"), fetchData),
-        onSnapshot(collection(db, "submissions"), fetchData)
-    ];
+    // We also need listeners for assignments and submissions to keep progress real-time
+    const assignmentsQuery = collection(db, "assignments");
+    const submissionsQuery = query(collection(db, "submissions"), where("studentId", "==", user.uid));
 
-    fetchData();
+    const unsubAssignments = onSnapshot(assignmentsQuery, async () => {
+         try {
+            const studentCourses = await getStudentCoursesWithProgress(user.uid);
+            setCourses(studentCourses);
+        } catch (error) {
+            console.error("Error fetching courses on assignment change: ", error);
+        }
+    });
+    
+    const unsubSubmissions = onSnapshot(submissionsQuery, async () => {
+        try {
+            const studentCourses = await getStudentCoursesWithProgress(user.uid);
+            setCourses(studentCourses);
+        } catch (error) {
+            console.error("Error fetching courses on submission change: ", error);
+        }
+    });
 
-    return () => unsubs.forEach(unsub => unsub());
+
+    return () => {
+        unsubUser();
+        unsubAssignments();
+        unsubSubmissions();
+    };
 
   }, [user]);
 
@@ -111,4 +135,3 @@ export default function StudentCoursesPage() {
     </div>
   );
 }
-
