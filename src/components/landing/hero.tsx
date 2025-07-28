@@ -23,12 +23,12 @@ export default function Hero() {
       </div>
       <div className="relative">
         <Image
-          src="https://placehold.co/600x400.png"
+          src="/logo.png"
           alt="Quran learning platform"
           width={600}
           height={400}
-          className="rounded-xl shadow-2xl"
-          data-ai-hint="quran learning"
+          className="rounded-xl"
+          priority
         />
       </div>
     </section>

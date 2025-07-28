@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Logo } from "@/components/logo";
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase';
@@ -44,7 +43,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-md space-y-6">
         <div className="flex justify-center mb-6">
-           <Image src="/logo-circle.png" alt="Faizyab Al-Quran Logo" width={120} height={120} />
+           <Image src="/logo-circle.png" alt="Faizyab Al-Quran Logo" width={80} height={80} />
         </div>
         <Card>
           <CardHeader className="text-center">

@@ -5,13 +5,14 @@ export function Logo() {
   return (
     <Link href="/" className="flex items-center gap-2" prefetch={false}>
       <Image 
-        src="/logo.png" 
+        src="/logo-circle.png" 
         alt="Faizyab Al-Quran Logo" 
-        width={150} 
+        width={40} 
         height={40}
         className="object-contain"
         priority
       />
+       <span className="font-headline text-xl font-bold">Faizyab Al-Quran</span>
     </Link>
   );
 }

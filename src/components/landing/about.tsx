@@ -11,7 +11,7 @@ export default function About() {
             width={550}
             height={310}
             className="rounded-xl object-cover shadow-lg"
-            data-ai-hint="library books"
+            data-ai-hint="library books quran"
           />
         </div>
         <div className="space-y-4">
