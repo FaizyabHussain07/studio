@@ -23,17 +23,27 @@ export default function ManageRequestsPage() {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [allStudents, setAllStudents] = useState([]);
   const [allCourses, setAllCourses] = useState([]);
+  const [currentRequest, setCurrentRequest] = useState(null);
 
   useEffect(() => {
     const fetchInitialData = async () => {
         setLoading(true);
-        const [students, courses] = await Promise.all([
-            getStudentUsers(),
-            getCourses()
-        ]);
-        setAllStudents(students);
-        setAllCourses(courses);
+        try {
+            const [students, courses, pendingRequests] = await Promise.all([
+                getStudentUsers(),
+                getCourses(),
+                getPendingEnrollmentRequests()
+            ]);
+            setAllStudents(students);
+            setAllCourses(courses);
+            setRequests(pendingRequests);
+        } catch (e) {
+            console.error(e)
+        } finally {
+            setLoading(false);
+        }
     }
+    
     fetchInitialData();
 
     // Listen to changes in the users collection to update requests in real-time
@@ -42,24 +52,22 @@ export default function ManageRequestsPage() {
     const unsubscribe = onSnapshot(q, async (snapshot) => {
         const pendingRequests = await getPendingEnrollmentRequests();
         setRequests(pendingRequests);
-        setLoading(false);
+        const courses = await getCourses();
+        setAllCourses(courses);
     });
 
     return () => unsubscribe();
   }, []);
   
-  const handleApprove = (request) => {
-    const courseToEdit = allCourses.find(c => c.id === request.courseId);
+  const handleApprove = async (request) => {
+    // We need to fetch the latest course data to ensure we have the most up-to-date student lists
+    const courseToEdit = await getCourse(request.courseId);
     
     if (courseToEdit) {
-        // We want to add the new student to the enrolled list, without removing existing ones.
-        const updatedCourse = {
-            ...courseToEdit,
-            enrolledStudentIds: [...(courseToEdit.enrolledStudentIds || []), request.studentId],
-            // Ensure we don't have the student in pending list anymore.
-            // This is handled by the updateUserCourses logic which reconstructs from enrolled/completed lists.
-        };
-        setSelectedCourse(updatedCourse);
+        // The CourseForm will handle moving the student from pending to enrolled.
+        // We just need to pass the course data and the student who made the request.
+        setSelectedCourse(courseToEdit);
+        setCurrentRequest(request); // Pass the request context
         setIsFormOpen(true);
     }
   }
@@ -79,13 +87,18 @@ export default function ManageRequestsPage() {
                   Review the student and course, then save changes to confirm enrollment.
                 </DialogDescription>
             </DialogHeader>
-            <CourseForm course={selectedCourse} students={allStudents} onFinished={() => setIsFormOpen(false)} />
+            <CourseForm 
+                course={selectedCourse} 
+                students={allStudents} 
+                onFinished={() => setIsFormOpen(false)}
+                requestingStudentId={currentRequest?.studentId}
+            />
         </DialogContent>
       </Dialog>
       
       <Card>
         <CardHeader>
-          <CardTitle>Pending Requests</CardTitle>
+          <CardTitle>Pending Requests ({requests.length})</CardTitle>
           <CardDescription>
             The following students have requested to enroll in a course.
           </CardDescription>

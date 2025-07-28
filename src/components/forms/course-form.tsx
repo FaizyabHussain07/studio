@@ -22,7 +22,7 @@ const courseSchema = z.object({
   completedStudentIds: z.array(z.string()).optional(),
 });
 
-export function CourseForm({ course, students, onFinished }) {
+export function CourseForm({ course, students, onFinished, requestingStudentId }) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const form = useForm({
@@ -42,14 +42,20 @@ export function CourseForm({ course, students, onFinished }) {
   }));
   
   useEffect(() => {
+    let enrolled = course?.enrolledStudentIds || [];
+    // If we are approving a request, automatically add the student to the enrolled list in the form
+    if (requestingStudentId && !enrolled.includes(requestingStudentId)) {
+        enrolled = [...enrolled, requestingStudentId];
+    }
+
     form.reset({
       name: course?.name || "",
       description: course?.description || "",
       imageUrl: course?.imageUrl || "",
-      enrolledStudentIds: course?.enrolledStudentIds || [],
+      enrolledStudentIds: enrolled,
       completedStudentIds: course?.completedStudentIds || [],
     })
-  }, [course, form]);
+  }, [course, form, requestingStudentId]);
 
   const onSubmit = async (data) => {
     setLoading(true);
@@ -65,11 +71,16 @@ export function CourseForm({ course, students, onFinished }) {
 
       if (course) {
         await updateCourse(course.id, coursePayload);
-        await updateUserCourses(course.id, enrolledIds, completedIds);
+        // We now also pass the original student list to handle removals correctly.
+        const originalStudentIds = [
+            ...(course.enrolledStudentIds || []), 
+            ...(course.completedStudentIds || []),
+        ];
+        await updateUserCourses(course.id, enrolledIds, completedIds, students, requestingStudentId);
         toast({ title: "Success", description: "Course updated successfully." });
       } else {
         const newCourseId = await createCourse(coursePayload);
-        await updateUserCourses(newCourseId, enrolledIds, completedIds);
+        await updateUserCourses(newCourseId, enrolledIds, completedIds, students);
         toast({ title: "Success", description: "Course created successfully." });
       }
       onFinished();
