@@ -2,7 +2,6 @@
 'use client';
 
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -13,6 +12,7 @@ import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import Image from "next/image";
 import { onSnapshot, collection, query, where, doc } from "firebase/firestore";
+import { Badge } from "@/components/ui/badge";
 
 export default function StudentDashboardPage() {
   const [courses, setCourses] = useState([]);
@@ -56,8 +56,6 @@ export default function StudentDashboardPage() {
     
     fetchData();
 
-    // Re-fetch all data when any of these collections change.
-    // This is a simple but effective way to keep the dashboard up-to-date.
     const userDocRef = doc(db, 'users', user.uid);
     const unsubs = [
         onSnapshot(userDocRef, fetchData),
@@ -78,7 +76,7 @@ export default function StudentDashboardPage() {
     .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
     .slice(0, 3);
   
-  const topCourses = courses.slice(0, 3);
+  const topCourses = courses.filter(c => c.status === 'enrolled').slice(0, 3);
 
   if (loading) {
     return <div className="text-center p-8">Loading dashboard...</div>;
@@ -101,7 +99,7 @@ export default function StudentDashboardPage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {topCourses.map(course => (
               <Card key={course.id} className="flex flex-col">
-                <CardHeader className="p-0">
+                <CardHeader className="p-0 relative">
                   <div className="relative w-full aspect-video">
                     <Image
                       src={course.imageUrl || "/quran img 5.jpg"}
@@ -110,20 +108,14 @@ export default function StudentDashboardPage() {
                       className="rounded-t-lg object-cover"
                     />
                   </div>
+                   <Badge className="absolute top-2 right-2 capitalize" variant={'secondary'}>{course.status}</Badge>
                 </CardHeader>
                 <CardContent className="p-6 flex-grow">
                   <CardTitle className="font-headline text-xl mb-2">{course.name}</CardTitle>
                   <CardDescription className="line-clamp-3">{course.description}</CardDescription>
                 </CardContent>
-                <CardFooter className="p-6 pt-0 flex-col items-start gap-2 border-t mt-auto">
-                    <div className="w-full">
-                        <div className="flex justify-between text-sm text-muted-foreground mb-1">
-                            <span>Progress</span>
-                            <span>{course.progress}%</span>
-                        </div>
-                        <Progress value={course.progress} className="h-2" />
-                    </div>
-                  <Button asChild variant="default" className="w-full mt-2">
+                <CardFooter className="p-6 pt-0 mt-auto bg-card border-t">
+                  <Button asChild variant="default" className="w-full mt-4">
                     <Link href={`/dashboard/student/courses/${course.id}`}>
                       Go to Course <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>

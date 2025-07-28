@@ -8,7 +8,7 @@ import { MoreVertical, PlusCircle, Search, Users, FileText, BookOpen } from "luc
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import Image from "next/image";
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { deleteCourse } from "@/lib/services";
+import { deleteCourse, getCourses as fetchCourses } from "@/lib/services";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CourseForm } from "@/components/forms/course-form";
 import { useToast } from "@/hooks/use-toast";
@@ -25,23 +25,33 @@ export default function ManageCoursesPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const { toast } = useToast();
+  
+  const getCourses = useCallback(async () => {
+    setLoading(true);
+    try {
+        const coursesData = await fetchCourses();
+        setCourses(coursesData);
+    } catch (error) {
+        console.error("Error fetching courses", error);
+        toast({ title: "Error", description: "Could not load courses.", variant: "destructive" });
+    } finally {
+        setLoading(false);
+    }
+  }, [toast]);
 
   useEffect(() => {
-    setLoading(true);
-    
+    getCourses();
+
     const studentQuery = query(collection(db, "users"), where("role", "==", "student"));
-    const coursesQuery = collection(db, 'courses');
     const assignmentsQuery = collection(db, 'assignments');
     const quizzesQuery = collection(db, 'quizzes');
 
     const unsubs = [
       onSnapshot(studentQuery, snapshot => {
         setStudents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        getCourses(); // Re-fetch courses when students change
       }),
-      onSnapshot(coursesQuery, snapshot => {
-        setCourses(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-        setLoading(false);
-      }),
+      onSnapshot(collection(db, 'courses'), getCourses),
       onSnapshot(assignmentsQuery, snapshot => {
         setAssignments(snapshot.docs.map(doc => ({id: doc.id, ...doc.data()})));
       }),
@@ -51,11 +61,11 @@ export default function ManageCoursesPage() {
     ];
 
     return () => unsubs.forEach(unsub => unsub());
-  }, []);
+  }, [getCourses]);
   
   const coursesWithDetails = useMemo(() => {
     return courses.map(course => {
-        const studentCount = course.studentIds?.length || 0;
+        const studentCount = (course.enrolledStudentIds?.length || 0) + (course.completedStudentIds?.length || 0);
         const assignmentCount = assignments.filter(a => a.courseId === course.id).length;
         const quizCount = quizzes.filter(q => q.courseId === course.id).length;
         
@@ -88,6 +98,11 @@ export default function ManageCoursesPage() {
         toast({ title: "Error", description: "Could not delete course.", variant: "destructive" });
     }
   };
+  
+  const onFormFinished = () => {
+      setIsFormOpen(false);
+      getCourses();
+  }
 
   return (
     <div className="space-y-8">
@@ -104,7 +119,7 @@ export default function ManageCoursesPage() {
                   Fill in the details below. Click save when you're done.
                 </DialogDescription>
             </DialogHeader>
-            <CourseForm course={selectedCourse} students={students} onFinished={() => setIsFormOpen(false)}/>
+            <CourseForm course={selectedCourse} students={students} onFinished={onFormFinished}/>
         </DialogContent>
       </Dialog>
 

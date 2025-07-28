@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
@@ -10,14 +10,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { createCourse, updateCourse, updateUserCourses } from "@/lib/services";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MultiSelect } from "@/components/ui/multi-select";
 
 const courseSchema = z.object({
   name: z.string().min(1, "Course name is required"),
   description: z.string().min(1, "Description is required"),
   imageUrl: z.string().url().optional().or(z.literal('')),
-  studentIds: z.array(z.string()).optional(),
+  enrolledStudentIds: z.array(z.string()).optional(),
+  completedStudentIds: z.array(z.string()).optional(),
 });
 
 export function CourseForm({ course, students, onFinished }) {
@@ -29,7 +30,8 @@ export function CourseForm({ course, students, onFinished }) {
       name: course?.name || "",
       description: course?.description || "",
       imageUrl: course?.imageUrl || "",
-      studentIds: course?.studentIds || [],
+      enrolledStudentIds: course?.enrolledStudentIds || [],
+      completedStudentIds: course?.completedStudentIds || [],
     },
   });
 
@@ -37,6 +39,16 @@ export function CourseForm({ course, students, onFinished }) {
     value: student.id,
     label: student.name,
   }));
+  
+  useEffect(() => {
+    form.reset({
+      name: course?.name || "",
+      description: course?.description || "",
+      imageUrl: course?.imageUrl || "",
+      enrolledStudentIds: course?.enrolledStudentIds || [],
+      completedStudentIds: course?.completedStudentIds || [],
+    })
+  }, [course, form]);
 
   const onSubmit = async (data) => {
     setLoading(true);
@@ -45,16 +57,18 @@ export function CourseForm({ course, students, onFinished }) {
           name: data.name,
           description: data.description,
           imageUrl: data.imageUrl,
-          studentIds: data.studentIds || [],
       };
+      
+      const enrolledIds = data.enrolledStudentIds || [];
+      const completedIds = data.completedStudentIds || [];
 
       if (course) {
         await updateCourse(course.id, coursePayload);
-        await updateUserCourses(course.id, data.studentIds);
+        await updateUserCourses(course.id, enrolledIds, completedIds);
         toast({ title: "Success", description: "Course updated successfully." });
       } else {
         const newCourseId = await createCourse(coursePayload);
-        await updateUserCourses(newCourseId, data.studentIds);
+        await updateUserCourses(newCourseId, enrolledIds, completedIds);
         toast({ title: "Success", description: "Course created successfully." });
       }
       onFinished();
@@ -110,16 +124,34 @@ export function CourseForm({ course, students, onFinished }) {
           />
            <FormField
             control={form.control}
-            name="studentIds"
+            name="enrolledStudentIds"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Enroll Students</FormLabel>
+                <FormLabel>Enrolled Students</FormLabel>
                 <FormControl>
                    <MultiSelect
                         options={studentOptions}
                         selected={field.value}
                         onChange={field.onChange}
                         placeholder="Select students to enroll..."
+                    />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+           <FormField
+            control={form.control}
+            name="completedStudentIds"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Completed Students</FormLabel>
+                <FormControl>
+                   <MultiSelect
+                        options={studentOptions}
+                        selected={field.value}
+                        onChange={field.onChange}
+                        placeholder="Select students who have completed..."
                     />
                 </FormControl>
                 <FormMessage />

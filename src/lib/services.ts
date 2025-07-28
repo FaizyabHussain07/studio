@@ -43,35 +43,63 @@ export const getUser = async (id) => {
 
 // Course Management
 export const createCourse = async (courseData) => {
-  const newCourse = await addDoc(collection(db, 'courses'), courseData);
+  const newCourse = await addDoc(collection(db, 'courses'), {
+    name: courseData.name,
+    description: courseData.description,
+    imageUrl: courseData.imageUrl,
+  });
   return newCourse.id;
 };
 
 export const updateCourse = async (id, courseData) => {
-    await updateDoc(doc(db, 'courses', id), courseData);
+    await updateDoc(doc(db, 'courses', id), {
+        name: courseData.name,
+        description: courseData.description,
+        imageUrl: courseData.imageUrl,
+    });
 }
 
-export const updateUserCourses = async (courseId, newStudentIds) => {
-    const q = query(collection(db, "users"), where("role", "==", "student"));
-    const snapshot = await getDocs(q);
-    const allStudents = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
+export const updateUserCourses = async (courseId, enrolledStudentIds, completedStudentIds) => {
+    const allStudentIds = [...new Set([...enrolledStudentIds, ...completedStudentIds])];
+    
+    // First, remove the course from anyone who is no longer associated with it.
+    const studentUsers = await getStudentUsers();
     const batch = writeBatch(db);
 
-    allStudents.forEach(student => {
+    studentUsers.forEach(student => {
         const studentRef = doc(db, 'users', student.id);
-        const isEnrolled = newStudentIds.includes(student.id);
-        const wasEnrolled = student.courses?.includes(courseId);
-
-        if(isEnrolled && !wasEnrolled) {
-            batch.update(studentRef, { courses: arrayUnion(courseId) });
-        } else if (!isEnrolled && wasEnrolled) {
-            batch.update(studentRef, { courses: arrayRemove(courseId) });
+        const currentEnrollment = student.courses?.find(c => c.courseId === courseId);
+        
+        // If they are not in the new lists but were previously enrolled
+        if (!allStudentIds.includes(student.id) && currentEnrollment) {
+            batch.update(studentRef, { courses: arrayRemove(currentEnrollment) });
         }
     });
+    
+    // Now, update or add the course for the selected students
+    for (const studentId of allStudentIds) {
+        const studentRef = doc(db, 'users', studentId);
+        const studentDoc = await getDoc(studentRef);
+        const studentData = studentDoc.data();
+        
+        const newStatus = completedStudentIds.includes(studentId) ? 'completed' : 'enrolled';
+        const currentEnrollment = studentData.courses?.find(c => c.courseId === courseId);
+
+        if (currentEnrollment) {
+            // If status changed, remove old entry and add new one
+            if (currentEnrollment.status !== newStatus) {
+                batch.update(studentRef, { courses: arrayRemove(currentEnrollment) });
+                batch.update(studentRef, { courses: arrayUnion({ courseId, status: newStatus }) });
+            }
+        } else {
+            // If not enrolled at all, add them
+            batch.update(studentRef, { courses: arrayUnion({ courseId, status: newStatus }) });
+        }
+    }
 
     await batch.commit();
 }
+
 
 export const deleteCourse = async (courseId) => {
     const batch = writeBatch(db);
@@ -79,11 +107,16 @@ export const deleteCourse = async (courseId) => {
     const courseRef = doc(db, 'courses', courseId);
     batch.delete(courseRef);
 
-    const usersQuery = query(collection(db, 'users'), where('courses', 'array-contains', courseId));
-    const usersSnapshot = await getDocs(usersQuery);
-    usersSnapshot.forEach(userDoc => {
-        const userRef = doc(db, 'users', userDoc.id);
-        batch.update(userRef, { courses: arrayRemove(courseId) });
+    // This is more complex now. We need to find all users who have this courseId in their courses array of objects.
+    // Firestore doesn't support querying inside array of objects directly like this easily.
+    // A better approach in a real app might be a subcollection, but for now, we'll fetch all students and filter.
+    const allStudents = await getStudentUsers();
+    allStudents.forEach(student => {
+        const enrollment = student.courses?.find(c => c.courseId === courseId);
+        if (enrollment) {
+            const studentRef = doc(db, 'users', student.id);
+            batch.update(studentRef, { courses: arrayRemove(enrollment) });
+        }
     });
 
     const assignmentsQuery = query(collection(db, 'assignments'), where('courseId', '==', courseId));
@@ -119,8 +152,21 @@ export const deleteCourse = async (courseId) => {
 
 
 export const getCourses = async () => {
-  const snapshot = await getDocs(collection(db, 'courses'));
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const snapshot = await getDocs(collection(db, 'courses'));
+    const courses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    // Also fetch enrollment details
+    const students = await getStudentUsers();
+    return courses.map(course => {
+        const enrolledStudentIds = students
+            .filter(s => s.courses?.some(c => c.courseId === course.id && c.status === 'enrolled'))
+            .map(s => s.id);
+        const completedStudentIds = students
+            .filter(s => s.courses?.some(c => c.courseId === course.id && c.status === 'completed'))
+            .map(s => s.id);
+        
+        return { ...course, enrolledStudentIds, completedStudentIds };
+    })
 };
 
 export const getCourse = async (id) => {
@@ -134,9 +180,11 @@ export const getStudentCourses = async (studentId) => {
   if (!user || !user.courses || user.courses.length === 0) {
     return [];
   }
-  const courseIds = user.courses;
+  const courseEnrollments = user.courses; // This is now an array of {courseId, status}
   
-  if (courseIds.length === 0) return [];
+  if (courseEnrollments.length === 0) return [];
+  
+  const courseIds = courseEnrollments.map(c => c.courseId);
   
   const courses = [];
   for (let i = 0; i < courseIds.length; i += 30) {
@@ -147,7 +195,12 @@ export const getStudentCourses = async (studentId) => {
         snapshot.forEach(doc => courses.push({ id: doc.id, ...doc.data() }));
       }
   }
-  return courses;
+
+  // Add the status back to the course object
+  return courses.map(course => {
+      const enrollment = courseEnrollments.find(e => e.courseId === course.id);
+      return { ...course, status: enrollment?.status || 'enrolled' };
+  });
 };
 
 export const getStudentCoursesWithProgress = async (studentId) => {
@@ -276,7 +329,7 @@ export const createSubmission = async (submissionData) => {
 
     if (existingSubmission.empty) {
         const newSubmissionRef = doc(collection(db, 'submissions'));
-        await setDoc(newSubmissionRef, { ...submissionData, id: newSubmissionRef.id });
+        await setDoc(newSubmissionRef, { ...submissionData, id: newSubmissionRef.id, courseId: submissionData.courseId });
         return newSubmissionRef.id;
     } else {
         const submissionDocRef = existingSubmission.docs[0].ref;
