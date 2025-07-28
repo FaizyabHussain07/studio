@@ -181,7 +181,8 @@ export const getStudentCourses = async (studentId) => {
   if (!user || !user.courses || user.courses.length === 0) {
     return [];
   }
-  const courseEnrollments = user.courses.filter(c => c.courseId); // Filter out any invalid entries
+  // This is the critical fix: ensure we only get valid courseId strings.
+  const courseEnrollments = user.courses.filter(c => c && typeof c.courseId === 'string');
 
   if (courseEnrollments.length === 0) {
     return [];
