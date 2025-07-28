@@ -6,7 +6,7 @@ export default function About() {
       <div className="container grid md:grid-cols-2 gap-12 items-center">
         <div className="relative aspect-square md:aspect-[4/5] rounded-xl overflow-hidden shadow-lg">
            <Image
-            src="/GIU AMA 200-08.jpg"
+            src="/ChatGPT Image Apr 5, 2025, 07_56_20 PM (1).png"
             alt="Founder of Faizyab Al-Quran"
             fill
             className="object-cover"
