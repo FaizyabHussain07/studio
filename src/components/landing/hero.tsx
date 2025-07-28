@@ -28,6 +28,7 @@ export default function Hero() {
           fill
           className="object-cover"
           priority
+          data-ai-hint="student learning"
         />
       </div>
     </section>

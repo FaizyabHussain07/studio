@@ -108,6 +108,7 @@ export default function StudentDashboardPage() {
                     height={400}
                     alt={course.name}
                     className="rounded-t-lg object-cover aspect-video"
+                    data-ai-hint="book course"
                   />
                 </CardHeader>
                 <CardContent className="p-6 flex-grow">
