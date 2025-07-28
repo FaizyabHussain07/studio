@@ -38,14 +38,7 @@ export default function StudentCoursesPage() {
         const userData = userDoc.data();
         const courseIds = userData?.courses || [];
 
-        // Clear existing listeners and data when user's courses change
-        // This is handled implicitly by re-running the effect, but good practice
-        setCourses([]);
-        setAssignments([]);
-        setSubmissions([]);
-
         if (courseIds.length > 0) {
-            // Fetch all related data based on the new courseIds
             // 1. Fetch courses
             const coursesQuery = query(collection(db, 'courses'), where(documentId(), 'in', courseIds));
             const unsubCourses = onSnapshot(coursesQuery, (coursesSnap) => {
@@ -59,7 +52,7 @@ export default function StudentCoursesPage() {
                 setAssignments(snap.docs.map(d => ({ id: d.id, ...d.data() })));
             });
             
-            // 3. Fetch student's submissions for those courses
+            // 3. Fetch student's submissions for those courses (if any courses exist)
             const submissionsQuery = query(collection(db, "submissions"), where('studentId', '==', user.uid), where('courseId', 'in', courseIds));
             const unsubSubmissions = onSnapshot(submissionsQuery, (snap) => {
                 setSubmissions(snap.docs.map(d => ({id: d.id, ...d.data()})));
@@ -78,6 +71,9 @@ export default function StudentCoursesPage() {
             setSubmissions([]);
             setLoading(false);
         }
+    }, (error) => {
+        console.error("Error listening to user document:", error);
+        setLoading(false);
     });
 
     // Cleanup the main user listener when the component unmounts or user changes
