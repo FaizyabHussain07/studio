@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
@@ -6,22 +7,40 @@ import { ArrowRight, BookUser, BrainCircuit } from "lucide-react";
 
 const sampleCourses = [
   {
-    title: "Quranic Studies 101",
-    description: "An introductory course to the fundamental principles of Quranic interpretation and recitation.",
+    title: "Hifz-ul-Quran",
+    description: "This course is for students who want to memorize the Holy Quran by heart.",
     imageUrl: "/quran img 5.jpg",
     icon: <BookUser className="w-8 h-8 text-primary" />,
   },
   {
-    title: "Advanced Tajweed",
-    description: "Master the art of Quranic recitation with in-depth lessons on the rules of Tajweed.",
+    title: "Nazra-tul-Quran",
+    description: "Learn to read the Holy Quran with proper pronunciation and articulation.",
     imageUrl: "/close-up-islamic-new-year-with-quran-book.jpg",
     icon: <BrainCircuit className="w-8 h-8 text-primary" />,
   },
   {
-    title: "Islamic History",
-    description: "Explore the rich history of Islam, from the time of the Prophet to the modern era.",
-    imageUrl: "/public/3696932.jpg",
+    title: "Translation of the Qur'an",
+    description: "Understand the meaning of the Holy Quran with our comprehensive translation course.",
+    imageUrl: "/3696932.jpg",
     icon: <BookUser className="w-8 h-8 text-primary" />,
+  },
+  {
+    title: "Tafseer-ul-Quran",
+    description: "Delve deeper into the meanings of the Quranic verses with our Tafseer course.",
+    imageUrl: "/3699655.jpg",
+    icon: <BrainCircuit className="w-8 h-8 text-primary" />,
+  },
+  {
+    title: "Basic Qaida for kids",
+    description: "This course is designed for children to learn the basic rules of reading the Quran.",
+    imageUrl: "/7800339.jpg",
+    icon: <BookUser className="w-8 h-8 text-primary" />,
+  },
+  {
+    title: "Arabic Language",
+    description: "Learn the language of the Quran to better understand its message.",
+    imageUrl: "/6628329.jpg",
+    icon: <BrainCircuit className="w-8 h-8 text-primary" />,
   },
 ];
 
