@@ -5,9 +5,9 @@ import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { getPendingEnrollmentRequests, getCourse, getUser } from "@/lib/services";
-import { onSnapshot, collection, query, where } from "firebase/firestore";
+import { onSnapshot, collection, query, where, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import Link from "next/link";
 import { ArrowRight, UserCheck } from "lucide-react";
@@ -25,39 +25,38 @@ export default function ManageRequestsPage() {
   const [allCourses, setAllCourses] = useState([]);
   const [currentRequest, setCurrentRequest] = useState(null);
 
-  useEffect(() => {
-    const fetchInitialData = async () => {
-        setLoading(true);
-        try {
-            const [students, courses, pendingRequests] = await Promise.all([
-                getStudentUsers(),
-                getCourses(),
-                getPendingEnrollmentRequests()
-            ]);
-            setAllStudents(students);
-            setAllCourses(courses);
-            setRequests(pendingRequests);
-        } catch (e) {
-            console.error(e)
-        } finally {
-            setLoading(false);
-        }
-    }
-    
-    fetchInitialData();
-
-    // Listen to changes in the users collection to update requests in real-time
-    const q = query(collection(db, "users"), where("role", "==", "student"));
-    
-    const unsubscribe = onSnapshot(q, async (snapshot) => {
-        const pendingRequests = await getPendingEnrollmentRequests();
-        setRequests(pendingRequests);
-        const courses = await getCourses();
+  const fetchAllData = useCallback(async () => {
+    setLoading(true);
+    try {
+        const [students, courses, pendingRequests] = await Promise.all([
+            getStudentUsers(),
+            getCourses(),
+            getPendingEnrollmentRequests()
+        ]);
+        setAllStudents(students);
         setAllCourses(courses);
-    });
-
-    return () => unsubscribe();
+        setRequests(pendingRequests);
+    } catch (e) {
+        console.error("Failed to fetch data:", e);
+    } finally {
+        setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchAllData();
+    
+    const studentsQuery = query(collection(db, "users"), where("role", "==", "student"));
+    const coursesQuery = collection(db, "courses");
+
+    const unsubStudents = onSnapshot(studentsQuery, fetchAllData);
+    const unsubCourses = onSnapshot(coursesQuery, fetchAllData);
+
+    return () => {
+      unsubStudents();
+      unsubCourses();
+    };
+  }, [fetchAllData]);
   
   const handleApprove = async (request) => {
     // We need to fetch the latest course data to ensure we have the most up-to-date student lists

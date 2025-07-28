@@ -332,14 +332,13 @@ export const addPendingEnrollment = async (studentId, courseId, requestDate) => 
 }
 
 export const getPendingEnrollmentRequests = async () => {
-    const q = query(collection(db, "users"), where("role", "==", "student"), where("courses", "!=", []));
-    const studentsSnapshot = await getDocs(q);
-
+    // This function now fetches all students and filters in code to avoid complex indexed queries.
+    const allStudents = await getStudentUsers();
+    
     const requests = [];
     const courseCache = new Map();
 
-    for (const studentDoc of studentsSnapshot.docs) {
-        const student = { id: studentDoc.id, ...studentDoc.data() };
+    for (const student of allStudents) {
         const pendingCourses = student.courses?.filter(c => c.status === 'pending');
 
         if (pendingCourses && pendingCourses.length > 0) {
