@@ -136,7 +136,7 @@ export default function ManageCoursesPage() {
                 <CardHeader className="p-0">
                   <div className="relative aspect-video">
                     <Image 
-                      src={course.imageUrl || "/course-placeholder.jpg"}
+                      src={course.imageUrl || "/quran img 5.jpg"}
                       alt={course.name}
                       fill
                       className="rounded-t-lg object-cover"

@@ -114,7 +114,7 @@ export default function StudentCoursesPage() {
               <CardHeader className="p-0">
                 <div className="relative aspect-video">
                     <Image
-                      src={course.imageUrl || "/course-placeholder.jpg"}
+                      src={course.imageUrl || "/quran img 5.jpg"}
                       fill
                       alt={course.name}
                       className="rounded-t-lg object-cover"

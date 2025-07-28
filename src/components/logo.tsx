@@ -5,7 +5,7 @@ export function Logo() {
   return (
     <Link href="/" className="flex items-center gap-2" prefetch={false}>
       <Image 
-        src="/logo.png" 
+        src="/WhatsApp_Image_2025-07-07_at_16.40.56_083d1ca9-removebg-preview.png"
         alt="Faizyab Al-Quran Logo" 
         width={40} 
         height={40}

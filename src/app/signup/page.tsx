@@ -73,7 +73,7 @@ export default function SignUpPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-md space-y-6">
         <div className="flex justify-center mb-6">
-            <Image src="/logo-circle.png" alt="Faizyab Al-Quran Logo" width={80} height={80} />
+            <Image src="/WhatsApp_Image_2025-07-07_at_16.40.56_083d1ca9-removebg-preview.png" alt="Faizyab Al-Quran Logo" width={80} height={80} className="rounded-full object-contain" />
         </div>
         <Card>
           <CardHeader className="text-center">
