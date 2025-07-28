@@ -26,6 +26,7 @@ export default function ViewSubmissionsPage({ params }: { params: { id: string }
   const { toast } = useToast();
 
   useEffect(() => {
+    if (!id) return;
     const fetchStaticData = async () => {
       setLoading(true);
       try {

@@ -68,7 +68,8 @@ export const updateUserCourses = async (courseId, enrolledStudentIds, completedS
         completedStudentIds: completedStudentIds
     });
     
-    const allStudents = await getStudentUsers();
+    const allStudentsSnapshot = await getDocs(query(collection(db, "users"), where("role", "==", "student")));
+    const allStudents = allStudentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
     for (const student of allStudents) {
         const studentRef = doc(db, 'users', student.id);
@@ -78,25 +79,16 @@ export const updateUserCourses = async (courseId, enrolledStudentIds, completedS
         const isCompleted = completedStudentIds.includes(student.id);
         
         if (isEnrolled) {
-             // If already enrolled, but status is now different (e.g., was completed), update it
-            if (currentEnrollment && currentEnrollment.status !== 'enrolled') {
-                batch.update(studentRef, { courses: arrayRemove(currentEnrollment) });
-                batch.update(studentRef, { courses: arrayUnion({ courseId, status: 'enrolled' }) });
-            } 
-            // If not enrolled at all, add them
-            else if (!currentEnrollment) {
-                batch.update(studentRef, { courses: arrayUnion({ courseId, status: 'enrolled' }) });
-            }
+             if (currentEnrollment) { // If enrollment exists, remove old one before adding new
+                 batch.update(studentRef, { courses: arrayRemove(currentEnrollment) });
+             }
+             batch.update(studentRef, { courses: arrayUnion({ courseId, status: 'enrolled' }) });
+
         } else if (isCompleted) {
-             // If already enrolled, but status is now different (e.g., was enrolled), update it
-            if (currentEnrollment && currentEnrollment.status !== 'completed') {
-                batch.update(studentRef, { courses: arrayRemove(currentEnrollment) });
-                batch.update(studentRef, { courses: arrayUnion({ courseId, status: 'completed' }) });
-            } 
-            // If not enrolled at all, add them as completed
-            else if (!currentEnrollment) {
-                batch.update(studentRef, { courses: arrayUnion({ courseId, status: 'completed' }) });
-            }
+             if (currentEnrollment) { // If enrollment exists, remove old one before adding new
+                 batch.update(studentRef, { courses: arrayRemove(currentEnrollment) });
+             }
+             batch.update(studentRef, { courses: arrayUnion({ courseId, status: 'completed' }) });
         } else {
             // If not in either list, remove any existing enrollment
             if (currentEnrollment) {
@@ -182,7 +174,7 @@ export const getStudentCourses = async (studentId) => {
     return [];
   }
   // This is the critical fix: ensure we only get valid courseId strings.
-  const courseEnrollments = user.courses.filter(c => c && typeof c.courseId === 'string');
+  const courseEnrollments = user.courses.filter(c => c && typeof c.courseId === 'string' && c.courseId.trim() !== '');
 
   if (courseEnrollments.length === 0) {
     return [];
@@ -333,7 +325,7 @@ export const createSubmission = async (submissionData) => {
 
     if (existingSubmission.empty) {
         const newSubmissionRef = doc(collection(db, 'submissions'));
-        await setDoc(newSubmissionRef, { ...submissionData, id: newSubmissionRef.id, courseId: submissionData.courseId });
+        await setDoc(newSubmissionRef, { ...submissionData, id: newSubmissionRef.id });
         return newSubmissionRef.id;
     } else {
         const submissionDocRef = existingSubmission.docs[0].ref;

@@ -103,7 +103,8 @@ export default function AssignmentDetailPage({ params }: { params: { id:string }
           status: 'Submitted',
           fileDataUrl: fileDataUrl,
           fileName: fileName,
-          textSubmission: textSubmission
+          textSubmission: textSubmission,
+          courseId: assignmentData.courseId,
       });
       toast({ title: "Success", description: "Assignment submitted successfully!" });
       // Real-time listener will update the submission state
