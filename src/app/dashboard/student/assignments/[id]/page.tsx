@@ -15,6 +15,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { Textarea } from "@/components/ui/textarea";
 
 export default function AssignmentDetailPage({ params }: { params: { id:string } }) {
+  const { id } = params;
   const [assignmentData, setAssignmentData] = useState(null);
   const [courseName, setCourseName] = useState("");
   const [loading, setLoading] = useState(true);
@@ -33,12 +34,12 @@ export default function AssignmentDetailPage({ params }: { params: { id:string }
   }, []);
 
   useEffect(() => {
-    if (!user || !params.id) return;
+    if (!user || !id) return;
 
     const fetchInitialData = async () => {
         setLoading(true);
         try {
-            const assignment = await getAssignment(params.id);
+            const assignment = await getAssignment(id);
             if (assignment) {
                 setAssignmentData(assignment);
                 const course = await getCourse(assignment.courseId);
@@ -53,7 +54,7 @@ export default function AssignmentDetailPage({ params }: { params: { id:string }
     fetchInitialData();
     
     // Listen for real-time updates on submission
-    const unsubSubmission = getStudentSubmissionForAssignment(user.uid, params.id, (sub) => {
+    const unsubSubmission = getStudentSubmissionForAssignment(user.uid, id, (sub) => {
         setSubmission(sub);
         if (sub?.textSubmission) {
             setTextSubmission(sub.textSubmission);
@@ -62,7 +63,7 @@ export default function AssignmentDetailPage({ params }: { params: { id:string }
 
     return () => unsubSubmission();
 
-  }, [params.id, user]);
+  }, [id, user]);
   
   const handleFileChange = (e) => {
     if (e.target.files.length > 0) {
@@ -234,5 +235,3 @@ export default function AssignmentDetailPage({ params }: { params: { id:string }
     </div>
   );
 }
-
-    

@@ -18,6 +18,7 @@ import { getUser } from "@/lib/services";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 export default function ViewSubmissionsPage({ params }: { params: { id: string }}) {
+  const { id } = params;
   const [assignment, setAssignment] = useState(null);
   const [submissions, setSubmissions] = useState([]);
   const [course, setCourse] = useState(null);
@@ -28,7 +29,7 @@ export default function ViewSubmissionsPage({ params }: { params: { id: string }
     const fetchStaticData = async () => {
       setLoading(true);
       try {
-        const assignmentData = await getAssignment(params.id);
+        const assignmentData = await getAssignment(id);
         setAssignment(assignmentData);
 
         if (assignmentData) {
@@ -40,12 +41,12 @@ export default function ViewSubmissionsPage({ params }: { params: { id: string }
       }
     };
     fetchStaticData();
-  }, [params.id]);
+  }, [id]);
 
   useEffect(() => {
-    if (!params.id) return;
+    if (!id) return;
     
-    const q = query(collection(db, 'submissions'), where('assignmentId', '==', params.id));
+    const q = query(collection(db, 'submissions'), where('assignmentId', '==', id));
     
     const unsubscribe = onSnapshot(q, async (snapshot) => {
         setLoading(true);
@@ -71,7 +72,7 @@ export default function ViewSubmissionsPage({ params }: { params: { id: string }
 
     return () => unsubscribe();
 
-  }, [params.id]);
+  }, [id]);
 
 
   const handleStatusChange = async (submissionId, newStatus) => {

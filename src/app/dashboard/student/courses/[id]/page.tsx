@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
@@ -14,6 +15,7 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { collection, onSnapshot, query, where, doc } from "firebase/firestore";
 
 export default function CourseDetailPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   const [user, setUser] = useState<User | null>(null);
   const [courseData, setCourseData] = useState(null);
   const [assignments, setAssignments] = useState([]);
@@ -28,10 +30,10 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
   }, []);
 
   useEffect(() => {
-    if (!params.id) return;
+    if (!id) return;
     setLoading(true);
 
-    const unsubCourse = onSnapshot(doc(db, "courses", params.id), (doc) => {
+    const unsubCourse = onSnapshot(doc(db, "courses", id), (doc) => {
       if (doc.exists()) {
         setCourseData({ id: doc.id, ...doc.data() });
       } else {
@@ -40,7 +42,7 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
       setLoading(false);
     });
     
-    const assignmentsQuery = query(collection(db, "assignments"), where("courseId", "==", params.id));
+    const assignmentsQuery = query(collection(db, "assignments"), where("courseId", "==", id));
     const unsubAssignments = onSnapshot(assignmentsQuery, (snapshot) => {
         const assignmentsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setAssignments(assignmentsData);
@@ -51,7 +53,7 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
         unsubAssignments();
     };
 
-  }, [params.id]);
+  }, [id]);
 
   useEffect(() => {
     if (!user || assignments.length === 0) return;
