@@ -7,36 +7,42 @@ import { ArrowRight, BookUser, BrainCircuit } from "lucide-react";
 
 const sampleCourses = [
   {
+    id: "hifz-ul-quran",
     title: "Hifz-ul-Quran",
     description: "This course is for students who want to memorize the Holy Quran by heart.",
     imageUrl: "/quran img 5.jpg",
     icon: <BookUser className="w-8 h-8 text-primary" />,
   },
   {
+    id: "nazra-tul-quran",
     title: "Nazra-tul-Quran",
     description: "Learn to read the Holy Quran with proper pronunciation and articulation.",
     imageUrl: "/close-up-islamic-new-year-with-quran-book.jpg",
     icon: <BrainCircuit className="w-8 h-8 text-primary" />,
   },
   {
+    id: "translation-of-the-quran",
     title: "Translation of the Qur'an",
     description: "Understand the meaning of the Holy Quran with our comprehensive translation course.",
     imageUrl: "/3696932.jpg",
     icon: <BookUser className="w-8 h-8 text-primary" />,
   },
   {
+    id: "tafseer-ul-quran",
     title: "Tafseer-ul-Quran",
     description: "Delve deeper into the meanings of the Quranic verses with our Tafseer course.",
     imageUrl: "/3699655.jpg",
     icon: <BrainCircuit className="w-8 h-8 text-primary" />,
   },
   {
+    id: "basic-qaida-for-kids",
     title: "Basic Qaida for kids",
     description: "This course is designed for children to learn the basic rules of reading the Quran.",
     imageUrl: "/7800339.jpg",
     icon: <BookUser className="w-8 h-8 text-primary" />,
   },
   {
+    id: "arabic-language",
     title: "Arabic Language",
     description: "Learn the language of the Quran to better understand its message.",
     imageUrl: "/6628329.jpg",
@@ -55,8 +61,8 @@ export default function Courses() {
           </p>
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {sampleCourses.map((course, index) => (
-            <Card key={index} className="flex flex-col hover:shadow-xl transition-shadow duration-300 overflow-hidden">
+          {sampleCourses.map((course) => (
+            <Card key={course.id} className="flex flex-col hover:shadow-xl transition-shadow duration-300 overflow-hidden">
                <CardHeader className="p-0">
                   <div className="relative aspect-video">
                     <Image 
@@ -72,9 +78,9 @@ export default function Courses() {
                 <CardDescription>{course.description}</CardDescription>
               </CardContent>
               <CardFooter className="p-6 pt-0">
-                <Button asChild variant="outline" className="w-full">
-                  <Link href="/signup">
-                    Learn More <ArrowRight className="ml-2 h-4 w-4" />
+                <Button asChild className="w-full">
+                  <Link href={`/signup?courseId=${course.id}&courseName=${encodeURIComponent(course.title)}`}>
+                    Enroll Now <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
               </CardFooter>

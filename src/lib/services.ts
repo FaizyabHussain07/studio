@@ -3,6 +3,69 @@
 import { db } from './firebase';
 import { collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, query, where, documentId, orderBy, limit, writeBatch, setDoc, onSnapshot, arrayUnion, arrayRemove, getCountFromServer } from 'firebase/firestore';
 
+// --- Course Seed Data ---
+const sampleCoursesData = [
+  {
+    id: "hifz-ul-quran",
+    name: "Hifz-ul-Quran",
+    description: "This course is for students who want to memorize the Holy Quran by heart.",
+    imageUrl: "/quran img 5.jpg",
+  },
+  {
+    id: "nazra-tul-quran",
+    name: "Nazra-tul-Quran",
+    description: "Learn to read the Holy Quran with proper pronunciation and articulation.",
+    imageUrl: "/close-up-islamic-new-year-with-quran-book.jpg",
+  },
+  {
+    id: "translation-of-the-quran",
+    name: "Translation of the Qur'an",
+    description: "Understand the meaning of the Holy Quran with our comprehensive translation course.",
+    imageUrl: "/3696932.jpg",
+  },
+  {
+    id: "tafseer-ul-quran",
+    name: "Tafseer-ul-Quran",
+    description: "Delve deeper into the meanings of the Quranic verses with our Tafseer course.",
+    imageUrl: "/3699655.jpg",
+  },
+  {
+    id: "basic-qaida-for-kids",
+    name: "Basic Qaida for kids",
+    description: "This course is designed for children to learn the basic rules of reading the Quran.",
+    imageUrl: "/7800339.jpg",
+  },
+  {
+    id: "arabic-language",
+    name: "Arabic Language",
+    description: "Learn the language of the Quran to better understand its message.",
+    imageUrl: "/6628329.jpg",
+  },
+];
+
+
+const seedCourses = async () => {
+    const coursesRef = collection(db, 'courses');
+    const snapshot = await getDocs(query(coursesRef, limit(1)));
+    
+    if (snapshot.empty) {
+        console.log("No courses found, seeding database...");
+        const batch = writeBatch(db);
+        sampleCoursesData.forEach(course => {
+            const docRef = doc(db, 'courses', course.id);
+            batch.set(docRef, {
+                name: course.name,
+                description: course.description,
+                imageUrl: course.imageUrl,
+            });
+        });
+        await batch.commit();
+        console.log("Courses seeded successfully.");
+    }
+};
+seedCourses();
+
+
 // User Management
 export const createUser = async (userData) => {
   const userRef = userData.uid ? doc(db, 'users', userData.uid) : doc(collection(db, 'users'));
@@ -44,49 +107,48 @@ export const getUser = async (id) => {
 
 // Course Management
 export const createCourse = async (courseData) => {
-  const newCourse = await addDoc(collection(db, 'courses'), {
+  const newCourseRef = doc(collection(db, 'courses'));
+  await setDoc(newCourseRef, {
     name: courseData.name,
     description: courseData.description,
     imageUrl: courseData.imageUrl,
-    enrolledStudentIds: [],
-    completedStudentIds: [],
   });
-  return newCourse.id;
+  return newCourseRef.id;
 };
 
+
 export const updateCourse = async (id, courseData) => {
-    await updateDoc(doc(db, 'courses', id), courseData);
+    // Only update fields that are part of the course document itself
+    const coursePayload = {
+        name: courseData.name,
+        description: courseData.description,
+        imageUrl: courseData.imageUrl
+    };
+    await updateDoc(doc(db, 'courses', id), coursePayload);
 }
 
-export const updateUserCourses = async (courseId, enrolledStudentIds, completedStudentIds) => {
+export const updateUserCourses = async (courseId, enrolledStudentIds, completedStudentIds, allStudentIdsInForm) => {
     const batch = writeBatch(db);
-    const courseRef = doc(db, 'courses', courseId);
 
-    // Update the course document with the new lists of student IDs
-    batch.update(courseRef, {
-        enrolledStudentIds: enrolledStudentIds,
-        completedStudentIds: completedStudentIds
-    });
-
-    const allStudentsSnapshot = await getDocs(query(collection(db, "users"), where("role", "==", "student")));
-    const allStudents = allStudentsSnapshot.docs.map(studentDoc => ({ id: studentDoc.id, ...studentDoc.data() }));
-
-    for (const student of allStudents) {
-        const studentRef = doc(db, 'users', student.id);
+    const relevantStudentsSnapshot = await getDocs(query(collection(db, "users"), where("role", "==", "student")));
+    
+    for (const studentDoc of relevantStudentsSnapshot.docs) {
+        const studentRef = doc(db, 'users', studentDoc.id);
+        const student = studentDoc.data();
         const currentEnrollment = student.courses?.find(c => c.courseId === courseId);
         
-        const isEnrolled = enrolledStudentIds.includes(student.id);
-        const isCompleted = completedStudentIds.includes(student.id);
+        const isNowEnrolled = enrolledStudentIds.includes(student.id);
+        const isNowCompleted = completedStudentIds.includes(student.id);
         
-        // Remove existing enrollment object regardless of status
+        // If the student has any previous enrollment for this course, remove it first.
         if (currentEnrollment) {
             batch.update(studentRef, { courses: arrayRemove(currentEnrollment) });
         }
 
-        // Add the new, correct enrollment object if they are in one of the lists
-        if (isEnrolled) {
+        // Add the new status if they are enrolled or completed.
+        if (isNowEnrolled) {
              batch.update(studentRef, { courses: arrayUnion({ courseId, status: 'enrolled' }) });
-        } else if (isCompleted) {
+        } else if (isNowCompleted) {
              batch.update(studentRef, { courses: arrayUnion({ courseId, status: 'completed' }) });
         }
     }
@@ -101,9 +163,6 @@ export const deleteCourse = async (courseId) => {
     const courseRef = doc(db, 'courses', courseId);
     batch.delete(courseRef);
 
-    // This is more complex now. We need to find all users who have this courseId in their courses array of objects.
-    // Firestore doesn't support querying inside array of objects directly like this easily.
-    // A better approach in a real app might be a subcollection, but for now, we'll fetch all students and filter.
     const allStudents = await getStudentUsers();
     allStudents.forEach(student => {
         const enrollment = student.courses?.find(c => c.courseId === courseId);
@@ -158,7 +217,12 @@ export const getCourse = async (id) => {
 
   const courseData = { id: courseDoc.id, ...courseDoc.data() };
   
-  // The enrollment data is now directly on the course document, so no extra fetching needed here.
+  const enrolledStudents = await getDocs(query(collection(db, 'users'), where('courses', 'array-contains', { courseId: id, status: 'enrolled' })));
+  const completedStudents = await getDocs(query(collection(db, 'users'), where('courses', 'array-contains', { courseId: id, status: 'completed' })));
+
+  courseData.enrolledStudentIds = enrolledStudents.docs.map(doc => doc.id);
+  courseData.completedStudentIds = completedStudents.docs.map(doc => doc.id);
+
   return courseData;
 };
 
@@ -167,7 +231,6 @@ export const getStudentCourses = async (studentId) => {
   if (!user || !user.courses || user.courses.length === 0) {
     return [];
   }
-  // This is the critical fix: ensure we only get valid courseId strings.
   const courseEnrollments = user.courses.filter(c => c && typeof c.courseId === 'string' && c.courseId.trim() !== '');
 
   if (courseEnrollments.length === 0) {
@@ -186,7 +249,6 @@ export const getStudentCourses = async (studentId) => {
       }
   }
 
-  // Add the status back to the course object
   return courses.map(course => {
       const enrollment = courseEnrollments.find(e => e.courseId === course.id);
       return { ...course, status: enrollment?.status || 'enrolled' };
@@ -229,6 +291,53 @@ export const getStudentCoursesWithProgress = async (studentId) => {
       return { ...course, progress };
   });
 }
+
+export const addPendingEnrollment = async (studentId, courseId, requestDate) => {
+    const userRef = doc(db, 'users', studentId);
+    await updateDoc(userRef, {
+        courses: arrayUnion({
+            courseId: courseId,
+            status: 'pending',
+            requestDate: requestDate.toISOString(),
+        })
+    })
+}
+
+export const getPendingEnrollmentRequests = async () => {
+    const q = query(collection(db, "users"), where("role", "==", "student"), where("courses", "!=", []));
+    const studentsSnapshot = await getDocs(q);
+
+    const requests = [];
+    const courseCache = new Map();
+
+    for (const studentDoc of studentsSnapshot.docs) {
+        const student = { id: studentDoc.id, ...studentDoc.data() };
+        const pendingCourses = student.courses?.filter(c => c.status === 'pending');
+
+        if (pendingCourses && pendingCourses.length > 0) {
+            for (const pCourse of pendingCourses) {
+                let courseName = courseCache.get(pCourse.courseId);
+                if (!courseName) {
+                    const course = await getCourse(pCourse.courseId);
+                    if (course) {
+                        courseName = course.name;
+                        courseCache.set(pCourse.courseId, courseName);
+                    }
+                }
+
+                requests.push({
+                    studentId: student.id,
+                    studentName: student.name,
+                    studentEmail: student.email,
+                    courseId: pCourse.courseId,
+                    courseName: courseName || "Unknown Course",
+                    requestDate: pCourse.requestDate ? new Date(pCourse.requestDate).toLocaleDateString() : 'N/A'
+                });
+            }
+        }
+    }
+    return requests;
+};
 
 
 // Assignment Management
@@ -447,7 +556,10 @@ export const getStudentQuizzes = async (studentId) => {
     const courses = await getStudentCourses(studentId);
     if(courses.length === 0) return [];
 
-    const courseIds = courses.map(c => c.id);
+    const enrolledCourses = courses.filter(c => c.status === 'enrolled');
+    if(enrolledCourses.length === 0) return [];
+
+    const courseIds = enrolledCourses.map(c => c.id);
     const quizzes = await getQuizzesByCourses(courseIds);
 
     return quizzes.map(quiz => {

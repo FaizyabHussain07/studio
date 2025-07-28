@@ -5,16 +5,20 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { auth } from '@/lib/firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { createUser } from '@/lib/services';
+import { createUser, addPendingEnrollment } from '@/lib/services';
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { Logo } from "@/components/logo";
 
-export default function SignUpPage() {
+function SignUpComponent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const courseId = searchParams.get('courseId');
+  const courseName = searchParams.get('courseName');
+
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
 
@@ -42,14 +46,22 @@ export default function SignUpPage() {
         email,
         role,
         joined: joinedDate.toLocaleDateString('en-CA'), // YYYY-MM-DD format
-        courses: [],
+        courses: [], // Start with empty courses array
         photoURL: user.photoURL
       });
       
-      toast({
-        title: "Account Created!",
-        description: "Welcome! Redirecting you to your dashboard...",
-      });
+      if (role === 'student' && courseId) {
+          await addPendingEnrollment(user.uid, courseId, joinedDate);
+          toast({
+              title: "Request Sent!",
+              description: `Your request to enroll in "${courseName}" has been sent for approval.`
+          })
+      } else {
+         toast({
+            title: "Account Created!",
+            description: "Welcome! Redirecting you to your dashboard...",
+         });
+      }
 
       if (role === 'admin') {
         router.push('/dashboard/admin');
@@ -78,7 +90,9 @@ export default function SignUpPage() {
         <Card>
           <CardHeader className="text-center">
             <CardTitle className="font-headline text-2xl">Create an Account</CardTitle>
-            <CardDescription>Join our learning community today.</CardDescription>
+            <CardDescription>
+                {courseName ? `To enroll in "${courseName}", please create an account.` : "Join our learning community today."}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -110,5 +124,13 @@ export default function SignUpPage() {
         </Card>
       </div>
     </div>
-  );
+  )
+}
+
+export default function SignUpPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <SignUpComponent />
+        </Suspense>
+    )
 }
