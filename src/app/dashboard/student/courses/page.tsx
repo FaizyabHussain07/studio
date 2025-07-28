@@ -87,7 +87,7 @@ export default function StudentCoursesPage() {
       <CardFooter className="p-6 pt-0 mt-auto bg-card border-t">
         <Button asChild variant="default" className="w-full mt-4">
           <Link href={`/dashboard/student/courses/${course.id}`}>
-            Go to Course <ArrowRight className="ml-2 h-4 w-4" />
+            View Course <ArrowRight className="ml-2 h-4 w-4" />
           </Link>
         </Button>
       </CardFooter>
