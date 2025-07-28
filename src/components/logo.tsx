@@ -5,13 +5,12 @@ export function Logo() {
   return (
     <Link href="/" className="flex items-center gap-2" prefetch={false}>
       <Image 
-        src="https://placehold.co/40x40.png" 
+        src="/logo.png" 
         alt="Faizyab Al-Quran Logo" 
         width={40} 
         height={40}
         className="object-contain"
         priority
-        data-ai-hint="logo"
       />
        <span className="font-headline text-xl font-bold">Faizyab Al-Quran</span>
     </Link>

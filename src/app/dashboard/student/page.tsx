@@ -103,12 +103,11 @@ export default function StudentDashboardPage() {
               <Card key={course.id} className="flex flex-col">
                 <CardHeader className="p-0">
                   <Image
-                    src={course.imageUrl || "https://placehold.co/600x400.png"}
+                    src={course.imageUrl || "/course-placeholder.jpg"}
                     width={600}
                     height={400}
                     alt={course.name}
                     className="rounded-t-lg object-cover aspect-video"
-                    data-ai-hint="learning online course"
                   />
                 </CardHeader>
                 <CardContent className="p-6 flex-grow">

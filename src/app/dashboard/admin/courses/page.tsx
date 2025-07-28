@@ -136,11 +136,10 @@ export default function ManageCoursesPage() {
                 <CardHeader className="p-0">
                   <div className="relative aspect-video">
                     <Image 
-                      src={course.imageUrl || "https://placehold.co/600x400.png"}
+                      src={course.imageUrl || "/course-placeholder.jpg"}
                       alt={course.name}
                       fill
                       className="rounded-t-lg object-cover"
-                      data-ai-hint="education learning"
                     />
                   </div>
                 </CardHeader>
