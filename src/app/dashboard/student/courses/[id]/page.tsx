@@ -6,7 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { FileText, ArrowLeft, CheckCircle2, XCircle } from "lucide-react";
+import { FileText, ArrowLeft, CheckCircle2, XCircle, FileWarning } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getCourse, getAssignmentsByCourse, getStudentAssignmentStatus } from "@/lib/services";
 import { auth, db } from "@/lib/firebase";
@@ -20,21 +20,24 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
     });
-    return () => unsubscribe();
+    return () => unsubscribeAuth();
   }, []);
 
   useEffect(() => {
     if (!user || !params.id) return;
+    
+    setLoading(true);
 
     const fetchCourseData = async () => {
-      setLoading(true);
+      console.log("Fetching course data for course:", params.id);
       try {
         const course = await getCourse(params.id);
         if (course) {
           const courseAssignments = await getAssignmentsByCourse(params.id);
+          
           const assignmentsWithStatus = await Promise.all(
             courseAssignments.map(async (assignment) => {
               const status = await getStudentAssignmentStatus(user.uid, assignment.id);
@@ -42,10 +45,10 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
             })
           );
           
-          const completedCount = assignmentsWithStatus.filter(a => a.status === 'Submitted' || a.status === 'Graded').length;
-          const progress = courseAssignments.length > 0 ? (completedCount / courseAssignments.length) * 100 : 0;
+          const submittedOrGradedCount = assignmentsWithStatus.filter(a => a.status === 'Submitted' || a.status === 'Graded').length;
+          const progress = courseAssignments.length > 0 ? Math.round((submittedOrGradedCount / courseAssignments.length) * 100) : 0;
 
-          setCourseData({...course, progress: Math.round(progress) });
+          setCourseData({...course, progress });
           setAssignments(assignmentsWithStatus);
         }
       } catch (error) {
@@ -58,12 +61,18 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
     // Initial fetch
     fetchCourseData();
 
-    // Listen to changes in assignments and submissions to update progress
+    // Listen to changes in this course's assignments and the student's submissions
     const assignmentsQuery = query(collection(db, "assignments"), where("courseId", "==", params.id));
     const submissionsQuery = query(collection(db, "submissions"), where("studentId", "==", user.uid));
 
-    const unsubAssignments = onSnapshot(assignmentsQuery, fetchCourseData);
-    const unsubSubmissions = onSnapshot(submissionsQuery, fetchCourseData);
+    const unsubAssignments = onSnapshot(assignmentsQuery, (snapshot) => {
+        console.log("Change detected in assignments, refetching course data.");
+        fetchCourseData();
+    });
+    const unsubSubmissions = onSnapshot(submissionsQuery, (snapshot) => {
+        console.log("Change detected in submissions, refetching course data.");
+        fetchCourseData();
+    });
     
     return () => {
         unsubAssignments();
@@ -80,6 +89,8 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
         return { icon: <CheckCircle2 className="h-6 w-6 text-blue-500 flex-shrink-0" />, badge: 'secondary', badgeText: 'Submitted' };
       case 'Missing':
          return { icon: <XCircle className="h-6 w-6 text-red-500 flex-shrink-0" />, badge: 'destructive', badgeText: 'Missing' };
+       case 'Needs Revision':
+         return { icon: <FileWarning className="h-6 w-6 text-yellow-500 flex-shrink-0" />, badge: 'outline', badgeText: 'Revision' };
       default:
         return { icon: <FileText className="h-6 w-6 text-primary flex-shrink-0" />, badge: 'outline', badgeText: 'Pending' };
     }

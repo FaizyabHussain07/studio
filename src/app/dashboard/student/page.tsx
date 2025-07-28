@@ -12,7 +12,7 @@ import { getStudentCoursesWithProgress, getStudentAssignmentsWithStatus, getStud
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import Image from "next/image";
-import { onSnapshot, doc, collection } from "firebase/firestore";
+import { onSnapshot, doc, collection, query, where } from "firebase/firestore";
 
 export default function StudentDashboardPage() {
   const [courses, setCourses] = useState([]);
@@ -22,13 +22,13 @@ export default function StudentDashboardPage() {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       if (!currentUser) {
         setLoading(false);
       }
     });
-    return () => unsubscribe();
+    return () => unsubscribeAuth();
   }, []);
 
   useEffect(() => {
@@ -37,19 +37,24 @@ export default function StudentDashboardPage() {
     setLoading(true);
 
     const fetchData = async () => {
+      console.log("Fetching all dashboard data for user:", user.uid);
       try {
-        const studentCourses = await getStudentCoursesWithProgress(user.uid);
-        setCourses(studentCourses.slice(0, 3)); // Show max 3 courses on dashboard
+        const [studentCourses, studentAssignments, studentQuizzes] = await Promise.all([
+          getStudentCoursesWithProgress(user.uid),
+          getStudentAssignmentsWithStatus(user.uid),
+          getStudentQuizzes(user.uid)
+        ]);
 
-        const studentAssignments = await getStudentAssignmentsWithStatus(user.uid);
+        setCourses(studentCourses.slice(0, 3)); 
+
         const upcomingAssignments = studentAssignments
-            .filter(a => a.status === 'Pending')
+            .filter(a => a.status === 'Pending' || a.status === 'Missing')
             .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
             .slice(0, 3);
         setAssignments(upcomingAssignments);
         
-        const studentQuizzes = await getStudentQuizzes(user.uid);
         setQuizzes(studentQuizzes);
+
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       } finally {
@@ -57,19 +62,27 @@ export default function StudentDashboardPage() {
       }
     };
     
-    // Set up listeners for real-time updates
-    const unsubs = [
-        onSnapshot(doc(db, "users", user.uid), fetchData),
-        onSnapshot(collection(db, "courses"), fetchData),
-        onSnapshot(collection(db, "assignments"), fetchData),
-        onSnapshot(collection(db, "submissions"), fetchData),
-        onSnapshot(collection(db, "quizzes"), fetchData)
-    ];
-    
     // Initial fetch
     fetchData();
 
-    return () => unsubs.forEach(unsub => unsub());
+    // Set up listeners for real-time updates on all relevant collections
+    const collectionsToWatch = ['users', 'courses', 'assignments', 'submissions', 'quizzes'];
+    const unsubs = collectionsToWatch.map(col => {
+      let q = query(collection(db, col));
+      // For user-specific collections, we only need to listen to the current user's documents
+      if (col === 'users') q = query(collection(db, col), where("uid", "==", user.uid));
+      if (col === 'submissions') q = query(collection(db, col), where("studentId", "==", user.uid));
+      
+      return onSnapshot(q, (snapshot) => {
+        console.log(`Change detected in ${col}, refetching all dashboard data.`);
+        fetchData();
+      });
+    });
+    
+    return () => {
+      console.log("Cleaning up dashboard listeners.");
+      unsubs.forEach(unsub => unsub());
+    };
 
   }, [user]);
 
@@ -149,7 +162,7 @@ export default function StudentDashboardPage() {
                         <FileText className="h-6 w-6 text-primary" />
                         <div>
                           <h3 className="font-semibold">{assignment.title}</h3>
-                          <p className="text-sm text-muted-foreground">Due: {assignment.dueDate} | Course: {assignment.courseName}</p>
+                          <p className="text-sm text-muted-foreground">Due: {new Date(assignment.dueDate).toLocaleDateString()} | Course: {assignment.courseName}</p>
                         </div>
                       </div>
                       <Button asChild variant="secondary" size="sm">

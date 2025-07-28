@@ -11,7 +11,7 @@ import { getStudentCoursesWithProgress } from "@/lib/services";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import Image from "next/image";
-import { onSnapshot, doc, collection, query, where } from "firebase/firestore";
+import { onSnapshot, doc } from "firebase/firestore";
 
 export default function StudentCoursesPage() {
   const [courses, setCourses] = useState([]);
@@ -19,13 +19,13 @@ export default function StudentCoursesPage() {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       if (!currentUser) {
           setLoading(false);
       }
     });
-    return () => unsubscribe();
+    return () => unsubscribeAuth();
   }, []);
 
   useEffect(() => {
@@ -34,12 +34,8 @@ export default function StudentCoursesPage() {
     }
     
     setLoading(true);
-    
-    // This is the primary listener. When the student's own user document changes (e.g., they are enrolled in a new course),
-    // it triggers a full refetch of all their courses and progress.
-    const userDocRef = doc(db, "users", user.uid);
-    const unsubscribeUser = onSnapshot(userDocRef, async () => {
-        console.log("User document updated, refetching courses.");
+
+    const fetchAndSetCourses = async () => {
         try {
             const studentCourses = await getStudentCoursesWithProgress(user.uid);
             setCourses(studentCourses);
@@ -47,13 +43,21 @@ export default function StudentCoursesPage() {
             console.error("Error fetching courses with progress: ", error);
             setCourses([]);
         } finally {
-            // We only stop loading when the initial fetch is done.
-            if(loading) setLoading(false);
+            setLoading(false);
         }
-    });
+    }
     
+    // Initial fetch
+    fetchAndSetCourses();
+    
+    // Listen for changes in the user's document (e.g., course enrollment changes)
+    const unsubUser = onSnapshot(doc(db, "users", user.uid), () => {
+        console.log("Detected user data change, refetching courses.");
+        fetchAndSetCourses();
+    });
+
     return () => {
-        unsubscribeUser();
+      unsubUser();
     };
 
   }, [user]);
