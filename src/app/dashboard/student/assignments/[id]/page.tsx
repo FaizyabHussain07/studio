@@ -14,8 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { onAuthStateChanged } from "firebase/auth";
 import { Textarea } from "@/components/ui/textarea";
 
-export default function AssignmentDetailPage({ params }: { params: { id:string } }) {
-  const { id } = params;
+export default function AssignmentDetailPage({ params: { id } }: { params: { id:string } }) {
   const [assignmentData, setAssignmentData] = useState(null);
   const [courseName, setCourseName] = useState("");
   const [loading, setLoading] = useState(true);
