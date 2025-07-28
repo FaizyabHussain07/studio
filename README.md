@@ -64,6 +64,4 @@ The application will be available at `http://localhost:3000`.
 
 For demonstration purposes, the user with the following email is automatically assigned admin privileges upon signing up:
 
-- **Admin Email**: `syedfaizyabhussain07@gmail.com`
-
 All other users who sign up will be assigned the "student" role.
