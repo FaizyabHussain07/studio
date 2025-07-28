@@ -36,7 +36,8 @@ export default function ManageRequestsPage() {
     }
     fetchInitialData();
 
-    const q = query(collection(db, "users"), where("courses", "!=", []));
+    // Listen to changes in the users collection to update requests in real-time
+    const q = query(collection(db, "users"), where("role", "==", "student"));
     
     const unsubscribe = onSnapshot(q, async (snapshot) => {
         const pendingRequests = await getPendingEnrollmentRequests();

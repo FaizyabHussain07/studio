@@ -62,16 +62,14 @@ export function CourseForm({ course, students, onFinished }) {
       
       const enrolledIds = data.enrolledStudentIds || [];
       const completedIds = data.completedStudentIds || [];
-      const allStudentIdsInForm = [...enrolledIds, ...completedIds];
 
       if (course) {
         await updateCourse(course.id, coursePayload);
-        // This function now correctly handles removing pending status
-        await updateUserCourses(course.id, enrolledIds, completedIds, allStudentIdsInForm);
+        await updateUserCourses(course.id, enrolledIds, completedIds);
         toast({ title: "Success", description: "Course updated successfully." });
       } else {
         const newCourseId = await createCourse(coursePayload);
-        await updateUserCourses(newCourseId, enrolledIds, completedIds, allStudentIdsInForm);
+        await updateUserCourses(newCourseId, enrolledIds, completedIds);
         toast({ title: "Success", description: "Course created successfully." });
       }
       onFinished();

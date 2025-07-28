@@ -127,34 +127,34 @@ export const updateCourse = async (id, courseData) => {
     await updateDoc(doc(db, 'courses', id), coursePayload);
 }
 
-export const updateUserCourses = async (courseId, enrolledStudentIds, completedStudentIds, allStudentIdsInForm) => {
+export const updateUserCourses = async (courseId, enrolledStudentIds, completedStudentIds) => {
     const batch = writeBatch(db);
 
-    const relevantStudentsSnapshot = await getDocs(query(collection(db, "users"), where("role", "==", "student")));
-    
-    for (const studentDoc of relevantStudentsSnapshot.docs) {
-        const studentRef = doc(db, 'users', studentDoc.id);
-        const student = studentDoc.data();
-        const currentEnrollment = student.courses?.find(c => c.courseId === courseId);
-        
-        const isNowEnrolled = enrolledStudentIds.includes(student.id);
-        const isNowCompleted = completedStudentIds.includes(student.id);
-        
-        // If the student has any previous enrollment for this course, remove it first.
-        if (currentEnrollment) {
-            batch.update(studentRef, { courses: arrayRemove(currentEnrollment) });
-        }
+    const allStudentIdsInForm = new Set([...enrolledStudentIds, ...completedStudentIds]);
 
-        // Add the new status if they are enrolled or completed.
-        if (isNowEnrolled) {
-             batch.update(studentRef, { courses: arrayUnion({ courseId, status: 'enrolled' }) });
-        } else if (isNowCompleted) {
-             batch.update(studentRef, { courses: arrayUnion({ courseId, status: 'completed' }) });
+    // Update students who are now enrolled or completed
+    for (const studentId of allStudentIdsInForm) {
+        const studentRef = doc(db, 'users', studentId);
+        const studentSnap = await getDoc(studentRef);
+        if (studentSnap.exists()) {
+            const studentData = studentSnap.data();
+            let courses = studentData.courses || [];
+            
+            // Remove any existing status for this course
+            courses = courses.filter(c => c.courseId !== courseId);
+            
+            // Add the new status
+            if (enrolledStudentIds.includes(studentId)) {
+                courses.push({ courseId, status: 'enrolled' });
+            } else if (completedStudentIds.includes(studentId)) {
+                courses.push({ courseId, status: 'completed' });
+            }
+            batch.update(studentRef, { courses });
         }
     }
-
     await batch.commit();
 }
+
 
 
 export const deleteCourse = async (courseId) => {
@@ -304,7 +304,7 @@ export const addPendingEnrollment = async (studentId, courseId, requestDate) => 
 }
 
 export const getPendingEnrollmentRequests = async () => {
-    const q = query(collection(db, "users"), where("role", "==", "student"), where("courses", "!=", []));
+    const q = query(collection(db, "users"), where("role", "==", "student"));
     const studentsSnapshot = await getDocs(q);
 
     const requests = [];
@@ -318,9 +318,9 @@ export const getPendingEnrollmentRequests = async () => {
             for (const pCourse of pendingCourses) {
                 let courseName = courseCache.get(pCourse.courseId);
                 if (!courseName) {
-                    const course = await getCourse(pCourse.courseId);
-                    if (course) {
-                        courseName = course.name;
+                    const courseDoc = await getDoc(doc(db, 'courses', pCourse.courseId));
+                    if (courseDoc.exists()) {
+                        courseName = courseDoc.data().name;
                         courseCache.set(pCourse.courseId, courseName);
                     }
                 }
