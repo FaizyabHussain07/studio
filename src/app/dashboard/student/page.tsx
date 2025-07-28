@@ -14,6 +14,13 @@ import Image from "next/image";
 import { onSnapshot, collection, query, where, doc } from "firebase/firestore";
 import { Badge } from "@/components/ui/badge";
 
+// Helper to check for valid image URLs
+const isValidImageUrl = (url) => {
+    if (!url || typeof url !== 'string') return false;
+    return url.startsWith('/') || url.startsWith('https://');
+};
+
+
 export default function StudentDashboardPage() {
   const [courses, setCourses] = useState([]);
   const [assignments, setAssignments] = useState([]);
@@ -97,32 +104,35 @@ export default function StudentDashboardPage() {
         
         {topCourses.length > 0 ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {topCourses.map(course => (
-              <Card key={course.id} className="flex flex-col">
-                <CardHeader className="p-0 relative">
-                  <div className="relative w-full aspect-video">
-                    <Image
-                      src={course.imageUrl || "/quran img 5.jpg"}
-                      fill
-                      alt={course.name}
-                      className="rounded-t-lg object-cover"
-                    />
-                  </div>
-                   <Badge className="absolute top-2 right-2 capitalize" variant={'secondary'}>{course.status}</Badge>
-                </CardHeader>
-                <CardContent className="p-6 flex-grow">
-                  <CardTitle className="font-headline text-xl mb-2">{course.name}</CardTitle>
-                  <CardDescription className="line-clamp-3">{course.description}</CardDescription>
-                </CardContent>
-                <CardFooter className="p-6 pt-0 mt-auto bg-card border-t">
-                  <Button asChild variant="default" className="w-full mt-4">
-                    <Link href={`/dashboard/student/courses/${course.id}`}>
-                      View Course <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
+            {topCourses.map(course => {
+                const imageUrl = isValidImageUrl(course.imageUrl) ? course.imageUrl : 'https://placehold.co/600x400.png';
+                return (
+                  <Card key={course.id} className="flex flex-col">
+                    <CardHeader className="p-0 relative">
+                      <div className="relative w-full aspect-video">
+                        <Image
+                          src={imageUrl}
+                          fill
+                          alt={course.name}
+                          className="rounded-t-lg object-cover"
+                        />
+                      </div>
+                       <Badge className="absolute top-2 right-2 capitalize" variant={'secondary'}>{course.status}</Badge>
+                    </CardHeader>
+                    <CardContent className="p-6 flex-grow">
+                      <CardTitle className="font-headline text-xl mb-2">{course.name}</CardTitle>
+                      <CardDescription className="line-clamp-3">{course.description}</CardDescription>
+                    </CardContent>
+                    <CardFooter className="p-6 pt-0 mt-auto bg-card border-t">
+                      <Button asChild variant="default" className="w-full mt-4">
+                        <Link href={`/dashboard/student/courses/${course.id}`}>
+                          View Course <ArrowRight className="ml-2 h-4 w-4" />
+                        </Link>
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                )
+            })}
           </div>
         ) : (
           <Card className="text-center p-8">

@@ -14,6 +14,13 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getStudentCourses } from "@/lib/services";
 
+
+// Helper to check for valid image URLs
+const isValidImageUrl = (url) => {
+    if (!url || typeof url !== 'string') return false;
+    return url.startsWith('/') || url.startsWith('https://');
+};
+
 export default function StudentCoursesPage() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -68,43 +75,46 @@ export default function StudentCoursesPage() {
   const pendingCourses = courses.filter(c => c.status === 'pending');
   const completedCourses = courses.filter(c => c.status === 'completed');
 
-  const CourseCard = ({ course }) => (
-    <Card key={course.id} className="flex flex-col hover:shadow-lg transition-shadow duration-300">
-      <CardHeader className="p-0 relative">
-        <div className="relative aspect-video">
-            <Image
-              src={course.imageUrl || "/quran img 5.jpg"}
-              fill
-              alt={course.name}
-              className="rounded-t-lg object-cover"
-            />
-        </div>
-         <Badge 
-            className="absolute top-2 right-2 capitalize" 
-            variant={course.status === 'completed' ? 'default' : course.status === 'pending' ? 'destructive' : 'secondary'}
-        >
-            {course.status}
-        </Badge>
-      </CardHeader>
-      <CardContent className="p-6 flex-grow">
-        <CardTitle className="font-headline text-xl mb-2">{course.name}</CardTitle>
-        <CardDescription className="line-clamp-3">{course.description}</CardDescription>
-      </CardContent>
-      <CardFooter className="p-6 pt-0 mt-auto bg-card border-t">
-        {course.status === 'pending' ? (
-           <Button variant="secondary" className="w-full mt-4" disabled>
-             <Clock className="mr-2 h-4 w-4"/> Awaiting Approval
-           </Button>
-        ) : (
-           <Button asChild variant="default" className="w-full mt-4">
-              <Link href={`/dashboard/student/courses/${course.id}`}>
-                View Course <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-           </Button>
-        )}
-      </CardFooter>
-    </Card>
-  );
+  const CourseCard = ({ course }) => {
+    const imageUrl = isValidImageUrl(course.imageUrl) ? course.imageUrl : 'https://placehold.co/600x400.png';
+    return (
+        <Card key={course.id} className="flex flex-col hover:shadow-lg transition-shadow duration-300">
+        <CardHeader className="p-0 relative">
+            <div className="relative aspect-video">
+                <Image
+                src={imageUrl}
+                fill
+                alt={course.name}
+                className="rounded-t-lg object-cover"
+                />
+            </div>
+            <Badge 
+                className="absolute top-2 right-2 capitalize" 
+                variant={course.status === 'completed' ? 'default' : course.status === 'pending' ? 'destructive' : 'secondary'}
+            >
+                {course.status}
+            </Badge>
+        </CardHeader>
+        <CardContent className="p-6 flex-grow">
+            <CardTitle className="font-headline text-xl mb-2">{course.name}</CardTitle>
+            <CardDescription className="line-clamp-3">{course.description}</CardDescription>
+        </CardContent>
+        <CardFooter className="p-6 pt-0 mt-auto bg-card border-t">
+            {course.status === 'pending' ? (
+            <Button variant="secondary" className="w-full mt-4" disabled>
+                <Clock className="mr-2 h-4 w-4"/> Awaiting Approval
+            </Button>
+            ) : (
+            <Button asChild variant="default" className="w-full mt-4">
+                <Link href={`/dashboard/student/courses/${course.id}`}>
+                    View Course <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+            </Button>
+            )}
+        </CardFooter>
+        </Card>
+    )
+  };
 
   return (
     <div className="space-y-8">
