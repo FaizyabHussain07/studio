@@ -26,7 +26,7 @@ export default function ManageAssignmentsPage() {
   const [students, setStudents] = useState<{ id: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [selectedAssignment, setSelectedAssignment] = useState(null);
+  const [selectedAssignment, setSelectedAssignment] = useState<{ id: string; [key: string]: any } | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -70,13 +70,15 @@ export default function ManageAssignmentsPage() {
         const submissionCount = submissionsByAssignment[assignment.id] || 0;
         return {
             ...assignment,
+            title: assignment.title, // Ensure title is present
+            dueDate: assignment.dueDate, // Add dueDate property
             courseName: course ? course.name : "Unknown Course",
             submissionsCount: `${submissionCount}/${students.length}`,
         };
     });
   }, [assignments, courses, submissions, students, loading]);
 
-  const handleEdit = (assignment) => {
+  const handleEdit = (assignment: { id: string; [key: string]: any }) => {
       setSelectedAssignment(assignment);
       setIsFormOpen(true);
   }
@@ -86,7 +88,7 @@ export default function ManageAssignmentsPage() {
       setIsFormOpen(true);
   }
   
-  const handleDelete = async (assignmentId) => {
+  const handleDelete = async (assignmentId: string) => {
     try {
         await deleteAssignment(assignmentId);
         toast({ title: "Success", description: "Assignment deleted successfully." });
