@@ -17,10 +17,19 @@ import { getUser } from "@/lib/services";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useParams } from "next/navigation";
 
+// Define a type for the assignment to ensure type safety
+type Assignment = {
+    id: string;
+    courseId: string;
+    title: string;
+    // Add other assignment properties here if needed
+};
+
+
 export default function ViewSubmissionsPage() {
   const params = useParams();
   const id = params.id as string;
-  const [assignment, setAssignment] = useState<any>(null);
+  const [assignment, setAssignment] = useState<Assignment | null>(null);
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [course, setCourse] = useState<any>(null);
   const [loading, setLoading] = useState(true);
