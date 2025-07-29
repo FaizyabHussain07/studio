@@ -60,7 +60,7 @@ export default function ManageAssignmentsPage() {
   const processedAssignments = useMemo(() => {
     if (loading || courses.length === 0) return [];
     
-    const submissionsByAssignment = submissions.reduce((acc, sub) => {
+    const submissionsByAssignment = submissions.reduce<Record<string, number>>((acc, sub) => {
         acc[sub.assignmentId] = (acc[sub.assignmentId] || 0) + 1;
         return acc;
     }, {});
