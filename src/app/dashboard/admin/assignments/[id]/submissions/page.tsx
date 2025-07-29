@@ -40,8 +40,8 @@ export default function ViewSubmissionsPage() {
     const fetchStaticData = async () => {
       setLoading(true);
       try {
-        const assignmentData = await getAssignment(id);
-        setAssignment(assignmentData as Assignment | null);
+        const assignmentData = await getAssignment(id) as Assignment | null;
+        setAssignment(assignmentData);
 
         if (assignmentData) {
             const courseData = await getCourse(assignmentData.courseId);
