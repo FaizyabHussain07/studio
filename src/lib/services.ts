@@ -1,56 +1,100 @@
 
-
 import { db } from './firebase';
 import { collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, query, where, documentId, orderBy, limit, writeBatch, setDoc, onSnapshot, arrayUnion, arrayRemove, getCountFromServer } from 'firebase/firestore';
 
 // --- Course Seed Data ---
 const sampleCoursesData = [
-  {
-    id: "hifz-ul-quran",
-    name: "Hifz-ul-Quran",
-    description: "This course is for students who want to memorize the Holy Quran by heart.",
-    imageUrl: "/quran img 5.jpg",
-  },
-  {
-    id: "nazra-tul-quran",
-    name: "Nazra-tul-Quran",
-    description: "Learn to read the Holy Quran with proper pronunciation and articulation.",
-    imageUrl: "/close-up-islamic-new-year-with-quran-book.jpg",
-  },
-  {
-    id: "translation-of-the-quran",
-    name: "Translation of the Qur'an",
-    description: "Understand the meaning of the Holy Quran with our comprehensive translation course.",
-    imageUrl: "/3696932.jpg",
-  },
-  {
-    id: "tafseer-ul-quran",
-    name: "Tafseer-ul-Quran",
-    description: "Delve deeper into the meanings of the Quranic verses with our Tafseer course.",
-    imageUrl: "/3699655.jpg",
-  },
-  {
-    id: "basic-qaida-for-kids",
-    name: "Basic Qaida for kids",
-    description: "This course is designed for children to learn the basic rules of reading the Quran.",
-    imageUrl: "/7800339.jpg",
-  },
-  {
-    id: "arabic-language",
-    name: "Arabic Language",
-    description: "Learn the language of the Quran to better understand its message.",
-    imageUrl: "/6628329.jpg",
-  },
+    {
+        id: "basic-qaida-for-kid",
+        name: "Basic Qaida for kid",
+        description: "Foundational course for children to learn the basic rules of reading the Quran.",
+        imageUrl: "https://placehold.co/600x400.png",
+    },
+    {
+        id: "qaida-revision",
+        name: "Qaida Revision",
+        description: "A revision course to solidify the rules of Qaida for accurate Quranic recitation.",
+        imageUrl: "https://placehold.co/600x400.png",
+    },
+    {
+        id: "quran-reading",
+        name: "Quran Reading",
+        description: "Learn to read the Holy Quran with proper pronunciation and fluency.",
+        imageUrl: "https://placehold.co/600x400.png",
+    },
+    {
+        id: "quran-reading-revision",
+        name: "Quran Reading Revision",
+        description: "Revise and perfect your Quranic reading skills with guided practice.",
+        imageUrl: "https://placehold.co/600x400.png",
+    },
+    {
+        id: "quran-with-tajweed",
+        name: "Quran with Tajweed",
+        description: "Master the art of Quranic recitation with the correct rules of Tajweed.",
+        imageUrl: "https://placehold.co/600x400.png",
+    },
+    {
+        id: "quran-with-tajweed-revision",
+        name: "Quran with Tajweed Revision",
+        description: "A comprehensive revision course for all the rules of Tajweed.",
+        imageUrl: "https://placehold.co/600x400.png",
+    },
+    {
+        id: "hifz-ul-quran",
+        name: "Hifz-ul-Quran",
+        description: "This course is for students who want to memorize the Holy Quran by heart.",
+        imageUrl: "https://placehold.co/600x400.png",
+    },
+    {
+        id: "hifz-ul-quran-revision",
+        name: "Hifz-ul-Quran Revision",
+        description: "Revise your memorization of the Quran to ensure long-term retention.",
+        imageUrl: "https://placehold.co/600x400.png",
+    },
+    {
+        id: "diniyat-for-kids",
+        name: "Diniyat for kids/Basic Diniyat",
+        description: "Fundamental Islamic knowledge for children, covering basics of faith and practice.",
+        imageUrl: "https://placehold.co/600x400.png",
+    },
+    {
+        id: "diniyat-for-kids-revision",
+        name: "Diniyat for kids/Basic Diniyat Revision",
+        description: "A revision course to reinforce the foundational concepts of Diniyat.",
+        imageUrl: "https://placehold.co/600x400.png",
+    },
+    {
+        id: "advanced-diniyat",
+        name: "Advanced Diniyat",
+        description: "An in-depth study of Islamic sciences for advanced learners.",
+        imageUrl: "https://placehold.co/600x400.png",
+    },
+    {
+        id: "advanced-diniyat-revision",
+        name: "Advanced Diniyat Revision",
+        description: "Revise complex topics in Islamic studies to deepen your understanding.",
+        imageUrl: "https://placehold.co/600x400.png",
+    },
 ];
 
 
 const seedCourses = async () => {
     const coursesRef = collection(db, 'courses');
-    const snapshot = await getDocs(query(coursesRef, limit(1)));
-    
-    if (snapshot.empty) {
-        console.log("No courses found, seeding database...");
+    const snapshot = await getDocs(coursesRef);
+    const existingIds = new Set(snapshot.docs.map(doc => doc.id));
+    const newCourseIds = new Set(sampleCoursesData.map(c => c.id));
+
+    if (snapshot.size !== sampleCoursesData.length || ![...existingIds].every(id => newCourseIds.has(id))) {
+        console.log("Course mismatch found, re-seeding database...");
         const batch = writeBatch(db);
+
+        // Optional: Delete all existing courses if you want a clean slate
+        snapshot.docs.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+        
+        // Add all new courses
         sampleCoursesData.forEach(course => {
             const docRef = doc(db, 'courses', course.id);
             batch.set(docRef, {
@@ -60,7 +104,7 @@ const seedCourses = async () => {
             });
         });
         await batch.commit();
-        console.log("Courses seeded successfully.");
+        console.log("Courses re-seeded successfully.");
     }
 };
 seedCourses();
