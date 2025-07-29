@@ -1,4 +1,5 @@
 
+
 import { db } from './firebase';
 import { collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, query, where, documentId, orderBy, limit, writeBatch, setDoc, onSnapshot, arrayUnion, arrayRemove, getCountFromServer } from 'firebase/firestore';
 
@@ -85,28 +86,38 @@ const seedCourses = async () => {
     const existingIds = new Set(snapshot.docs.map(doc => doc.id));
     const newCourseIds = new Set(sampleCoursesData.map(c => c.id));
 
-    if (snapshot.size !== sampleCoursesData.length || ![...existingIds].every(id => newCourseIds.has(id))) {
-        console.log("Course mismatch found, re-seeding database...");
+    // Check if the IDs in the database are different from the IDs in our code.
+    const areDifferent = snapshot.size !== newCourseIds.size || 
+                         !snapshot.docs.every(doc => newCourseIds.has(doc.id));
+
+    if (areDifferent) {
+        console.log("Course data mismatch detected. Re-seeding database...");
         const batch = writeBatch(db);
 
-        // Optional: Delete all existing courses if you want a clean slate
+        // Delete all existing courses
         snapshot.docs.forEach(doc => {
             batch.delete(doc.ref);
         });
         
-        // Add all new courses
+        // Add all the new courses from the sample data
         sampleCoursesData.forEach(course => {
-            const docRef = doc(db, 'courses', course.id);
+            const docRef = doc(db, 'courses', course.id); // Use the explicit ID from our data
             batch.set(docRef, {
                 name: course.name,
                 description: course.description,
                 imageUrl: course.imageUrl,
+                // Ensure new courses start with empty student lists
+                enrolledStudentIds: [],
+                completedStudentIds: [],
             });
         });
+        
         await batch.commit();
-        console.log("Courses re-seeded successfully.");
+        console.log("Courses re-seeded successfully with the correct data and images.");
     }
 };
+
+// Run the seeder logic when the app loads
 seedCourses();
 
 
