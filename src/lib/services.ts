@@ -232,6 +232,17 @@ export const updateUserCourses = async (courseId: string, enrolledStudentIds: st
         completedStudentIds: completedStudentIds || []
     });
 
+    if (approvingStudentId) {
+        const studentRef = doc(db, 'users', approvingStudentId);
+        const studentData: any = studentMap.get(approvingStudentId);
+        if (studentData) {
+           const updatedCourses = studentData.courses.map((c: any) => 
+               c.courseId === courseId ? { ...c, status: 'enrolled' } : c
+           );
+           batch.update(studentRef, { courses: updatedCourses });
+        }
+    }
+
     await batch.commit();
 }
 
@@ -243,10 +254,12 @@ export const deleteCourse = async (courseId: string) => {
 
     const allStudents = await getStudentUsers();
     allStudents.forEach((student: any) => {
-        const enrollment = student.courses?.find((c: any) => c.courseId === courseId);
-        if (enrollment) {
-            const studentRef = doc(db, 'users', student.id);
-            batch.update(studentRef, { courses: arrayRemove(enrollment) });
+        if (student.courses && Array.isArray(student.courses)) {
+            const updatedCourses = student.courses.filter((c: any) => c.courseId !== courseId);
+            if (updatedCourses.length < student.courses.length) {
+                const studentRef = doc(db, 'users', student.id);
+                batch.update(studentRef, { courses: updatedCourses });
+            }
         }
     });
 
@@ -507,18 +520,24 @@ export const getSubmissions = async (count = 0) => {
     const snapshot = await getDocs(q);
     const submissions = await Promise.all(snapshot.docs.map(async (docRef) => {
         const data: any = docRef.data();
-        const [student, assignment] = await Promise.all([
-            getUser(data.studentId),
-            getAssignment(data.assignmentId),
-        ]);
-        const course: any = assignment ? await getCourse((assignment as any).courseId) : null;
+        const student = await getUser(data.studentId);
+        const assignment = await getAssignment(data.assignmentId);
+        
+        let courseName = 'Unknown Course';
+        if (assignment) {
+            const course = await getCourse((assignment as any).courseId);
+            if (course) {
+                courseName = course.name;
+            }
+        }
+        
         return {
             id: docRef.id,
             ...data,
             submissionDate: new Date(data.submissionDate).toLocaleDateString(),
             studentName: (student as any)?.name || 'Unknown Student',
             assignmentTitle: (assignment as any)?.title || 'Unknown Assignment',
-            courseName: course?.name || 'Unknown Course'
+            courseName: courseName
         }
     }));
     return submissions;

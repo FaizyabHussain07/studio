@@ -23,14 +23,16 @@ const noteSchema = z.object({
   assignedStudentIds: z.array(z.string()).min(1, "Please assign to at least one student"),
   externalUrl: z.string().url("Must be a valid URL").optional().or(z.literal('')),
   file: z.any().optional(),
+  note: z.any().optional(), // To pass existing note context to the refinement
 }).refine(data => {
-    // If a note exists (we are editing), check if it already has a file
+    // If we are editing and an existing file URL is present (and no new file is being uploaded)
     if (data.note?.fileDataUrl && !data.file) return true;
-    // Otherwise, require either a new file or a URL
+    
+    // Otherwise, we need either a valid external URL or a new file
     return !!data.externalUrl || !!data.file;
 }, {
     message: "Either a file or an external URL is required.",
-    path: ["file"], // Where to show the error
+    path: ["file"], // Show the error message on the 'file' field area
 });
 
 
@@ -39,7 +41,7 @@ export function NoteForm({ students, note, onFinished }: { students: any[], note
   const { toast } = useToast();
   const [file, setFile] = useState<File | null>(null);
   const [contentType, setContentType] = useState<'url' | 'file'>(
-    note?.fileDataUrl ? 'file' : 'url'
+    note?.fileDataUrl ? 'file' : note?.externalUrl ? 'url' : 'url'
   );
 
   const studentOptions = students.map(student => ({
@@ -47,7 +49,7 @@ export function NoteForm({ students, note, onFinished }: { students: any[], note
     label: student.name,
   }));
   
-  const form = useForm({
+  const form = useForm<z.infer<typeof noteSchema>>({
     resolver: zodResolver(noteSchema),
     defaultValues: {
       name: note?.name || "",
@@ -60,10 +62,10 @@ export function NoteForm({ students, note, onFinished }: { students: any[], note
     context: { note }
   });
 
-  const fileToDataUrl = (fileToConvert: File) => {
+  const fileToDataUrl = (fileToConvert: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
+      reader.onload = () => resolve(reader.result as string);
       reader.onerror = reject;
       reader.readAsDataURL(fileToConvert);
     });
@@ -114,6 +116,13 @@ export function NoteForm({ students, note, onFinished }: { students: any[], note
           payload.fileName = null;
       }
       
+      // If user cleared an existing file without uploading a new one, but selected URL type
+      if (contentType === 'file' && !file && !note?.fileDataUrl) {
+          toast({ title: "Error", description: "Please select a file to upload.", variant: "destructive" });
+          setLoading(false);
+          return;
+      }
+
       if (note) {
         await updateNote(note.id, payload);
         toast({ title: "Success", description: "Note updated successfully." });
@@ -168,7 +177,7 @@ export function NoteForm({ students, note, onFinished }: { students: any[], note
                 <FormControl>
                    <MultiSelect
                         options={studentOptions}
-                        selected={field.value}
+                        selected={field.value || []}
                         onChange={field.onChange}
                         placeholder="Select students..."
                     />
@@ -183,7 +192,7 @@ export function NoteForm({ students, note, onFinished }: { students: any[], note
                 <Button 
                     type="button"
                     variant={contentType === 'url' ? 'default' : 'outline'}
-                    onClick={() => { setContentType('url'); form.clearErrors('file'); setFile(null); form.setValue('file', null); handleClearFile() }}
+                    onClick={() => { setContentType('url'); form.clearErrors('file'); handleClearFile(); }}
                 >
                     <LinkIcon className="mr-2 h-4 w-4"/> URL
                 </Button>
@@ -223,7 +232,7 @@ export function NoteForm({ students, note, onFinished }: { students: any[], note
                      <FormControl>
                         <div className="relative border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center text-center">
                             <File className="h-10 w-10 text-muted-foreground mb-2"/>
-                            <p className="text-muted-foreground">Drag & drop or</p>
+                            <p className="text-muted-foreground">Drag &amp; drop or</p>
                             <Button variant="link" className="p-0 h-auto" type="button">
                                 <label htmlFor="file-upload" className="cursor-pointer">
                                     click to browse for a file
@@ -232,7 +241,7 @@ export function NoteForm({ students, note, onFinished }: { students: any[], note
                             <input id="file-upload" type="file" className="sr-only" onChange={handleFileChange} disabled={loading}/>
                         </div>
                     </FormControl>
-                     <div className="text-sm text-muted-foreground">
+                    <div className="text-sm text-muted-foreground">
                        {file ? (
                           <div className="mt-2 border rounded-lg p-3 flex items-center justify-between">
                             <div className="flex items-center gap-2 overflow-hidden">
