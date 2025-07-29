@@ -73,7 +73,9 @@ function SignUpComponent() {
       console.error("Failed to sign up:", error);
       toast({
         title: "Sign-up Failed",
-        description: error.message || "This email might already be in use. Please try another one.",
+        description: typeof error === 'object' && error !== null && 'message' in error
+          ? (error as { message?: string }).message
+          : "An unknown error occurred. Please try again later.",
         variant: "destructive",
       });
     } finally {
