@@ -1,9 +1,8 @@
 
 
 import { db } from './firebase';
-import { collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, query, where, documentId, orderBy, limit, writeBatch, setDoc, onSnapshot, arrayUnion, arrayRemove, getCountFromServer } from 'firebase/firestore';
+import { collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, query, where, documentId, orderBy, limit, writeBatch, setDoc, onSnapshot, arrayUnion, arrayRemove } from 'firebase/firestore';
 
-// --- Course Seed Data ---
 const sampleCoursesData = [
     {
         id: "basic-qaida-for-kid",
@@ -91,65 +90,59 @@ const sampleCoursesData = [
     },
 ];
 
-
 const seedCourses = async () => {
-    const coursesRef = collection(db, 'courses');
-    const snapshot = await getDocs(coursesRef);
-    const existingIds = new Set(snapshot.docs.map(doc => doc.id));
-    const newCourseIds = new Set(sampleCoursesData.map(c => c.id));
+    try {
+        const coursesRef = collection(db, 'courses');
+        const snapshot = await getDocs(coursesRef);
+        const existingIds = new Set(snapshot.docs.map(doc => doc.id));
+        const sampleIds = new Set(sampleCoursesData.map(c => c.id));
 
-    // Check if the IDs in the database are different from the IDs in our code.
-    const areDifferent = snapshot.size !== newCourseIds.size || 
-                         !snapshot.docs.every(doc => newCourseIds.has(doc.id));
+        const areDifferent = snapshot.size !== sampleIds.size || !snapshot.docs.every(doc => sampleIds.has(doc.id));
 
-    if (areDifferent) {
-        console.log("Course data mismatch detected. Re-seeding database...");
-        const batch = writeBatch(db);
+        if (areDifferent) {
+            console.log("Course data mismatch detected. Re-seeding database...");
+            const batch = writeBatch(db);
 
-        // Delete all existing courses
-        snapshot.docs.forEach(doc => {
-            batch.delete(doc.ref);
-        });
-        
-        // Add all the new courses from the sample data
-        sampleCoursesData.forEach(course => {
-            const docRef = doc(db, 'courses', course.id); // Use the explicit ID from our data
-            batch.set(docRef, {
-                name: course.title,
-                description: course.description,
-                imageUrl: course.imageUrl,
-                // Ensure new courses start with empty student lists
-                enrolledStudentIds: [],
-                completedStudentIds: [],
+            snapshot.docs.forEach(doc => {
+                batch.delete(doc.ref);
             });
-        });
-        
-        await batch.commit();
-        console.log("Courses re-seeded successfully with the correct data and images.");
+            
+            sampleCoursesData.forEach(course => {
+                const docRef = doc(db, 'courses', course.id);
+                batch.set(docRef, {
+                    name: course.title,
+                    description: course.description,
+                    imageUrl: course.imageUrl,
+                    dataAiHint: course.dataAiHint,
+                    enrolledStudentIds: [],
+                    completedStudentIds: [],
+                });
+            });
+            
+            await batch.commit();
+            console.log("Courses re-seeded successfully.");
+        }
+    } catch (error) {
+        console.error("Error during course seeding:", error);
     }
 };
 
-// Run the seeder logic when the app loads
 seedCourses();
 
-
-// User Management
-export const createUser = async (userData) => {
-  const userRef = userData.uid ? doc(db, 'users', userData.uid) : doc(collection(db, 'users'));
-  const finalUserData = { ...userData, uid: userRef.id };
-  await setDoc(userRef, finalUserData);
+export const createUser = async (userData: any) => {
+  const userRef = doc(db, 'users', userData.uid);
+  await setDoc(userRef, userData);
+  return userRef.id;
 };
 
-
-export const updateUser = async (id, userData) => {
+export const updateUser = async (id: string, userData: any) => {
     const userRef = doc(db, 'users', id);
     await updateDoc(userRef, userData);
 }
 
-export const deleteUser = async (userId) => {
+export const deleteUser = async (userId: string) => {
     await deleteDoc(doc(db, 'users', userId));
 }
-
 
 export const getUsers = async () => {
   const snapshot = await getDocs(collection(db, 'users'));
@@ -162,7 +155,7 @@ export const getStudentUsers = async () => {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 }
 
-export const getUser = async (id) => {
+export const getUser = async (id: string) => {
   if (!id) return null;
   const userDocRef = doc(db, 'users', id);
   const userDoc = await getDoc(userDocRef);
@@ -172,20 +165,17 @@ export const getUser = async (id) => {
   return null;
 };
 
-// Course Management
-export const createCourse = async (courseData) => {
+export const createCourse = async (courseData: any) => {
   const newCourseRef = doc(collection(db, 'courses'));
   await setDoc(newCourseRef, {
-    name: courseData.name,
-    description: courseData.description,
-    imageUrl: courseData.imageUrl,
+    ...courseData,
+    enrolledStudentIds: [],
+    completedStudentIds: [],
   });
   return newCourseRef.id;
 };
 
-
-export const updateCourse = async (id, courseData) => {
-    // Only update fields that are part of the course document itself
+export const updateCourse = async (id: string, courseData: any) => {
     const coursePayload = {
         name: courseData.name,
         description: courseData.description,
@@ -194,10 +184,9 @@ export const updateCourse = async (id, courseData) => {
     await updateDoc(doc(db, 'courses', id), coursePayload);
 }
 
-export const updateUserCourses = async (courseId, enrolledStudentIds, completedStudentIds, allStudents, approvingStudentId = null) => {
+export const updateUserCourses = async (courseId: string, enrolledStudentIds: string[], completedStudentIds: string[], allStudents: any[], approvingStudentId: string | null = null) => {
     const batch = writeBatch(db);
     
-    // Get the full list of students who were previously associated with the course to check for removals
     const courseDoc = await getDoc(doc(db, 'courses', courseId));
     const courseData = courseDoc.data();
     
@@ -210,29 +199,25 @@ export const updateUserCourses = async (courseId, enrolledStudentIds, completedS
 
     const allCurrentStudentIds = new Set([...enrolledStudentIds, ...completedStudentIds]);
     
-    // Students to be removed
     for(const studentId of allPreviousStudentIds) {
         if (!allCurrentStudentIds.has(studentId)) {
             const studentRef = doc(db, 'users', studentId);
-            const studentData = studentMap.get(studentId);
+            const studentData: any = studentMap.get(studentId);
             if (studentData) {
-                const updatedCourses = studentData.courses.filter(c => c.courseId !== courseId);
+                const updatedCourses = studentData.courses.filter((c: any) => c.courseId !== courseId);
                 batch.update(studentRef, { courses: updatedCourses });
             }
         }
     }
     
-    // Students to be added or updated
     for (const studentId of allCurrentStudentIds) {
         const studentRef = doc(db, 'users', studentId);
-        const studentData = studentMap.get(studentId);
+        const studentData: any = studentMap.get(studentId);
 
         if (studentData) {
             let courses = studentData.courses || [];
-            // Remove any existing status for this course to avoid duplicates
-            courses = courses.filter(c => c.courseId !== courseId);
+            courses = courses.filter((c: any) => c.courseId !== courseId);
             
-            // Add the new status
             if (enrolledStudentIds.includes(studentId)) {
                 courses.push({ courseId, status: 'enrolled' });
             } else if (completedStudentIds.includes(studentId)) {
@@ -242,7 +227,6 @@ export const updateUserCourses = async (courseId, enrolledStudentIds, completedS
         }
     }
 
-    // Update the course document itself with the new lists of IDs
     batch.update(doc(db, 'courses', courseId), {
         enrolledStudentIds: enrolledStudentIds || [],
         completedStudentIds: completedStudentIds || []
@@ -251,17 +235,15 @@ export const updateUserCourses = async (courseId, enrolledStudentIds, completedS
     await batch.commit();
 }
 
-
-
-export const deleteCourse = async (courseId) => {
+export const deleteCourse = async (courseId: string) => {
     const batch = writeBatch(db);
     
     const courseRef = doc(db, 'courses', courseId);
     batch.delete(courseRef);
 
     const allStudents = await getStudentUsers();
-    allStudents.forEach(student => {
-        const enrollment = student.courses?.find(c => c.courseId === courseId);
+    allStudents.forEach((student: any) => {
+        const enrollment = student.courses?.find((c: any) => c.courseId === courseId);
         if (enrollment) {
             const studentRef = doc(db, 'users', student.id);
             batch.update(studentRef, { courses: arrayRemove(enrollment) });
@@ -299,42 +281,32 @@ export const deleteCourse = async (courseId) => {
     await batch.commit();
 }
 
-
 export const getCourses = async () => {
     const snapshot = await getDocs(collection(db, 'courses'));
     const courses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     return courses;
 };
 
-export const getCourse = async (id) => {
+export const getCourse = async (id: string) => {
   if (!id) return null;
   const courseDoc = await getDoc(doc(db, 'courses', id));
-  if (!courseDoc.exists()) return null;
-
-  const courseData = { id: courseDoc.id, ...courseDoc.data() };
-  
-  // The student IDs are now stored directly on the course document
-  return {
-    ...courseData,
-    enrolledStudentIds: courseData.enrolledStudentIds || [],
-    completedStudentIds: courseData.completedStudentIds || [],
-  };
+  return courseDoc.exists() ? { id: courseDoc.id, ...courseDoc.data() } : null;
 };
 
-export const getStudentCourses = async (studentId) => {
-  const user = await getUser(studentId);
+export const getStudentCourses = async (studentId: string) => {
+  const user: any = await getUser(studentId);
   if (!user || !user.courses || user.courses.length === 0) {
     return [];
   }
-  const courseEnrollments = user.courses.filter(c => c && typeof c.courseId === 'string' && c.courseId.trim() !== '');
+  const courseEnrollments = user.courses.filter((c: any) => c && typeof c.courseId === 'string' && c.courseId.trim() !== '');
 
   if (courseEnrollments.length === 0) {
     return [];
   }
   
-  const courseIds = courseEnrollments.map(c => c.courseId);
+  const courseIds = courseEnrollments.map((c: any) => c.courseId);
   
-  const courses = [];
+  const courses: any[] = [];
   for (let i = 0; i < courseIds.length; i += 30) {
       const chunk = courseIds.slice(i, i + 30);
       if (chunk.length > 0) {
@@ -345,12 +317,12 @@ export const getStudentCourses = async (studentId) => {
   }
 
   return courses.map(course => {
-      const enrollment = courseEnrollments.find(e => e.courseId === course.id);
+      const enrollment = courseEnrollments.find((e: any) => e.courseId === course.id);
       return { ...course, status: enrollment?.status || 'enrolled' };
   });
 };
 
-export const getStudentCoursesWithProgress = async (studentId) => {
+export const getStudentCoursesWithProgress = async (studentId: string) => {
   const courses = await getStudentCourses(studentId);
   if (courses.length === 0) return [];
   
@@ -359,14 +331,14 @@ export const getStudentCoursesWithProgress = async (studentId) => {
   const assignmentIds = assignments.map(a => a.id);
   const submissions = await getSubmissionsByStudent(studentId, assignmentIds);
 
-  const assignmentsByCourse = assignments.reduce((acc, a) => {
+  const assignmentsByCourse = assignments.reduce((acc: any, a: any) => {
       if (!acc[a.courseId]) acc[a.courseId] = [];
       acc[a.courseId].push(a);
       return acc;
   }, {});
 
-  const submissionsByCourse = submissions.reduce((acc, s) => {
-      const assignment = assignments.find(a => a.id === s.assignmentId);
+  const submissionsByCourse = submissions.reduce((acc: any, s: any) => {
+      const assignment: any = assignments.find(a => a.id === s.assignmentId);
       if (assignment) {
           if(!acc[assignment.courseId]) acc[assignment.courseId] = [];
           acc[assignment.courseId].push(s);
@@ -374,20 +346,17 @@ export const getStudentCoursesWithProgress = async (studentId) => {
       return acc;
   }, {});
   
-  return courses.map(course => {
+  return courses.map((course: any) => {
       const courseAssignments = assignmentsByCourse[course.id] || [];
       const courseSubmissions = submissionsByCourse[course.id] || [];
-
       if(courseAssignments.length === 0) return {...course, progress: 0};
-      
-      const completedCount = courseSubmissions.filter(s => s.status === 'Submitted' || s.status === 'Graded').length;
+      const completedCount = courseSubmissions.filter((s: any) => s.status === 'Submitted' || s.status === 'Graded').length;
       const progress = Math.round((completedCount / courseAssignments.length) * 100);
-      
       return { ...course, progress };
   });
 }
 
-export const addPendingEnrollment = async (studentId, courseId, requestDate) => {
+export const addPendingEnrollment = async (studentId: string, courseId: string, requestDate: Date) => {
     const userRef = doc(db, 'users', studentId);
     await updateDoc(userRef, {
         courses: arrayUnion({
@@ -399,14 +368,12 @@ export const addPendingEnrollment = async (studentId, courseId, requestDate) => 
 }
 
 export const getPendingEnrollmentRequests = async () => {
-    // This function now fetches all students and filters in code to avoid complex indexed queries.
-    const allStudents = await getStudentUsers();
-    
-    const requests = [];
+    const allStudents: any[] = await getStudentUsers();
+    const requests: any[] = [];
     const courseCache = new Map();
 
     for (const student of allStudents) {
-        const pendingCourses = student.courses?.filter(c => c.status === 'pending');
+        const pendingCourses = student.courses?.filter((c: any) => c.status === 'pending');
 
         if (pendingCourses && pendingCourses.length > 0) {
             for (const pCourse of pendingCourses) {
@@ -418,7 +385,6 @@ export const getPendingEnrollmentRequests = async () => {
                         courseCache.set(pCourse.courseId, courseName);
                     }
                 }
-
                 requests.push({
                     studentId: student.id,
                     studentName: student.name,
@@ -433,48 +399,42 @@ export const getPendingEnrollmentRequests = async () => {
     return requests;
 };
 
-
-// Assignment Management
-export const createAssignment = async (assignmentData) => {
+export const createAssignment = async (assignmentData: any) => {
   const newAssignment = await addDoc(collection(db, 'assignments'), assignmentData);
   return newAssignment.id;
 };
 
-export const updateAssignment = async (id, assignmentData) => {
+export const updateAssignment = async (id: string, assignmentData: any) => {
     await updateDoc(doc(db, 'assignments', id), assignmentData);
 }
 
-export const deleteAssignment = async (assignmentId) => {
+export const deleteAssignment = async (assignmentId: string) => {
     const batch = writeBatch(db);
-    
     const assignmentRef = doc(db, 'assignments', assignmentId);
     batch.delete(assignmentRef);
-    
     const submissionsQuery = query(collection(db, 'submissions'), where('assignmentId', '==', assignmentId));
     const submissionsSnapshot = await getDocs(submissionsQuery);
     submissionsSnapshot.forEach(doc => {
         batch.delete(doc.ref);
     });
-
     await batch.commit();
 }
-
 
 export const getAssignments = async () => {
   const snapshot = await getDocs(collection(db, 'assignments'));
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
-export const getAssignmentsByCourse = async (courseId) => {
+export const getAssignmentsByCourse = async (courseId: string) => {
     const q = query(collection(db, "assignments"), where("courseId", "==", courseId));
     const snapshot = await getDocs(q);
     const assignments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    return assignments.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+    return assignments.sort((a: any, b: any) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
 }
 
-const getAssignmentsByCourses = async (courseIds) => {
+const getAssignmentsByCourses = async (courseIds: string[]) => {
     if (!courseIds || courseIds.length === 0) return [];
-    const assignments = [];
+    const assignments: any[] = [];
     for (let i = 0; i < courseIds.length; i += 30) {
         const chunk = courseIds.slice(i, i + 30);
         if (chunk.length > 0) {
@@ -486,17 +446,17 @@ const getAssignmentsByCourses = async (courseIds) => {
     return assignments;
 }
 
-export const getStudentAssignmentsWithStatus = async (studentId) => {
+export const getStudentAssignmentsWithStatus = async (studentId: string) => {
     const courses = await getStudentCourses(studentId);
     if(courses.length === 0) return [];
 
-    const assignments = await getAssignmentsByCourses(courses.map(c => c.id));
-    const assignmentIds = assignments.map(a => a.id);
+    const assignments = await getAssignmentsByCourses(courses.map((c: any) => c.id));
+    const assignmentIds = assignments.map((a: any) => a.id);
     const submissions = await getSubmissionsByStudent(studentId, assignmentIds);
     
-    return assignments.map(assignment => {
-        const submission = submissions.find(s => s.assignmentId === assignment.id);
-        const course = courses.find(c => c.id === assignment.courseId);
+    return assignments.map((assignment: any) => {
+        const submission = submissions.find((s: any) => s.assignmentId === assignment.id);
+        const course = courses.find((c: any) => c.id === assignment.courseId);
         let status = 'Pending';
         if (submission) {
             status = submission.status || 'Submitted';
@@ -507,16 +467,13 @@ export const getStudentAssignmentsWithStatus = async (studentId) => {
     });
 }
 
-
-export const getAssignment = async (id) => {
+export const getAssignment = async (id: string) => {
   if (!id) return null;
   const assignmentDoc = await getDoc(doc(db, 'assignments', id));
   return assignmentDoc.exists() ? { id: assignmentDoc.id, ...assignmentDoc.data() } : null;
 };
 
-
-// Submissions
-export const createSubmission = async (submissionData) => {
+export const createSubmission = async (submissionData: any) => {
     const q = query(collection(db, 'submissions'), where('studentId', '==', submissionData.studentId), where('assignmentId', '==', submissionData.assignmentId));
     const existingSubmission = await getDocs(q);
 
@@ -531,7 +488,7 @@ export const createSubmission = async (submissionData) => {
     }
 }
 
-export const updateSubmissionStatus = async (submissionId, status) => {
+export const updateSubmissionStatus = async (submissionId: string, status: string) => {
     const submissionRef = doc(db, 'submissions', submissionId);
     await updateDoc(submissionRef, { status });
 }
@@ -544,32 +501,31 @@ export const getSubmissions = async (count = 0) => {
 
     const snapshot = await getDocs(q);
     const submissions = await Promise.all(snapshot.docs.map(async (docRef) => {
-        const data = docRef.data();
+        const data: any = docRef.data();
         const [student, assignment] = await Promise.all([
             getUser(data.studentId),
             getAssignment(data.assignmentId),
         ]);
-        const course = assignment ? await getCourse(assignment.courseId) : null;
+        const course: any = assignment ? await getCourse((assignment as any).courseId) : null;
         return {
             id: docRef.id,
             ...data,
             submissionDate: new Date(data.submissionDate).toLocaleDateString(),
-            studentName: student?.name || 'Unknown Student',
-            assignmentTitle: assignment?.title || 'Unknown Assignment',
+            studentName: (student as any)?.name || 'Unknown Student',
+            assignmentTitle: (assignment as any)?.title || 'Unknown Assignment',
             courseName: course?.name || 'Unknown Course'
         }
     }));
     return submissions;
 }
 
-
-export const getSubmissionsByAssignment = async (assignmentId) => {
+export const getSubmissionsByAssignment = async (assignmentId: string) => {
     const q = query(collection(db, "submissions"), where("assignmentId", "==", assignmentId));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 }
 
-export const getStudentSubmissionForAssignment = (studentId, assignmentId, callback) => {
+export const getStudentSubmissionForAssignment = (studentId: string, assignmentId: string, callback: (sub: any) => void) => {
     const q = query(
         collection(db, 'submissions'), 
         where('studentId', '==', studentId), 
@@ -586,10 +542,10 @@ export const getStudentSubmissionForAssignment = (studentId, assignmentId, callb
     });
 }
 
-export const getSubmissionsByStudent = async (studentId, assignmentIds) => {
+export const getSubmissionsByStudent = async (studentId: string, assignmentIds: string[]) => {
   if (!assignmentIds || assignmentIds.length === 0) return [];
   
-  const submissions = [];
+  const submissions: any[] = [];
   for (let i = 0; i < assignmentIds.length; i += 30) {
       const chunk = assignmentIds.slice(i, i + 30);
       if(chunk.length > 0) {
@@ -607,7 +563,7 @@ export const getSubmissionsByStudent = async (studentId, assignmentIds) => {
   return submissions;
 }
 
-export const getStudentAssignmentStatus = async (studentId, assignmentId) => {
+export const getStudentAssignmentStatus = async (studentId: string, assignmentId: string) => {
   const q = query(
       collection(db, 'submissions'), 
       where('studentId', '==', studentId), 
@@ -617,7 +573,7 @@ export const getStudentAssignmentStatus = async (studentId, assignmentId) => {
   const snapshot = await getDocs(q);
 
   if (snapshot.empty) {
-    const assignment = await getAssignment(assignmentId);
+    const assignment: any = await getAssignment(assignmentId);
     if (assignment && new Date() > new Date(assignment.dueDate)) {
         return 'Missing';
     }
@@ -626,28 +582,27 @@ export const getStudentAssignmentStatus = async (studentId, assignmentId) => {
   return snapshot.docs[0].data().status || 'Submitted';
 }
 
-// Quiz Management
-export const createQuiz = async (quizData) => {
+export const createQuiz = async (quizData: any) => {
     const newQuiz = await addDoc(collection(db, 'quizzes'), quizData);
     return newQuiz.id;
 }
 
-export const updateQuiz = async (id, quizData) => {
+export const updateQuiz = async (id: string, quizData: any) => {
     await updateDoc(doc(db, 'quizzes', id), quizData);
 }
 
-export const deleteQuiz = async (quizId) => {
+export const deleteQuiz = async (quizId: string) => {
     await deleteDoc(doc(db, 'quizzes', quizId));
 }
 
-export const getQuizzesByCourse = async (courseId) => {
+export const getQuizzesByCourse = async (courseId: string) => {
     const q = query(collection(db, "quizzes"), where("courseId", "==", courseId));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 }
 
-export const getStudentQuizzes = async (studentId) => {
-    const courses = await getStudentCourses(studentId);
+export const getStudentQuizzes = async (studentId: string) => {
+    const courses: any[] = await getStudentCourses(studentId);
     if(courses.length === 0) return [];
 
     const enrolledCourses = courses.filter(c => c.status === 'enrolled');
@@ -662,10 +617,9 @@ export const getStudentQuizzes = async (studentId) => {
     });
 }
 
-const getQuizzesByCourses = async (courseIds) => {
+const getQuizzesByCourses = async (courseIds: string[]) => {
     if(courseIds.length === 0) return [];
-
-    const quizzes = [];
+    const quizzes: any[] = [];
     for (let i = 0; i < courseIds.length; i += 30) {
         const chunk = courseIds.slice(i, i + 30);
         if (chunk.length > 0) {
@@ -679,21 +633,20 @@ const getQuizzesByCourses = async (courseIds) => {
     return quizzes;
 }
 
-// Notes Management
-export const createNote = async (noteData) => {
+export const createNote = async (noteData: any) => {
     const newNoteRef = await addDoc(collection(db, 'notes'), noteData);
     return newNoteRef.id;
 }
 
-export const updateNote = async (id, noteData) => {
+export const updateNote = async (id: string, noteData: any) => {
     await updateDoc(doc(db, 'notes', id), noteData);
 }
 
-export const deleteNote = async (noteId) => {
+export const deleteNote = async (noteId: string) => {
     await deleteDoc(doc(db, 'notes', noteId));
 }
 
-export const getStudentNotes = async (studentId) => {
+export const getStudentNotes = async (studentId: string) => {
     const q = query(collection(db, 'notes'), where('assignedStudentIds', 'array-contains', studentId));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));

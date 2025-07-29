@@ -18,14 +18,13 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 
 type PageProps = {
     params: { id: string };
-    searchParams?: { [key: string]: string | string[] | undefined };
 };
 
 export default function ViewSubmissionsPage({ params }: PageProps) {
   const { id } = params;
-  const [assignment, setAssignment] = useState(null);
-  const [submissions, setSubmissions] = useState([]);
-  const [course, setCourse] = useState(null);
+  const [assignment, setAssignment] = useState<any>(null);
+  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [course, setCourse] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -58,7 +57,7 @@ export default function ViewSubmissionsPage({ params }: PageProps) {
         try {
             const submissionsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             const submissionsWithStudentInfo = await Promise.all(
-                submissionsData.map(async (sub) => {
+                submissionsData.map(async (sub: any) => {
                     const student = await getUser(sub.studentId);
                     return {
                         ...sub,
@@ -80,7 +79,7 @@ export default function ViewSubmissionsPage({ params }: PageProps) {
   }, [id]);
 
 
-  const handleStatusChange = async (submissionId, newStatus) => {
+  const handleStatusChange = async (submissionId: string, newStatus: string) => {
     try {
         await updateSubmissionStatus(submissionId, newStatus);
         toast({ title: "Status Updated", description: "The submission status has been changed."});
@@ -132,7 +131,7 @@ export default function ViewSubmissionsPage({ params }: PageProps) {
                 ) : submissions.length === 0 ? (
                   <TableRow><TableCell colSpan={5} className="text-center">No submissions yet.</TableCell></TableRow>
                 ) : (
-                  submissions.map((sub) => (
+                  submissions.map((sub: any) => (
                     <TableRow key={sub.id}>
                       <TableCell className="font-medium">
                         <p>{sub.studentName}</p>
@@ -163,7 +162,7 @@ export default function ViewSubmissionsPage({ params }: PageProps) {
                                     <DialogHeader>
                                         <DialogTitle>Text Submission from {sub.studentName}</DialogTitle>
                                         <DialogDescription>
-                                            The student submitted the following text alongside their file.
+                                            The student submitted the following text.
                                         </DialogDescription>
                                     </DialogHeader>
                                     <div className="mt-4 p-4 bg-secondary rounded-md whitespace-pre-wrap">

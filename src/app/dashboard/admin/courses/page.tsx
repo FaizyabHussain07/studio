@@ -16,47 +16,53 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { onSnapshot, collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
-// Helper to check if a URL is valid and from an allowed source.
-const isValidImageUrl = (url) => {
+const isValidImageUrl = (url: string | undefined | null): url is string => {
     if (!url || typeof url !== 'string') return false;
-    // For this app, we'll consider relative paths (local images) and placehold.co links valid.
-    // We disallow file:// protocol and other absolute URLs for security unless whitelisted.
-    return url.startsWith('/') || url.startsWith('https://placehold.co');
+    return url.startsWith('/') || url.startsWith('https://');
 }
 
 export default function ManageCoursesPage() {
-  const [courses, setCourses] = useState([]);
-  const [students, setStudents] = useState([]);
-  const [assignments, setAssignments] = useState([]);
-  const [quizzes, setQuizzes] = useState([]);
+  const [courses, setCourses] = useState<any[]>([]);
+  const [students, setStudents] = useState<any[]>([]);
+  const [assignments, setAssignments] = useState<any[]>([]);
+  const [quizzes, setQuizzes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [selectedCourse, setSelectedCourse] = useState<any | null>(null);
   const { toast } = useToast();
   
-  const getCoursesAndStudents = useCallback(async () => {
+  const getCoursesAndStudents = useCallback(() => {
     setLoading(true);
-    try {
-        const studentQuery = query(collection(db, "users"), where("role", "==", "student"));
-        const studentsSnapshot = await getDocs(studentQuery);
-        setStudents(studentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-        
-        const coursesSnapshot = await getDocs(collection(db, "courses"));
+    const coursesUnsub = onSnapshot(collection(db, 'courses'), (coursesSnapshot) => {
         setCourses(coursesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    } catch (error) {
-        console.error("Error fetching data", error);
-        toast({ title: "Error", description: "Could not load courses or students.", variant: "destructive" });
-    } finally {
         setLoading(false);
+    }, (error) => {
+        console.error("Error fetching courses:", error);
+        toast({ title: "Error", description: "Could not load courses.", variant: "destructive" });
+        setLoading(false);
+    });
+
+    const studentsQuery = query(collection(db, "users"), where("role", "==", "student"));
+    const studentsUnsub = onSnapshot(studentsQuery, (studentsSnapshot) => {
+        setStudents(studentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (error) => {
+        console.error("Error fetching students:", error);
+        toast({ title: "Error", description: "Could not load students.", variant: "destructive" });
+    });
+
+    return () => {
+        coursesUnsub();
+        studentsUnsub();
     }
   }, [toast]);
 
   useEffect(() => {
-    getCoursesAndStudents();
+    const unsub = getCoursesAndStudents();
+    return () => unsub();
+  }, [getCoursesAndStudents]);
 
+  useEffect(() => {
     const unsubs = [
-      onSnapshot(collection(db, 'users'), getCoursesAndStudents),
-      onSnapshot(collection(db, 'courses'), getCoursesAndStudents),
       onSnapshot(collection(db, 'assignments'), snapshot => {
         setAssignments(snapshot.docs.map(doc => ({id: doc.id, ...doc.data()})));
       }),
@@ -66,11 +72,11 @@ export default function ManageCoursesPage() {
     ];
 
     return () => unsubs.forEach(unsub => unsub());
-  }, [getCoursesAndStudents]);
+  }, []);
   
   const coursesWithDetails = useMemo(() => {
     return courses.map(course => {
-        const studentCount = (course.enrolledStudentIds?.length || 0) + (course.completedStudentIds?.length || 0);
+        const studentCount = (course.enrolledStudentIds?.length || 0);
         const assignmentCount = assignments.filter(a => a.courseId === course.id).length;
         const quizCount = quizzes.filter(q => q.courseId === course.id).length;
         
@@ -84,7 +90,7 @@ export default function ManageCoursesPage() {
   }, [courses, assignments, quizzes]);
 
 
-  const handleEdit = (course) => {
+  const handleEdit = (course: any) => {
     setSelectedCourse(course);
     setIsFormOpen(true);
   };
@@ -94,11 +100,11 @@ export default function ManageCoursesPage() {
     setIsFormOpen(true);
   };
 
-  const handleDelete = async (courseId) => {
+  const handleDelete = async (courseId: string) => {
     try {
         await deleteCourse(courseId);
         toast({ title: "Success", description: "Course deleted successfully." });
-    } catch(error) {
+    } catch(error: any) {
         console.error("Failed to delete course", error);
         toast({ title: "Error", description: "Could not delete course.", variant: "destructive" });
     }
@@ -161,6 +167,7 @@ export default function ManageCoursesPage() {
                           alt={course.name}
                           fill
                           className="rounded-t-lg object-cover"
+                          data-ai-hint={course.dataAiHint || ''}
                         />
                       </div>
                     </CardHeader>

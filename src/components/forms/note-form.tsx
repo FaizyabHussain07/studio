@@ -7,7 +7,7 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { createNote, updateNote } from "@/lib/services";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
@@ -22,16 +22,21 @@ const noteSchema = z.object({
   assignedStudentIds: z.array(z.string()).min(1, "Please assign to at least one student"),
   externalUrl: z.string().url("Must be a valid URL").optional().or(z.literal('')),
   file: z.any().optional(),
-}).refine(data => !!data.externalUrl || !!data.file || (data as any).note?.fileDataUrl, {
+}).refine(data => {
+    // If a note exists (we are editing), check if it already has a file
+    if (data.note?.fileDataUrl && !data.file) return true;
+    // Otherwise, require either a new file or a URL
+    return !!data.externalUrl || !!data.file;
+}, {
     message: "Either a file or an external URL is required.",
-    path: ["file"],
+    path: ["file"], // Where to show the error
 });
 
 
-export function NoteForm({ students, note, onFinished }) {
+export function NoteForm({ students, note, onFinished }: { students: any[], note: any, onFinished: () => void }) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const [file, setFile] = useState(null);
+  const [file, setFile] = useState<File | null>(null);
   const [contentType, setContentType] = useState<'url' | 'file'>(
     note?.fileDataUrl ? 'file' : 'url'
   );
@@ -49,12 +54,12 @@ export function NoteForm({ students, note, onFinished }) {
       assignedStudentIds: note?.assignedStudentIds || [],
       externalUrl: note?.externalUrl || "",
       file: null,
-      note: note, // Pass note to resolver context
+      note: note, // Pass note to resolver context for refinement
     },
     context: { note }
   });
 
-  const fileToDataUrl = (fileToConvert) => {
+  const fileToDataUrl = (fileToConvert: File) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(reader.result);
@@ -63,31 +68,29 @@ export function NoteForm({ students, note, onFinished }) {
     });
   };
   
-  const handleFileChange = (e) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
         setFile(selectedFile);
-        form.setValue('file', selectedFile);
-        form.clearErrors('file');
+        form.setValue('file', selectedFile, { shouldValidate: true });
+        form.setValue('externalUrl', '', { shouldValidate: true }); // Clear URL field
     }
   }
 
-  const onSubmit = async (data) => {
+  const handleClearFile = () => {
+    setFile(null);
+    form.setValue('file', null, { shouldValidate: true });
+    if(note?.fileName) {
+        // If we clear an existing file, we need to reflect that in the note object for validation
+        const updatedNote = {...note, fileDataUrl: null, fileName: null};
+        form.setValue('note', updatedNote, { shouldValidate: true });
+    }
+  }
+
+  const onSubmit = async (data: z.infer<typeof noteSchema>) => {
     setLoading(true);
-
-    if (contentType === 'file' && !file && !note?.fileDataUrl) {
-         form.setError("file", { type: "manual", message: "Please upload a file." });
-         setLoading(false);
-         return;
-    }
-     if (contentType === 'url' && !data.externalUrl) {
-         form.setError("externalUrl", { type: "manual", message: "Please enter a URL." });
-         setLoading(false);
-         return;
-    }
-
     try {
-      let payload = {
+      let payload: any = {
         name: data.name,
         description: data.description,
         assignedStudentIds: data.assignedStudentIds,
@@ -100,6 +103,9 @@ export function NoteForm({ students, note, onFinished }) {
           payload.fileDataUrl = await fileToDataUrl(file);
           payload.fileName = file.name;
           payload.externalUrl = null;
+      } else if (contentType === 'url') {
+          payload.fileDataUrl = null;
+          payload.fileName = null;
       }
       
       if (note) {
@@ -110,7 +116,7 @@ export function NoteForm({ students, note, onFinished }) {
         toast({ title: "Success", description: "Note created successfully." });
       }
       onFinished();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to save note:", error);
       toast({ title: "Error", description: "Could not save note.", variant: "destructive" });
     } finally {
@@ -171,14 +177,14 @@ export function NoteForm({ students, note, onFinished }) {
                 <Button 
                     type="button"
                     variant={contentType === 'url' ? 'default' : 'outline'}
-                    onClick={() => { setContentType('url'); form.clearErrors('file'); }}
+                    onClick={() => { setContentType('url'); form.clearErrors('file'); setFile(null); form.setValue('file', null) }}
                 >
                     <LinkIcon className="mr-2 h-4 w-4"/> URL
                 </Button>
                  <Button 
                     type="button"
                     variant={contentType === 'file' ? 'default' : 'outline'}
-                    onClick={() => { setContentType('file'); form.clearErrors('externalUrl'); }}
+                    onClick={() => { setContentType('file'); form.clearErrors('externalUrl'); form.setValue('externalUrl', '') }}
                 >
                     <File className="mr-2 h-4 w-4"/> File
                 </Button>
@@ -205,7 +211,7 @@ export function NoteForm({ students, note, onFinished }) {
                <FormField
                 control={form.control}
                 name="file"
-                render={({ field }) => (
+                render={() => (
                   <FormItem>
                     <FormLabel>Upload File</FormLabel>
                      <FormControl>
@@ -227,14 +233,19 @@ export function NoteForm({ students, note, onFinished }) {
                                <File className="h-5 w-5 flex-shrink-0"/>
                                <span className="text-sm truncate">{file.name}</span>
                             </div>
-                            <Button variant="ghost" size="icon" onClick={() => { setFile(null); form.setValue('file', null);}} disabled={loading}>
+                            <Button variant="ghost" size="icon" onClick={handleClearFile} disabled={loading}>
                                 <X className="h-4 w-4" />
                             </Button>
                           </div>
                       ) : note?.fileName && (
-                         <div className="mt-2 border rounded-lg p-3 flex items-center gap-2 overflow-hidden">
+                         <div className="mt-2 border rounded-lg p-3 flex items-center justify-between gap-2 overflow-hidden">
+                           <div className="flex items-center gap-2 overflow-hidden">
                             <File className="h-5 w-5 flex-shrink-0"/>
-                            <span className="text-sm truncate">Current file: {note.fileName}</span>
+                            <span className="text-sm truncate">Current: {note.fileName}</span>
+                           </div>
+                             <Button variant="ghost" size="icon" onClick={handleClearFile} disabled={loading} title="Remove current file">
+                                <X className="h-4 w-4" />
+                            </Button>
                          </div>
                       )}
                     </div>
