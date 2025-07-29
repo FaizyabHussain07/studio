@@ -401,6 +401,9 @@ export const getPendingEnrollmentRequests = async () => {
                     if (courseDoc.exists()) {
                         courseName = courseDoc.data().name;
                         courseCache.set(pCourse.courseId, courseName);
+                    } else {
+                        // Handle case where course was deleted but pending request exists
+                        courseName = "Deleted Course";
                     }
                 }
                 requests.push({
@@ -482,7 +485,7 @@ export const getStudentAssignmentsWithStatus = async (studentId: string) => {
             status = 'Missing';
         }
         return {...assignment, status, courseName: course?.name || 'Unknown' };
-    });
+    }).filter(a => a.courseName !== 'Unknown'); // Filter out assignments from deleted courses
 }
 
 export const getAssignment = async (id: string) => {
@@ -522,7 +525,20 @@ export const getSubmissions = async (count = 0) => {
         const data: any = docRef.data();
         const student = await getUser(data.studentId);
         const assignment = await getAssignment(data.assignmentId);
-        const course = assignment ? await getCourse((assignment as any).courseId) : null;
+        
+        // Gracefully handle deleted assignments or courses
+        if (!assignment) {
+            return {
+                id: docRef.id,
+                ...data,
+                submissionDate: new Date(data.submissionDate).toLocaleDateString(),
+                studentName: (student as any)?.name || 'Unknown Student',
+                assignmentTitle: 'Deleted Assignment',
+                courseName: 'Unknown Course',
+            };
+        }
+        
+        const course = await getCourse((assignment as any).courseId);
         
         return {
             id: docRef.id,
@@ -631,7 +647,7 @@ export const getStudentQuizzes = async (studentId: string) => {
     return quizzes.map(quiz => {
         const course = courses.find(c => c.id === quiz.courseId);
         return {...quiz, courseName: course?.name || 'Unknown' };
-    });
+    }).filter(q => q.courseName !== 'Unknown');
 }
 
 const getQuizzesByCourses = async (courseIds: string[]) => {

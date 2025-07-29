@@ -235,5 +235,3 @@ export default function ManageCoursesPage() {
     </div>
   );
 }
-
-    

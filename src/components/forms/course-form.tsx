@@ -175,5 +175,3 @@ export function CourseForm({ course, students, onFinished, requestingStudentId }
       </Form>
   );
 }
-
-    
