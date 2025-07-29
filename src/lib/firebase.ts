@@ -6,12 +6,12 @@ import { getAuth } from "firebase/auth";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
+  apiKey: "AIzaSyBBzXlMJjjFcqCCOY_C4Fs5DU3RDAKhKOA",
+  authDomain: "faizyab-al-quran.firebaseapp.com",
+  projectId:"faizyab-al-quran",
+  storageBucket: "faizyab-al-quran.firebasestorage.app",
+  messagingSenderId: "772007792970",
+  appId: "1:772007792970:web:8cc29051b464d8684471b3"
 };
 
 // Initialize Firebase
