@@ -522,22 +522,18 @@ export const getSubmissions = async (count = 0) => {
         const data: any = docRef.data();
         const student = await getUser(data.studentId);
         const assignment = await getAssignment(data.assignmentId);
-        
-        let courseName = 'Unknown Course';
-        if (assignment) {
-            const course = await getCourse((assignment as any).courseId);
-            if (course) {
-                courseName = course.name;
-            }
-        }
+        // Safely access courseId only if assignment exists
+        const course = assignment ? await getCourse((assignment as any).courseId) : null;
         
         return {
             id: docRef.id,
             ...data,
             submissionDate: new Date(data.submissionDate).toLocaleDateString(),
             studentName: (student as any)?.name || 'Unknown Student',
+            // Safely access assignment title
             assignmentTitle: (assignment as any)?.title || 'Unknown Assignment',
-            courseName: courseName
+            // Safely access course name
+            courseName: course?.name || 'Unknown Course',
         }
     }));
     return submissions;
