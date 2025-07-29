@@ -13,9 +13,11 @@ import { getCourse, getAssignmentsByCourse, getStudentAssignmentStatus, getSubmi
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { collection, onSnapshot, query, where, doc } from "firebase/firestore";
+import { useParams } from "next/navigation";
 
-export default function CourseDetailPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function CourseDetailPage() {
+  const params = useParams();
+  const id = params.id as string;
   const [user, setUser] = useState<User | null>(null);
   const [courseData, setCourseData] = useState(null);
   const [assignments, setAssignments] = useState([]);

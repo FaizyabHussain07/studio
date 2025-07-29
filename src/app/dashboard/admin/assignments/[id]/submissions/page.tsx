@@ -15,9 +15,11 @@ import { onSnapshot, query, collection, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { getUser } from "@/lib/services";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useParams } from "next/navigation";
 
-export default function ViewSubmissionsPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function ViewSubmissionsPage() {
+  const params = useParams();
+  const id = params.id as string;
   const [assignment, setAssignment] = useState<any>(null);
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [course, setCourse] = useState<any>(null);
