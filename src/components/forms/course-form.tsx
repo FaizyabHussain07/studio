@@ -22,7 +22,7 @@ const courseSchema = z.object({
   completedStudentIds: z.array(z.string()).optional(),
 });
 
-export function CourseForm({ course, students, onFinished, requestingStudentId }: { course: any, students: any, onFinished: any, requestingStudentId?: string | null }) {
+export function CourseForm({ course, students, onFinished, requestingStudentId }: { course?: any, students: any[], onFinished: () => void, requestingStudentId?: string | null }) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const form = useForm({
@@ -43,7 +43,6 @@ export function CourseForm({ course, students, onFinished, requestingStudentId }
   
   useEffect(() => {
     let enrolled = course?.enrolledStudentIds || [];
-    // If we are approving a request, automatically add the student to the enrolled list in the form
     if (requestingStudentId && !enrolled.includes(requestingStudentId)) {
         enrolled = [...enrolled, requestingStudentId];
     }
@@ -71,7 +70,6 @@ export function CourseForm({ course, students, onFinished, requestingStudentId }
 
       if (course) {
         await updateCourse(course.id, coursePayload);
-        // We now also pass the original student list to handle removals correctly.
         const originalStudentIds = [
             ...(course.enrolledStudentIds || []), 
             ...(course.completedStudentIds || []),
@@ -143,7 +141,7 @@ export function CourseForm({ course, students, onFinished, requestingStudentId }
                 <FormControl>
                    <MultiSelect
                         options={studentOptions}
-                        selected={field.value}
+                        selected={field.value || []}
                         onChange={field.onChange}
                         placeholder="Select students to enroll..."
                     />
@@ -161,7 +159,7 @@ export function CourseForm({ course, students, onFinished, requestingStudentId }
                 <FormControl>
                    <MultiSelect
                         options={studentOptions}
-                        selected={field.value}
+                        selected={field.value || []}
                         onChange={field.onChange}
                         placeholder="Select students who have completed..."
                     />

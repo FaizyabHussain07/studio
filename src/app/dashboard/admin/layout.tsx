@@ -46,6 +46,9 @@ export default function AdminDashboardLayout({
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser && currentUser.email === 'syedfaizyabhussain07@gmail.com') {
         setUser(currentUser);
+      } else if (currentUser) {
+        // Logged in but not admin
+        router.push("/dashboard/student");
       } else {
         router.push("/login");
       }
@@ -56,6 +59,10 @@ export default function AdminDashboardLayout({
   const handleLogout = async () => {
     await auth.signOut();
     router.push('/login');
+  }
+
+  if (!user) {
+    return <div className="flex h-screen items-center justify-center">Loading...</div>;
   }
 
   return (

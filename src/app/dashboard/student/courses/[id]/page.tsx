@@ -3,13 +3,12 @@
 'use client';
 
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { FileText, ArrowLeft, CheckCircle2, XCircle, FileWarning } from "lucide-react";
 import { useState, useEffect } from "react";
-import { getCourse, getAssignmentsByCourse, getStudentAssignmentStatus, getSubmissionsByStudent } from "@/lib/services";
+import { getCourse, getAssignmentsByCourse } from "@/lib/services";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { collection, onSnapshot, query, where, doc } from "firebase/firestore";
@@ -19,9 +18,9 @@ export default function CourseDetailPage() {
   const params = useParams();
   const id = params.id as string;
   const [user, setUser] = useState<User | null>(null);
-  const [courseData, setCourseData] = useState(null);
-  const [assignments, setAssignments] = useState([]);
-  const [submissions, setSubmissions] = useState([]);
+  const [courseData, setCourseData] = useState<any>(null);
+  const [assignments, setAssignments] = useState<any[]>([]);
+  const [submissions, setSubmissions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -35,10 +34,11 @@ export default function CourseDetailPage() {
     if (!id) return;
     setLoading(true);
 
-    const unsubCourse = onSnapshot(doc(db, "courses", id), (doc) => {
-      if (doc.exists()) {
-        setCourseData({ id: doc.id, ...doc.data() });
+    const unsubCourse = onSnapshot(doc(db, "courses", id), (docSnapshot) => {
+      if (docSnapshot.exists()) {
+        setCourseData({ id: docSnapshot.id, ...docSnapshot.data() });
       } else {
+        setCourseData(null);
         console.error("Course not found");
       }
       setLoading(false);
@@ -58,9 +58,17 @@ export default function CourseDetailPage() {
   }, [id]);
 
   useEffect(() => {
-    if (!user || assignments.length === 0) return;
+    if (!user || assignments.length === 0) {
+      if (assignments.length === 0) setSubmissions([]);
+      return;
+    };
     
     const assignmentIds = assignments.map(a => a.id);
+    if (assignmentIds.length === 0) {
+        setSubmissions([]);
+        return;
+    }
+    
     const submissionsQuery = query(collection(db, "submissions"), where("studentId", "==", user.uid), where('assignmentId', 'in', assignmentIds));
     
     const unsubSubmissions = onSnapshot(submissionsQuery, (snapshot) => {
@@ -71,7 +79,7 @@ export default function CourseDetailPage() {
   }, [user, assignments])
   
   
-  const getStatusInfo = (assignment) => {
+  const getStatusInfo = (assignment: any) => {
     const submission = submissions.find(s => s.assignmentId === assignment.id);
 
     if (submission) {
@@ -94,8 +102,20 @@ export default function CourseDetailPage() {
     return { icon: <FileText className="h-6 w-6 text-primary flex-shrink-0" />, badge: 'outline', badgeText: 'Pending' };
   };
 
-  if (loading || !courseData) {
+  if (loading) {
     return <div className="flex justify-center items-center h-full p-8">Loading course details...</div>;
+  }
+  
+  if (!courseData) {
+     return <div className="flex flex-col items-center justify-center h-full p-8">
+          <h1 className="text-2xl font-bold mb-4">Course Not Found</h1>
+          <p className="text-muted-foreground mb-6">This course may have been deleted.</p>
+          <Button asChild>
+            <Link href="/dashboard/student/courses">
+                <ArrowLeft className="mr-2 h-4 w-4"/> Back to My Courses
+            </Link>
+          </Button>
+      </div>;
   }
   
   const courseStatus = courseData.completedStudentIds?.includes(user?.uid) 

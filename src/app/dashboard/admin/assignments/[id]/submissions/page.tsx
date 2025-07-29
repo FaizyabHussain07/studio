@@ -17,14 +17,11 @@ import { getUser } from "@/lib/services";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useParams } from "next/navigation";
 
-// Define a type for the assignment to ensure type safety
 type Assignment = {
     id: string;
     courseId: string;
     title: string;
-    // Add other assignment properties here if needed
 };
-
 
 export default function ViewSubmissionsPage() {
   const params = useParams();
@@ -108,7 +105,7 @@ export default function ViewSubmissionsPage() {
              <h1 className="text-3xl font-bold font-headline">Loading submissions...</h1>
         ) : (
             <div>
-                <p className="text-sm text-primary font-medium">{course?.name}</p>
+                <p className="text-sm text-primary font-medium">{course?.name || 'Loading course...'}</p>
                 <h1 className="text-3xl font-bold font-headline">Submissions for: {assignment?.title}</h1>
                 <p className="text-muted-foreground mt-1">Review student submissions and provide grades.</p>
             </div>

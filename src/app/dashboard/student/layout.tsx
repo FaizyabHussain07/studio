@@ -43,7 +43,6 @@ export default function StudentDashboardLayout({
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
-        // A simple check to redirect admin away from student dashboard
         if(currentUser.email === 'syedfaizyabhussain07@gmail.com') {
             router.push('/dashboard/admin');
             return;

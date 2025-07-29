@@ -6,84 +6,84 @@ import { collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, query, 
 const sampleCoursesData = [
     {
         id: "basic-qaida-for-kid",
-        title: "Basic Qaida for kid",
+        name: "Basic Qaida for kid",
         description: "Foundational course for children to learn the basic rules of reading the Quran.",
         imageUrl: "https://images.unsplash.com/photo-1594910196905-5735b54a5a57?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxjaGlsZCUyMHJlYWRpbmd8ZW58MHx8fHwxNzUzNzY4NDk0fDA&ixlib=rb-4.1.0&q=80&w=1080",
         dataAiHint: "child reading",
     },
     {
         id: "qaida-revision",
-        title: "Qaida Revision",
+        name: "Qaida Revision",
         description: "A revision course to solidify the rules of Qaida for accurate Quranic recitation.",
         imageUrl: "https://images.unsplash.com/photo-1532012197267-da84d127e765?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxzdHVkeSUyMGJvb2tzfGVufDB8fHx8MTc1Mzc2ODQ5NHww&ixlib=rb-4.1.0&q=80&w=1080",
         dataAiHint: "study books",
     },
     {
         id: "quran-reading",
-        title: "Quran Reading",
+        name: "Quran Reading",
         description: "Learn to read the Holy Quran with proper pronunciation and fluency.",
         imageUrl: "https://images.unsplash.com/photo-1621160105007-727ca40f26a7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cXVyYW4lMjByZWFkaW5nfGVufDB8fHx8MTc1Mzc1Nzc0NHww&ixlib=rb-4.1.0&q=80&w=1080",
         dataAiHint: "quran reading",
     },
     {
         id: "quran-reading-revision",
-        title: "Quran Reading Revision",
+        name: "Quran Reading Revision",
         description: "Revise and perfect your Quranic reading skills with guided practice.",
         imageUrl: "https://images.unsplash.com/photo-1582159073167-2a14a3857f0f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxyZWxpZ2lvdXMlMjB0ZXh0fGVufDB8fHx8MTc1Mzc2ODQ5NHww&ixlib=rb-4.1.0&q=80&w=1080",
         dataAiHint: "religious text",
     },
     {
         id: "quran-with-tajweed",
-        title: "Quran with Tajweed",
+        name: "Quran with Tajweed",
         description: "Master the art of Quranic recitation with the correct rules of Tajweed.",
         imageUrl: "https://images.unsplash.com/photo-1609599595249-1a3b83f4be5a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxtb3NxdWUlMjBhcmNoaXRlY3R1cmV8ZW58MHx8fHwxNzUzNzY4NDk0fDA&ixlib=rb-4.1.0&q=80&w=1080",
         dataAiHint: "mosque architecture",
     },
     {
         id: "quran-with-tajweed-revision",
-        title: "Quran with Tajweed Revision",
+        name: "Quran with Tajweed Revision",
         description: "A comprehensive revision course for all the rules of Tajweed.",
         imageUrl: "https://images.unsplash.com/photo-1542831371-29b0f74f9713?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxjb2Rpbmd8ZW58MHx8fHwxNzUzNzY4NDk0fDA&ixlib=rb-4.1.0&q=80&w=1080",
         dataAiHint: "coding",
     },
     {
         id: "hifz-ul-quran",
-        title: "Hifz-ul-Quran",
+        name: "Hifz-ul-Quran",
         description: "This course is for students who want to memorize the Holy Quran by heart.",
         imageUrl: "https://images.unsplash.com/photo-1488190211105-8b0e65b80b4e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxtZW1vcml6YXRpb258ZW58MHx8fHwxNzUzNzY4NDk0fDA&ixlib=rb-4.1.0&q=80&w=1080",
         dataAiHint: "memorization",
     },
     {
         id: "hifz-ul-quran-revision",
-        title: "Hifz-ul-Quran Revision",
+        name: "Hifz-ul-Quran Revision",
         description: "Revise your memorization of the Quran to ensure long-term retention.",
         imageUrl: "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxyZXZpc2lvbiUyMHN0dWR5fGVufDB8fHx8MTc1Mzc2ODQ5NHww&ixlib=rb-4.1.0&q=80&w=1080",
         dataAiHint: "revision study",
     },
     {
         id: "diniyat-for-kids",
-        title: "Diniyat for kids/Basic Diniyat",
+        name: "Diniyat for kids/Basic Diniyat",
         description: "Fundamental Islamic knowledge for children, covering basics of faith and practice.",
         imageUrl: "https://images.unsplash.com/photo-1531545514256-b1400bc00f31?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxsZWFybmluZyUyMGNsYXNzfGVufDB8fHx8MTc1Mzc2ODQ5NXww&ixlib=rb-4.1.0&q=80&w=1080",
         dataAiHint: "learning class",
     },
     {
         id: "diniyat-for-kids-revision",
-        title: "Diniyat for kids/Basic Diniyat Revision",
+        name: "Diniyat for kids/Basic Diniyat Revision",
         description: "A revision course to reinforce the foundational concepts of Diniyat.",
         imageUrl: "https://images.unsplash.com/photo-1543269865-cbf427effbad?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxncm91cCUyMHN0dWR5fGVufDB8fHx8MTc1Mzc2ODQ5NXww&ixlib=rb-4.1.0&q=80&w=1080",
         dataAiHint: "group study",
     },
     {
         id: "advanced-diniyat",
-        title: "Advanced Diniyat",
+        name: "Advanced Diniyat",
         description: "An in-depth study of Islamic sciences for advanced learners.",
         imageUrl: "https://images.unsplash.com/photo-1517414442328-3693a72e81d1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxhZHZhbmNlZCUyMGxlYXJuaW5nfGVufDB8fHx8MTc1Mzc2ODQ5NXww&ixlib=rb-4.1.0&q=80&w=1080",
         dataAiHint: "advanced learning",
     },
     {
         id: "advanced-diniyat-revision",
-        title: "Advanced Diniyat Revision",
+        name: "Advanced Diniyat Revision",
         description: "Revise complex topics in Islamic studies to deepen your understanding.",
         imageUrl: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxleGFtJTIwcHJlcGFyYXRpb258ZW58MHx8fHwxNzUzNzY4NDk1fDA&ixlib=rb-4.1.0&q=80&w=1080",
         dataAiHint: "exam preparation",
@@ -110,7 +110,7 @@ const seedCourses = async () => {
             sampleCoursesData.forEach(course => {
                 const docRef = doc(db, 'courses', course.id);
                 batch.set(docRef, {
-                    name: course.title,
+                    name: course.name,
                     description: course.description,
                     imageUrl: course.imageUrl,
                     dataAiHint: course.dataAiHint,
@@ -273,11 +273,16 @@ export const deleteCourse = async (courseId: string) => {
         });
 
         // Batch delete submissions for the found assignments
-        const submissionsQuery = query(collection(db, 'submissions'), where('assignmentId', 'in', assignmentIds));
-        const submissionsSnapshot = await getDocs(submissionsQuery);
-        submissionsSnapshot.forEach(doc => {
-            batch.delete(doc.ref);
-        });
+        if (assignmentIds.length > 0) {
+            for (let i = 0; i < assignmentIds.length; i += 30) {
+                const chunk = assignmentIds.slice(i, i + 30);
+                const submissionsQuery = query(collection(db, 'submissions'), where('assignmentId', 'in', chunk));
+                const submissionsSnapshot = await getDocs(submissionsQuery);
+                submissionsSnapshot.forEach(doc => {
+                    batch.delete(doc.ref);
+                });
+            }
+        }
     }
     
     const quizzesQuery = query(collection(db, 'quizzes'), where('courseId', '==', courseId));
@@ -330,10 +335,10 @@ export const getStudentCourses = async (studentId: string) => {
   return courseEnrollments
     .map((enrollment: any) => {
       const course = courseMap.get(enrollment.courseId);
-      if (!course) return null; // If course doesn't exist, return null
+      if (!course) return null;
       return { ...course, status: enrollment.status || 'enrolled' };
     })
-    .filter(Boolean); // Filter out any null values for deleted courses
+    .filter(Boolean);
 };
 
 export const getStudentCoursesWithProgress = async (studentId: string) => {
@@ -393,12 +398,11 @@ export const getPendingEnrollmentRequests = async () => {
             for (const pCourse of pendingCourses) {
                 let courseName = courseCache.get(pCourse.courseId);
                 if (!courseName) {
-                    const courseDoc = await getDoc(doc(db, 'courses', pCourse.courseId));
-                    if (courseDoc.exists()) {
-                        courseName = courseDoc.data().name;
+                    const courseDoc = await getCourse(pCourse.courseId);
+                    if (courseDoc) {
+                        courseName = courseDoc.name;
                         courseCache.set(pCourse.courseId, courseName);
                     } else {
-                        // Handle case where course was deleted but pending request exists
                         courseName = "Deleted Course";
                     }
                 }
@@ -407,7 +411,7 @@ export const getPendingEnrollmentRequests = async () => {
                     studentName: student.name,
                     studentEmail: student.email,
                     courseId: pCourse.courseId,
-                    courseName: courseName || "Unknown Course",
+                    courseName: courseName,
                     requestDate: pCourse.requestDate ? new Date(pCourse.requestDate).toLocaleDateString() : 'N/A'
                 });
             }
@@ -429,11 +433,13 @@ export const deleteAssignment = async (assignmentId: string) => {
     const batch = writeBatch(db);
     const assignmentRef = doc(db, 'assignments', assignmentId);
     batch.delete(assignmentRef);
+    
     const submissionsQuery = query(collection(db, 'submissions'), where('assignmentId', '==', assignmentId));
     const submissionsSnapshot = await getDocs(submissionsQuery);
     submissionsSnapshot.forEach(doc => {
         batch.delete(doc.ref);
     });
+
     await batch.commit();
 }
 
@@ -467,7 +473,12 @@ export const getStudentAssignmentsWithStatus = async (studentId: string) => {
     const courses = await getStudentCourses(studentId);
     if(courses.length === 0) return [];
 
-    const assignments = await getAssignmentsByCourses(courses.map((c: any) => c.id));
+    const enrolledCourses = courses.filter(c => c.status === 'enrolled');
+    if (enrolledCourses.length === 0) return [];
+
+    const assignments = await getAssignmentsByCourses(enrolledCourses.map((c: any) => c.id));
+    if (assignments.length === 0) return [];
+    
     const assignmentIds = assignments.map((a: any) => a.id);
     const submissions = await getSubmissionsByStudent(studentId, assignmentIds);
     
@@ -481,8 +492,8 @@ export const getStudentAssignmentsWithStatus = async (studentId: string) => {
             status = 'Missing';
         }
         return {...assignment, status, courseName: course?.name || 'Unknown' };
-    }).filter(a => a.courseName !== 'Unknown'); // Filter out assignments from deleted courses
-}
+    }).filter(a => a.courseName !== 'Unknown');
+};
 
 export const getAssignment = async (id: string) => {
   if (!id) return null;
@@ -517,36 +528,38 @@ export const getSubmissions = async (count = 0) => {
         : query(submissionsRef, orderBy("submissionDate", "desc"));
 
     const snapshot = await getDocs(q);
-    const submissions = await Promise.all(snapshot.docs.map(async (docRef) => {
-        const data: any = docRef.data();
-        const student = await getUser(data.studentId);
-        const assignment = await getAssignment(data.assignmentId);
-        
-        // Gracefully handle deleted assignments or courses
-        if (!assignment) {
-            return {
-                id: docRef.id,
-                ...data,
-                submissionDate: new Date(data.submissionDate).toLocaleDateString(),
-                studentName: (student as any)?.name || 'Unknown Student',
-                assignmentTitle: 'Deleted Assignment',
-                courseName: 'Unknown Course',
-            };
-        }
-        
-        const course = await getCourse((assignment as any).courseId);
-        
+    const submissionsData = snapshot.docs.map(docRef => ({id: docRef.id, ...docRef.data()}));
+
+    const studentIds = [...new Set(submissionsData.map((sub: any) => sub.studentId))];
+    const assignmentIds = [...new Set(submissionsData.map((sub: any) => sub.assignmentId))];
+
+    const [students, assignments] = await Promise.all([
+        Promise.all(studentIds.map(id => getUser(id))),
+        Promise.all(assignmentIds.map(id => getAssignment(id))),
+    ]);
+    
+    const studentMap = new Map(students.filter(Boolean).map((s: any) => [s.id, s]));
+    const assignmentMap = new Map(assignments.filter(Boolean).map((a: any) => [a.id, a]));
+
+    const courseIds = [...new Set(assignments.filter(Boolean).map((a: any) => a.courseId))];
+    const courses = await Promise.all(courseIds.map(id => getCourse(id)));
+    const courseMap = new Map(courses.filter(Boolean).map((c: any) => [c.id, c]));
+
+    return submissionsData.map((sub: any) => {
+        const student = studentMap.get(sub.studentId);
+        const assignment = assignmentMap.get(sub.assignmentId);
+        const course = assignment ? courseMap.get(assignment.courseId) : null;
         return {
-            id: docRef.id,
-            ...data,
-            submissionDate: new Date(data.submissionDate).toLocaleDateString(),
-            studentName: (student as any)?.name || 'Unknown Student',
-            assignmentTitle: (assignment as any)?.title || 'Unknown Assignment',
+            id: sub.id,
+            ...sub,
+            submissionDate: new Date(sub.submissionDate).toLocaleDateString(),
+            studentName: student?.name || 'Unknown Student',
+            assignmentTitle: assignment?.title || 'Deleted Assignment',
             courseName: course?.name || 'Unknown Course',
         }
-    }));
-    return submissions;
+    });
 }
+
 
 export const getSubmissionsByAssignment = async (assignmentId: string) => {
     const q = query(collection(db, "submissions"), where("assignmentId", "==", assignmentId));
@@ -555,6 +568,10 @@ export const getSubmissionsByAssignment = async (assignmentId: string) => {
 }
 
 export const getStudentSubmissionForAssignment = (studentId: string, assignmentId: string, callback: (sub: any) => void) => {
+    if (!studentId || !assignmentId) {
+        callback(null);
+        return () => {};
+    }
     const q = query(
         collection(db, 'submissions'), 
         where('studentId', '==', studentId), 
@@ -640,8 +657,10 @@ export const getStudentQuizzes = async (studentId: string) => {
     const courseIds = enrolledCourses.map(c => c.id);
     const quizzes = await getQuizzesByCourses(courseIds);
 
+    const courseMap = new Map(courses.map(c => [c.id, c]));
+
     return quizzes.map(quiz => {
-        const course = courses.find(c => c.id === quiz.courseId);
+        const course = courseMap.get(quiz.courseId);
         return {...quiz, courseName: course?.name || 'Unknown' };
     }).filter(q => q.courseName !== 'Unknown');
 }

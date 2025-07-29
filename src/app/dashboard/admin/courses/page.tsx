@@ -31,8 +31,7 @@ export default function ManageCoursesPage() {
   const [selectedCourse, setSelectedCourse] = useState<any | null>(null);
   const { toast } = useToast();
   
-  const getCoursesAndStudents = useCallback(() => {
-    setLoading(true);
+  useEffect(() => {
     const coursesUnsub = onSnapshot(collection(db, 'courses'), (coursesSnapshot) => {
         setCourses(coursesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
         setLoading(false);
@@ -50,29 +49,21 @@ export default function ManageCoursesPage() {
         toast({ title: "Error", description: "Could not load students.", variant: "destructive" });
     });
 
+    const assignmentsUnsub = onSnapshot(collection(db, 'assignments'), snapshot => {
+        setAssignments(snapshot.docs.map(doc => ({id: doc.id, ...doc.data()})));
+    });
+
+    const quizzesUnsub = onSnapshot(collection(db, 'quizzes'), snapshot => {
+      setQuizzes(snapshot.docs.map(doc => ({id: doc.id, ...doc.data()})));
+    });
+
     return () => {
         coursesUnsub();
         studentsUnsub();
+        assignmentsUnsub();
+        quizzesUnsub();
     }
   }, [toast]);
-
-  useEffect(() => {
-    const unsub = getCoursesAndStudents();
-    return () => unsub();
-  }, [getCoursesAndStudents]);
-
-  useEffect(() => {
-    const unsubs = [
-      onSnapshot(collection(db, 'assignments'), snapshot => {
-        setAssignments(snapshot.docs.map(doc => ({id: doc.id, ...doc.data()})));
-      }),
-      onSnapshot(collection(db, 'quizzes'), snapshot => {
-        setQuizzes(snapshot.docs.map(doc => ({id: doc.id, ...doc.data()})));
-      }),
-    ];
-
-    return () => unsubs.forEach(unsub => unsub());
-  }, []);
   
   const coursesWithDetails = useMemo(() => {
     return courses.map(course => {
@@ -199,7 +190,7 @@ export default function ManageCoursesPage() {
                                     <AlertDialogHeader>
                                     <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        This action cannot be undone. This will permanently delete the course and all associated data.
+                                        This action cannot be undone. This will permanently delete the course and all associated data, including assignments, quizzes, and submissions.
                                     </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>

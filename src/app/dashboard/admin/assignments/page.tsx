@@ -10,13 +10,13 @@ import { MoreHorizontal, PlusCircle, Search } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect, useMemo } from 'react';
-import { getCourses, getSubmissionsByAssignment, getStudentUsers, deleteAssignment } from "@/lib/services";
+import { getCourses, deleteAssignment } from "@/lib/services";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AssignmentForm } from "@/components/forms/assignment-form";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
-import { onSnapshot, collection, getDocs, query, where } from "firebase/firestore";
+import { onSnapshot, collection, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 export default function ManageAssignmentsPage() {
@@ -32,12 +32,11 @@ export default function ManageAssignmentsPage() {
   useEffect(() => {
     const fetchStaticData = async () => {
         try {
-            const [coursesData, studentsData] = await Promise.all([ getCourses(), getStudentUsers() ]);
+            const coursesData = await getCourses();
             setCourses(coursesData);
-            setStudents(studentsData);
         } catch (error) {
-            console.error("Error fetching initial data:", error);
-            toast({ title: "Error", description: "Could not load initial data.", variant: "destructive" });
+            console.error("Error fetching courses:", error);
+            toast({ title: "Error", description: "Could not load courses.", variant: "destructive" });
         }
     };
     fetchStaticData();
@@ -51,14 +50,19 @@ export default function ManageAssignmentsPage() {
         setSubmissions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
 
+    const unsubStudents = onSnapshot(query(collection(db, 'users'), where('role', '==', 'student')), snapshot => {
+        setStudents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+
     return () => {
         unsubAssignments();
         unsubSubmissions();
+        unsubStudents();
     };
   }, [toast]);
   
   const processedAssignments = useMemo(() => {
-    if (loading || courses.length === 0) return [];
+    if (loading) return [];
     
     const submissionsByAssignment = submissions.reduce<Record<string, number>>((acc, sub) => {
         acc[sub.assignmentId] = (acc[sub.assignmentId] || 0) + 1;
@@ -70,12 +74,12 @@ export default function ManageAssignmentsPage() {
         const submissionCount = submissionsByAssignment[assignment.id] || 0;
         return {
             ...assignment,
-            title: assignment.title, // Ensure title is present
-            dueDate: assignment.dueDate, // Add dueDate property
+            title: assignment.title,
+            dueDate: assignment.dueDate,
             courseName: course ? course.name : "Unknown Course",
             submissionsCount: `${submissionCount}/${students.length}`,
         };
-    });
+    }).filter(a => a.courseName !== "Unknown Course");
   }, [assignments, courses, submissions, students, loading]);
 
   const handleEdit = (assignment: { id: string; [key: string]: any }) => {

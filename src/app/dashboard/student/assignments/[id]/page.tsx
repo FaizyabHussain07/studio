@@ -9,21 +9,21 @@ import Link from "next/link";
 import { ArrowLeft, Paperclip, Upload, File, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getAssignment, getCourse, createSubmission, getStudentSubmissionForAssignment } from "@/lib/services";
-import { auth, db } from "@/lib/firebase";
+import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, User } from "firebase/auth";
 import { Textarea } from "@/components/ui/textarea";
 import { useParams } from "next/navigation";
 
 export default function AssignmentDetailPage() {
   const params = useParams();
   const id = params.id as string;
-  const [assignmentData, setAssignmentData] = useState(null);
+  const [assignmentData, setAssignmentData] = useState<any>(null);
   const [courseName, setCourseName] = useState("");
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null);
-  const [submission, setSubmission] = useState(null);
-  const [file, setFile] = useState(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [submission, setSubmission] = useState<any>(null);
+  const [file, setFile] = useState<File | null>(null);
   const [textSubmission, setTextSubmission] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -62,22 +62,24 @@ export default function AssignmentDetailPage() {
         }
     });
 
-    return () => unsubSubmission();
+    return () => {
+      if (unsubSubmission) unsubSubmission();
+    };
 
   }, [id, user]);
   
-  const handleFileChange = (e) => {
-    if (e.target.files.length > 0) {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
       setFile(e.target.files[0]);
     }
   }
 
-  const fileToDataUrl = (file) => {
+  const fileToDataUrl = (fileToRead: File): Promise<string> => {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
+        reader.onload = () => resolve(reader.result as string);
         reader.onerror = reject;
-        reader.readAsDataURL(file);
+        reader.readAsDataURL(fileToRead);
       });
   }
 
@@ -90,8 +92,8 @@ export default function AssignmentDetailPage() {
     setIsSubmitting(true);
 
     try {
-      let fileDataUrl = null;
-      let fileName = null;
+      let fileDataUrl: string | null = null;
+      let fileName: string | null = null;
       if (file) {
           fileDataUrl = await fileToDataUrl(file);
           fileName = file.name;
@@ -112,7 +114,7 @@ export default function AssignmentDetailPage() {
           courseId: assignmentData.courseId,
       });
       toast({ title: "Success", description: "Assignment submitted successfully!" });
-    } catch(error) {
+    } catch(error: any) {
         console.error("Submission failed", error);
         toast({ title: "Error", description: `Failed to submit assignment. ${error.message}`, variant: "destructive" });
     } finally {
@@ -121,8 +123,20 @@ export default function AssignmentDetailPage() {
     }
   }
 
-  if (loading || !assignmentData) {
-    return <div className="flex justify-center items-center h-full">Loading assignment details...</div>;
+  if (loading) {
+    return <div className="flex justify-center items-center h-full p-8">Loading assignment details...</div>;
+  }
+  
+  if (!assignmentData) {
+      return <div className="flex flex-col items-center justify-center h-full p-8">
+          <h1 className="text-2xl font-bold mb-4">Assignment Not Found</h1>
+          <p className="text-muted-foreground mb-6">This assignment may have been deleted.</p>
+          <Button asChild>
+            <Link href="/dashboard/student/assignments">
+                <ArrowLeft className="mr-2 h-4 w-4"/> Back to All Assignments
+            </Link>
+          </Button>
+      </div>;
   }
   
   const status = submission?.status || 'Pending';
@@ -160,7 +174,7 @@ export default function AssignmentDetailPage() {
                     <CardTitle>Attachments</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    {assignmentData.attachments?.map(file => (
+                    {assignmentData.attachments?.map((file: any) => (
                         <Button key={file.name} variant="outline" asChild>
                             <a href={file.url} target="_blank" rel="noopener noreferrer">
                                 <Paperclip className="mr-2 h-4 w-4"/>

@@ -15,14 +15,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getStudentCourses } from "@/lib/services";
 
 
-// Helper to check for valid image URLs
-const isValidImageUrl = (url) => {
+const isValidImageUrl = (url: string | undefined | null): url is string => {
     if (!url || typeof url !== 'string') return false;
     return url.startsWith('/') || url.startsWith('https://');
 };
 
 export default function StudentCoursesPage() {
-  const [courses, setCourses] = useState([]);
+  const [courses, setCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
 
@@ -41,29 +40,24 @@ export default function StudentCoursesPage() {
 
     const userDocRef = doc(db, 'users', user.uid);
     
-    // This listener will refetch courses whenever the user document changes (e.g., new enrollment)
     const fetchCourses = async () => {
         try {
             const studentCourses = await getStudentCourses(user.uid);
             setCourses(studentCourses);
         } catch (error) {
             console.error("Failed to fetch student courses:", error);
-            setCourses([]); // Clear courses on error
+            setCourses([]);
         } finally {
             setLoading(false);
         }
     }
     
-    fetchCourses(); // Initial fetch
+    fetchCourses();
 
     const unsubUser = onSnapshot(userDocRef, fetchCourses);
     
-    // We might not need to listen to all courses if user doc is the source of truth for enrollments
-    // const unsubCourses = onSnapshot(collection(db, 'courses'), fetchCourses);
-
     return () => {
       unsubUser();
-      // unsubCourses();
     };
   }, [user]);
 
@@ -75,7 +69,7 @@ export default function StudentCoursesPage() {
   const pendingCourses = courses.filter(c => c.status === 'pending');
   const completedCourses = courses.filter(c => c.status === 'completed');
 
-  const CourseCard = ({ course }) => {
+  const CourseCard = ({ course }: { course: any }) => {
     const imageUrl = isValidImageUrl(course.imageUrl) ? course.imageUrl : 'https://placehold.co/600x400.png';
     return (
         <Card key={course.id} className="flex flex-col hover:shadow-lg transition-shadow duration-300">
