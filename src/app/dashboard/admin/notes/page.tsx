@@ -15,19 +15,34 @@ import { useToast } from "@/hooks/use-toast";
 import { onSnapshot, collection } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
+type Note = {
+  id: string;
+  name: string;
+  description?: string;
+  assignedStudentIds?: string[];
+  fileDataUrl?: string;
+  externalUrl?: string;
+  fileName?: string;
+};
+
+type Student = {
+  id: string;
+  name?: string;
+};
+
 export default function ManageNotesPage() {
-  const [notes, setNotes] = useState([]);
-  const [students, setStudents] = useState([]);
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [selectedNote, setSelectedNote] = useState(null);
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     const fetchStudents = async () => {
         try {
             const studentsData = await getStudentUsers();
-            setStudents(studentsData);
+            setStudents(studentsData as Student[]);
         } catch (error) {
             console.error("Error fetching students:", error);
             toast({ title: "Error", description: "Could not load students.", variant: "destructive" });
@@ -36,7 +51,7 @@ export default function ManageNotesPage() {
     fetchStudents();
 
     const unsubNotes = onSnapshot(collection(db, 'notes'), snapshot => {
-        setNotes(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        setNotes(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Note)));
         setLoading(false);
     });
     
@@ -54,7 +69,7 @@ export default function ManageNotesPage() {
     });
   }, [notes, students]);
 
-  const handleEdit = (note) => {
+  const handleEdit = (note: Note) => {
       setSelectedNote(note);
       setIsFormOpen(true);
   }
@@ -64,7 +79,7 @@ export default function ManageNotesPage() {
       setIsFormOpen(true);
   }
   
-  const handleDelete = async (noteId) => {
+  const handleDelete = async (noteId: string) => {
     try {
         await deleteNote(noteId);
         toast({ title: "Success", description: "Note deleted successfully." });

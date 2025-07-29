@@ -16,21 +16,33 @@ import Link from "next/link";
 import { onSnapshot, collection } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
+type Quiz = {
+    id: string;
+    title: string;
+    courseId: string;
+    externalUrl: string;
+};
+
+type Course = {
+    id: string;
+    name?: string;
+};
+
 export default function ManageQuizzesPage() {
-  const [quizzes, setQuizzes] = useState([]);
-  const [courses, setCourses] = useState([]);
+  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [selectedQuiz, setSelectedQuiz] = useState(null);
+  const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
   const { toast } = useToast();
 
    useEffect(() => {
     const unsubCourses = onSnapshot(collection(db, 'courses'), snapshot => {
-        setCourses(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        setCourses(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course)));
     });
 
     const unsubQuizzes = onSnapshot(collection(db, 'quizzes'), snapshot => {
-        setQuizzes(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        setQuizzes(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Quiz)));
         setLoading(false);
     });
 
@@ -47,11 +59,11 @@ export default function ManageQuizzesPage() {
         ...quiz,
         courseName: course ? course.name : "Unknown Course",
       };
-    });
+    }).filter(q => q.courseName !== "Unknown Course");
   }, [quizzes, courses]);
 
 
-  const handleEdit = (quiz) => {
+  const handleEdit = (quiz: Quiz) => {
       setSelectedQuiz(quiz);
       setIsFormOpen(true);
   }
@@ -61,7 +73,7 @@ export default function ManageQuizzesPage() {
       setIsFormOpen(true);
   }
   
-  const handleDelete = async (quizId) => {
+  const handleDelete = async (quizId: string) => {
     try {
         await deleteQuiz(quizId);
         toast({ title: "Success", description: "Quiz deleted successfully." });
