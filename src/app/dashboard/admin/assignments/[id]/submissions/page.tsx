@@ -41,7 +41,7 @@ export default function ViewSubmissionsPage() {
       setLoading(true);
       try {
         const assignmentData = await getAssignment(id);
-        setAssignment(assignmentData);
+        setAssignment(assignmentData as Assignment | null);
 
         if (assignmentData) {
             const courseData = await getCourse(assignmentData.courseId);
