@@ -16,8 +16,12 @@ import { db } from "@/lib/firebase";
 import { getUser } from "@/lib/services";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
-// The PageProps are now inferred directly by Next.js, fixing the build error.
-export default function ViewSubmissionsPage({ params }: { params: { id: string } }) {
+type PageProps = {
+    params: { id: string };
+    searchParams?: { [key: string]: string | string[] | undefined };
+};
+
+export default function ViewSubmissionsPage({ params }: PageProps) {
   const { id } = params;
   const [assignment, setAssignment] = useState(null);
   const [submissions, setSubmissions] = useState([]);
@@ -195,5 +199,3 @@ export default function ViewSubmissionsPage({ params }: { params: { id: string }
     </div>
   );
 }
-
-    
