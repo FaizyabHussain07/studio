@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm } from "react-hook-form";
@@ -40,17 +41,18 @@ export function StudentForm({ student, onFinished }) {
     setLoading(true);
     try {
       if (student) {
+        // NOTE: Firebase Auth email updates are sensitive and should be done via a dedicated flow
+        // for security reasons (e.g., sending a verification link).
+        // Here, we only update the Firestore record.
         await updateUser(student.id, {
             name: data.name,
-            email: data.email,
         });
         toast({ title: "Success", description: "Student updated successfully." });
 
       } else {
         // This is a placeholder for a more robust user creation flow.
         // In a real app, you would use Firebase Functions to create the user in Auth.
-        // This client-side approach is for demonstration and might have limitations (e.g., requires separate auth handling).
-        // For now, we are creating a document in Firestore. The user needs to be created in Auth separately.
+        // This client-side approach is for demonstration and might have limitations.
         const tempId = `temp_${Date.now()}`;
         await createUser({
             uid: tempId, // This will be updated when the user is created in Auth
@@ -62,7 +64,7 @@ export function StudentForm({ student, onFinished }) {
             photoURL: ''
         });
 
-        toast({ title: "Success", description: `Student profile for ${data.name} created. You must now create their authentication account separately with the same email.` });
+        toast({ title: "Success", description: `Student profile for ${data.name} created. You must now create their authentication account separately with the same email and password.` });
       }
       onFinished();
     } catch (error) {

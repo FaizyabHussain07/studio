@@ -306,20 +306,25 @@ export const getStudentCourses = async (studentId: string) => {
   
   const courseIds = courseEnrollments.map((c: any) => c.courseId);
   
-  const courses: any[] = [];
+  const courseDocs: any[] = [];
   for (let i = 0; i < courseIds.length; i += 30) {
       const chunk = courseIds.slice(i, i + 30);
       if (chunk.length > 0) {
         const coursesQuery = query(collection(db, 'courses'), where(documentId(), 'in', chunk));
         const snapshot = await getDocs(coursesQuery);
-        snapshot.forEach(doc => courses.push({ id: doc.id, ...doc.data() }));
+        snapshot.forEach(doc => courseDocs.push(doc));
       }
   }
 
-  return courses.map(course => {
-      const enrollment = courseEnrollments.find((e: any) => e.courseId === course.id);
-      return { ...course, status: enrollment?.status || 'enrolled' };
-  });
+  const courseMap = new Map(courseDocs.map(doc => [doc.id, { id: doc.id, ...doc.data() }]));
+
+  return courseEnrollments
+    .map((enrollment: any) => {
+      const course = courseMap.get(enrollment.courseId);
+      if (!course) return null; // If course doesn't exist, return null
+      return { ...course, status: enrollment.status || 'enrolled' };
+    })
+    .filter(Boolean); // Filter out any null values for deleted courses
 };
 
 export const getStudentCoursesWithProgress = async (studentId: string) => {

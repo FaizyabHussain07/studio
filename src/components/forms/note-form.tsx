@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useForm } from "react-hook-form";
@@ -80,6 +81,11 @@ export function NoteForm({ students, note, onFinished }: { students: any[], note
   const handleClearFile = () => {
     setFile(null);
     form.setValue('file', null, { shouldValidate: true });
+    // Clear the file input element itself
+    const fileInput = document.getElementById('file-upload') as HTMLInputElement;
+    if (fileInput) {
+        fileInput.value = '';
+    }
     if(note?.fileName) {
         // If we clear an existing file, we need to reflect that in the note object for validation
         const updatedNote = {...note, fileDataUrl: null, fileName: null};
@@ -177,7 +183,7 @@ export function NoteForm({ students, note, onFinished }: { students: any[], note
                 <Button 
                     type="button"
                     variant={contentType === 'url' ? 'default' : 'outline'}
-                    onClick={() => { setContentType('url'); form.clearErrors('file'); setFile(null); form.setValue('file', null) }}
+                    onClick={() => { setContentType('url'); form.clearErrors('file'); setFile(null); form.setValue('file', null); handleClearFile() }}
                 >
                     <LinkIcon className="mr-2 h-4 w-4"/> URL
                 </Button>
