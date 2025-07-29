@@ -40,8 +40,8 @@ export default function ViewSubmissionsPage() {
     const fetchStaticData = async () => {
       setLoading(true);
       try {
-        const assignmentData = await getAssignment(id);
-        setAssignment(assignmentData as Assignment | null);
+      const assignmentData = await getAssignment(id) as Assignment | null;
+        setAssignment(assignmentData);
 
         if (assignmentData) {
             const courseData = await getCourse(assignmentData.courseId);
@@ -65,7 +65,7 @@ export default function ViewSubmissionsPage() {
             const submissionsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             const submissionsWithStudentInfo = await Promise.all(
                 submissionsData.map(async (sub: any) => {
-                    const student = await getUser(sub.studentId);
+                    const student = await getUser(sub.studentId) as { id: string; name?: string; email?: string };
                     return {
                         ...sub,
                         studentName: student?.name || 'Unknown Student',

@@ -20,10 +20,10 @@ import { onSnapshot, collection, getDocs, query, where } from "firebase/firestor
 import { db } from "@/lib/firebase";
 
 export default function ManageAssignmentsPage() {
-  const [assignments, setAssignments] = useState([]);
-  const [courses, setCourses] = useState([]);
-  const [submissions, setSubmissions] = useState([]);
-  const [students, setStudents] = useState([]);
+  const [assignments, setAssignments] = useState<Array<{ id: string; [key: string]: any }>>([]);
+  const [courses, setCourses] = useState<{ id: string; name?: string }[]>([]);
+  const [submissions, setSubmissions] = useState<Array<{ id: string; [key: string]: any }>>([]);
+  const [students, setStudents] = useState<{ id: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedAssignment, setSelectedAssignment] = useState(null);
