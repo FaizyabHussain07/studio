@@ -16,11 +16,7 @@ import { db } from "@/lib/firebase";
 import { getUser } from "@/lib/services";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
-type PageProps = {
-    params: { id: string };
-};
-
-export default function ViewSubmissionsPage({ params }: PageProps) {
+export default function ViewSubmissionsPage({ params }: { params: { id: string } }) {
   const { id } = params;
   const [assignment, setAssignment] = useState<any>(null);
   const [submissions, setSubmissions] = useState<any[]>([]);
