@@ -18,7 +18,7 @@ import { Logo } from "@/components/logo";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/firebase";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, User } from "firebase/auth";
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
@@ -38,7 +38,7 @@ export default function AdminDashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -88,7 +88,7 @@ export default function AdminDashboardLayout({
               <SidebarMenuItem>
                 <SidebarMenuButton>
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user?.photoURL} />
+                    <AvatarImage src={user?.photoURL ?? undefined} />
                     <AvatarFallback>AD</AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col text-left">

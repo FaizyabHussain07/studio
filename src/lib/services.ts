@@ -248,7 +248,6 @@ export const updateUserCourses = async (courseId: string, enrolledStudentIds: st
 
 export const deleteCourse = async (courseId: string) => {
     const batch = writeBatch(db);
-    
     const courseRef = doc(db, 'courses', courseId);
     batch.delete(courseRef);
 
@@ -273,16 +272,12 @@ export const deleteCourse = async (courseId: string) => {
             batch.delete(doc.ref);
         });
 
-        for (let i = 0; i < assignmentIds.length; i += 30) {
-            const chunk = assignmentIds.slice(i, i + 30);
-            if (chunk.length > 0) {
-                const submissionsQuery = query(collection(db, 'submissions'), where('assignmentId', 'in', chunk));
-                const submissionsSnapshot = await getDocs(submissionsQuery);
-                submissionsSnapshot.forEach(doc => {
-                    batch.delete(doc.ref);
-                });
-            }
-        }
+        // Batch delete submissions for the found assignments
+        const submissionsQuery = query(collection(db, 'submissions'), where('assignmentId', 'in', assignmentIds));
+        const submissionsSnapshot = await getDocs(submissionsQuery);
+        submissionsSnapshot.forEach(doc => {
+            batch.delete(doc.ref);
+        });
     }
     
     const quizzesQuery = query(collection(db, 'quizzes'), where('courseId', '==', courseId));
@@ -293,6 +288,7 @@ export const deleteCourse = async (courseId: string) => {
 
     await batch.commit();
 }
+
 
 export const getCourses = async () => {
     const snapshot = await getDocs(collection(db, 'courses'));

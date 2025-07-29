@@ -13,12 +13,12 @@ import {
   SidebarInset,
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LayoutDashboard, BookOpen, ClipboardList, LogOut, User, GraduationCap, StickyNote } from "lucide-react";
+import { LayoutDashboard, BookOpen, ClipboardList, LogOut, User as UserIcon, GraduationCap, StickyNote } from "lucide-react";
 import { Logo } from "@/components/logo";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/firebase";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, User } from "firebase/auth";
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
@@ -36,7 +36,7 @@ export default function StudentDashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -95,7 +95,7 @@ export default function StudentDashboardLayout({
               <SidebarMenuItem>
                 <SidebarMenuButton>
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user?.photoURL} />
+                    <AvatarImage src={user?.photoURL ?? undefined} />
                     <AvatarFallback>{user?.displayName?.substring(0,2).toUpperCase() || 'ST'}</AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col text-left">
@@ -117,7 +117,7 @@ export default function StudentDashboardLayout({
         <header className="flex items-center justify-between p-4 border-b">
           <SidebarTrigger/>
           <Button variant="ghost" size="icon">
-              <User />
+              <UserIcon />
           </Button>
         </header>
         <main className="p-4 md:p-6 bg-secondary/40 min-h-[calc(100vh-65px)]">{children}</main>
