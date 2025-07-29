@@ -22,7 +22,7 @@ const noteSchema = z.object({
   assignedStudentIds: z.array(z.string()).min(1, "Please assign to at least one student"),
   externalUrl: z.string().url("Must be a valid URL").optional().or(z.literal('')),
   file: z.any().optional(),
-}).refine(data => !!data.externalUrl || !!data.file, {
+}).refine(data => !!data.externalUrl || !!data.file || (data as any).note?.fileDataUrl, {
     message: "Either a file or an external URL is required.",
     path: ["file"],
 });
@@ -49,7 +49,9 @@ export function NoteForm({ students, note, onFinished }) {
       assignedStudentIds: note?.assignedStudentIds || [],
       externalUrl: note?.externalUrl || "",
       file: null,
+      note: note, // Pass note to resolver context
     },
+    context: { note }
   });
 
   const fileToDataUrl = (fileToConvert) => {
@@ -169,14 +171,14 @@ export function NoteForm({ students, note, onFinished }) {
                 <Button 
                     type="button"
                     variant={contentType === 'url' ? 'default' : 'outline'}
-                    onClick={() => setContentType('url')}
+                    onClick={() => { setContentType('url'); form.clearErrors('file'); }}
                 >
                     <LinkIcon className="mr-2 h-4 w-4"/> URL
                 </Button>
                  <Button 
                     type="button"
                     variant={contentType === 'file' ? 'default' : 'outline'}
-                    onClick={() => setContentType('file')}
+                    onClick={() => { setContentType('file'); form.clearErrors('externalUrl'); }}
                 >
                     <File className="mr-2 h-4 w-4"/> File
                 </Button>
@@ -218,7 +220,7 @@ export function NoteForm({ students, note, onFinished }) {
                             <input id="file-upload" type="file" className="sr-only" onChange={handleFileChange} disabled={loading}/>
                         </div>
                     </FormControl>
-                    <FormDescription>
+                     <div className="text-sm text-muted-foreground">
                        {file ? (
                           <div className="mt-2 border rounded-lg p-3 flex items-center justify-between">
                             <div className="flex items-center gap-2 overflow-hidden">
@@ -235,7 +237,7 @@ export function NoteForm({ students, note, onFinished }) {
                             <span className="text-sm truncate">Current file: {note.fileName}</span>
                          </div>
                       )}
-                    </FormDescription>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
