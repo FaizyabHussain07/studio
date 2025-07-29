@@ -22,7 +22,7 @@ const courseSchema = z.object({
   completedStudentIds: z.array(z.string()).optional(),
 });
 
-export function CourseForm({ course, students, onFinished, requestingStudentId }) {
+export function CourseForm({ course, students, onFinished, requestingStudentId }: { course: any, students: any, onFinished: any, requestingStudentId?: string | null }) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const form = useForm({
@@ -175,3 +175,5 @@ export function CourseForm({ course, students, onFinished, requestingStudentId }
       </Form>
   );
 }
+
+    
