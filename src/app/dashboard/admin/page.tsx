@@ -10,6 +10,14 @@ import { getSubmissions } from "@/lib/services";
 import { onSnapshot, collection, query, where, getCountFromServer } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
+type Submission = {
+    id: string;
+    studentName: string;
+    assignmentTitle: string;
+    courseName: string;
+    submissionDate: string;
+    status: string;
+};
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState({
@@ -18,7 +26,7 @@ export default function AdminDashboardPage() {
     submissions: { title: "Total Submissions", value: "0", icon: CheckSquare },
     quizzes: { title: "Total Quizzes", value: "0", icon: HelpCircle }
   });
-  const [recentSubmissions, setRecentSubmissions] = useState([]);
+  const [recentSubmissions, setRecentSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -40,7 +48,7 @@ export default function AdminDashboardPage() {
             });
 
             const submissionsData = await getSubmissions(5);
-            setRecentSubmissions(submissionsData);
+            setRecentSubmissions(submissionsData as Submission[]);
         } catch (error) {
             console.error("Error fetching initial counts", error);
         } finally {
@@ -56,7 +64,7 @@ export default function AdminDashboardPage() {
         onSnapshot(collection(db, "submissions"), async (snap) => {
             setStats(prev => ({ ...prev, submissions: {...prev.submissions, value: snap.size.toString()} }));
             const submissionsData = await getSubmissions(5);
-            setRecentSubmissions(submissionsData);
+            setRecentSubmissions(submissionsData as Submission[]);
         })
     ];
     

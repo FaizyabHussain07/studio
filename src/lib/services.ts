@@ -272,7 +272,7 @@ export const deleteCourse = async (courseId: string) => {
     const assignmentsSnapshot = await getDocs(assignmentsQuery);
     const assignmentIds = assignmentsSnapshot.docs.map(doc => doc.id);
 
-    // Find all submissions for those assignments
+    // Find and delete all submissions for those assignments
     if (assignmentIds.length > 0) {
         // Firestore 'in' queries are limited to 30 values, so we chunk the array.
         for (let i = 0; i < assignmentIds.length; i += 30) {
@@ -561,37 +561,63 @@ export const getSubmissions = async (count = 0) => {
     const studentIds = [...new Set(submissionsData.map((sub: any) => sub.studentId))];
     const assignmentIds = [...new Set(submissionsData.map((sub: any) => sub.assignmentId))];
 
-    const [students, assignments] = await Promise.all([
-        getDocs(query(collection(db, 'users'), where(documentId(), 'in', studentIds.slice(0, 30)))),
-        getDocs(query(collection(db, 'assignments'), where(documentId(), 'in', assignmentIds.slice(0, 30)))),
+    const studentIdChunks = [];
+    for (let i = 0; i < studentIds.length; i += 30) {
+        studentIdChunks.push(studentIds.slice(i, i + 30));
+    }
+    const assignmentIdChunks = [];
+    for (let i = 0; i < assignmentIds.length; i += 30) {
+        assignmentIdChunks.push(assignmentIds.slice(i, i + 30));
+    }
+
+    const studentPromises = studentIdChunks.map(chunk => getDocs(query(collection(db, 'users'), where(documentId(), 'in', chunk))));
+    const assignmentPromises = assignmentIdChunks.map(chunk => getDocs(query(collection(db, 'assignments'), where(documentId(), 'in', chunk))));
+
+    const [studentSnapshots, assignmentSnapshots] = await Promise.all([
+        Promise.all(studentPromises),
+        Promise.all(assignmentPromises),
     ]);
     
-    const studentMap = new Map(students.docs.map((s: any) => [s.id, s.data()]));
-    const assignmentMap = new Map(assignments.docs.map((a: any) => [a.id, a.data()]));
+    const studentMap = new Map();
+    studentSnapshots.forEach(snap => snap.docs.forEach(s => studentMap.set(s.id, s.data())));
+
+    const assignmentMap = new Map();
+    assignmentSnapshots.forEach(snap => snap.docs.forEach(a => assignmentMap.set(a.id, a.data())));
     
     const validAssignments = Array.from(assignmentMap.values());
     const courseIds = [...new Set(validAssignments.map((a: any) => a.courseId).filter(Boolean))];
     let courseMap = new Map();
 
     if (courseIds.length > 0) {
-        const courses = await getDocs(query(collection(db, 'courses'), where(documentId(), 'in', courseIds.slice(0, 30))));
-        courseMap = new Map(courses.docs.map((c: any) => [c.id, c.data()]));
+        const courseIdChunks = [];
+        for (let i = 0; i < courseIds.length; i += 30) {
+            courseIdChunks.push(courseIds.slice(i, i + 30));
+        }
+        const coursePromises = courseIdChunks.map(chunk => getDocs(query(collection(db, 'courses'), where(documentId(), 'in', chunk))));
+        const courseSnapshots = await Promise.all(coursePromises);
+        courseSnapshots.forEach(snap => snap.docs.forEach(c => courseMap.set(c.id, c.data())));
     }
 
     return submissionsData.map((sub: any) => {
         const student = studentMap.get(sub.studentId);
         const assignment = assignmentMap.get(sub.assignmentId);
-        const course = assignment ? courseMap.get(assignment.courseId) : null;
+
+        // This check prevents the server from crashing if an assignment is deleted
+        if (!assignment) {
+            return null;
+        }
+
+        const course = courseMap.get(assignment.courseId);
         
         return {
             id: sub.id,
             ...sub,
             submissionDate: new Date(sub.submissionDate).toLocaleDateString(),
             studentName: student?.name || 'Unknown Student',
-            assignmentTitle: assignment?.title || 'Deleted Assignment',
+            assignmentTitle: assignment?.title || 'Unknown Assignment',
             courseName: course?.name || 'Unknown Course',
         }
-    }).filter(sub => sub.assignmentTitle !== 'Deleted Assignment' && sub.courseName !== 'Unknown Course');
+    }).filter(sub => sub !== null && sub.courseName !== 'Unknown Course');
 }
 
 
