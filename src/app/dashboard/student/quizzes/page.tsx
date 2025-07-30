@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
@@ -8,10 +9,17 @@ import { useState, useEffect } from "react";
 import { getStudentQuizzes } from "@/lib/services";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { collection, onSnapshot, doc, query, where } from "firebase/firestore";
+import { onSnapshot, doc } from "firebase/firestore";
+
+type Quiz = {
+    id: string;
+    title: string;
+    courseName: string;
+    externalUrl: string;
+};
 
 export default function AllQuizzesPage() {
-  const [quizzes, setQuizzes] = useState([]);
+  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
 
@@ -32,7 +40,7 @@ export default function AllQuizzesPage() {
     const unsubscribeUser = onSnapshot(userDocRef, async () => {
       try {
         const studentQuizzes = await getStudentQuizzes(user.uid);
-        setQuizzes(studentQuizzes);
+        setQuizzes(studentQuizzes as Quiz[]);
       } catch (error) {
         console.error("Error fetching quizzes:", error);
       } finally {

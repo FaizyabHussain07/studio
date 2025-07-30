@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
@@ -14,17 +15,41 @@ import Image from "next/image";
 import { onSnapshot, collection, query, where, doc } from "firebase/firestore";
 import { Badge } from "@/components/ui/badge";
 
+type Course = {
+  id: string;
+  name: string;
+  description: string;
+  imageUrl?: string;
+  status: 'enrolled' | 'pending' | 'completed';
+};
+
+type Assignment = {
+    id: string;
+    title: string;
+    courseName: string;
+    dueDate: string;
+    status: 'Graded' | 'Submitted' | 'Missing' | 'Pending';
+};
+
+type Quiz = {
+    id: string;
+    title: string;
+    courseName: string;
+    externalUrl: string;
+};
+
+
 // Helper to check for valid image URLs
-const isValidImageUrl = (url) => {
+const isValidImageUrl = (url: string | undefined | null): url is string => {
     if (!url || typeof url !== 'string') return false;
     return url.startsWith('/') || url.startsWith('https://');
 };
 
 
 export default function StudentDashboardPage() {
-  const [courses, setCourses] = useState([]);
-  const [assignments, setAssignments] = useState([]);
-  const [quizzes, setQuizzes] = useState([]);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
 
@@ -51,9 +76,9 @@ export default function StudentDashboardPage() {
           getStudentQuizzes(user.uid)
         ]);
         
-        setCourses(studentCourses);
-        setAssignments(studentAssignments);
-        setQuizzes(studentQuizzes);
+        setCourses(studentCourses as Course[]);
+        setAssignments(studentAssignments as Assignment[]);
+        setQuizzes(studentQuizzes as Quiz[]);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       } finally {

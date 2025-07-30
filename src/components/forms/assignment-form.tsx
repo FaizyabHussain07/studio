@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useForm, Controller } from "react-hook-form";
@@ -20,7 +21,18 @@ const assignmentSchema = z.object({
   courseId: z.string().min(1, "Please select a course"),
 });
 
-export function AssignmentForm({ courses, assignment, onFinished }) {
+type Course = {
+    id: string;
+    name?: string;
+};
+
+type AssignmentFormProps = {
+    courses: Course[];
+    assignment: any | null;
+    onFinished: () => void;
+};
+
+export function AssignmentForm({ courses, assignment, onFinished }: AssignmentFormProps) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const form = useForm({
@@ -33,7 +45,7 @@ export function AssignmentForm({ courses, assignment, onFinished }) {
     },
   });
 
-  const onSubmit = async (data) => {
+  const onSubmit = async (data: z.infer<typeof assignmentSchema>) => {
     setLoading(true);
     try {
       if (assignment) {

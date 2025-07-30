@@ -17,15 +17,22 @@ import { MultiSelect } from "@/components/ui/multi-select";
 const courseSchema = z.object({
   name: z.string().min(1, "Course name is required"),
   description: z.string().min(1, "Description is required"),
-  imageUrl: z.string().url().optional().or(z.literal('')),
+  imageUrl: z.string().url("Must be a valid URL.").optional().or(z.literal('')),
   enrolledStudentIds: z.array(z.string()).optional(),
   completedStudentIds: z.array(z.string()).optional(),
 });
 
-export function CourseForm({ course, students, onFinished, requestingStudentId }: { course?: any, students: any[], onFinished: () => void, requestingStudentId?: string | null }) {
+type CourseFormProps = {
+    course?: any;
+    students: any[];
+    onFinished: () => void;
+    requestingStudentId?: string | null;
+};
+
+export function CourseForm({ course, students, onFinished, requestingStudentId }: CourseFormProps) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const form = useForm({
+  const form = useForm<z.infer<typeof courseSchema>>({
     resolver: zodResolver(courseSchema),
     defaultValues: {
       name: course?.name || "",
@@ -56,7 +63,7 @@ export function CourseForm({ course, students, onFinished, requestingStudentId }
     })
   }, [course, form, requestingStudentId]);
 
-  const onSubmit = async (data) => {
+  const onSubmit = async (data: z.infer<typeof courseSchema>) => {
     setLoading(true);
     try {
       const coursePayload = {
@@ -70,10 +77,6 @@ export function CourseForm({ course, students, onFinished, requestingStudentId }
 
       if (course) {
         await updateCourse(course.id, coursePayload);
-        const originalStudentIds = [
-            ...(course.enrolledStudentIds || []), 
-            ...(course.completedStudentIds || []),
-        ];
         await updateUserCourses(course.id, enrolledIds, completedIds, students, requestingStudentId);
         toast({ title: "Success", description: "Course updated successfully." });
       } else {

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useForm } from "react-hook-form";
@@ -9,8 +10,6 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
-import { auth } from "@/lib/firebase";
-import { createUserWithEmailAndPassword } from "firebase/auth";
 import { createUser, updateUser } from "@/lib/services";
 
 const studentCreateSchema = z.object({
@@ -25,7 +24,7 @@ const studentUpdateSchema = z.object({
 });
 
 
-export function StudentForm({ student, onFinished }) {
+export function StudentForm({ student, onFinished }: { student: any | null, onFinished: () => void }) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const form = useForm({
@@ -37,13 +36,13 @@ export function StudentForm({ student, onFinished }) {
     },
   });
 
-  const onSubmit = async (data) => {
+  const onSubmit = async (data: any) => {
     setLoading(true);
     try {
       if (student) {
         // NOTE: Firebase Auth email updates are sensitive and should be done via a dedicated flow
         // for security reasons (e.g., sending a verification link).
-        // Here, we only update the Firestore record.
+        // Here, we only update the Firestore record's name.
         await updateUser(student.id, {
             name: data.name,
         });
@@ -55,7 +54,7 @@ export function StudentForm({ student, onFinished }) {
         // This client-side approach is for demonstration and might have limitations.
         const tempId = `temp_${Date.now()}`;
         await createUser({
-            uid: tempId, // This will be updated when the user is created in Auth
+            uid: tempId, // This should be replaced by a real Auth UID in a production app.
             name: data.name,
             email: data.email,
             role: 'student',

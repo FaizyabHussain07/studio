@@ -1,17 +1,26 @@
 
+
 'use client'
 
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StickyNote, Download, Link as LinkIcon, File } from "lucide-react";
 import { useState, useEffect } from "react";
-import { getStudentNotes } from "@/lib/services";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 
+type Note = {
+    id: string;
+    name: string;
+    description?: string;
+    fileDataUrl?: string;
+    fileName?: string;
+    externalUrl?: string;
+};
+
 export default function AllNotesPage() {
-  const [notes, setNotes] = useState([]);
+  const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
 
@@ -30,7 +39,7 @@ export default function AllNotesPage() {
 
     const notesQuery = query(collection(db, "notes"), where('assignedStudentIds', 'array-contains', user.uid));
     const unsubNotes = onSnapshot(notesQuery, (snapshot) => {
-        const notesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const notesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Note));
         setNotes(notesData);
         setLoading(false);
     });
@@ -96,4 +105,3 @@ export default function AllNotesPage() {
     </div>
   );
 }
-

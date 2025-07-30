@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
@@ -16,11 +17,20 @@ import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { deleteUser } from "@/lib/services";
 
+type Student = {
+    id: string;
+    name: string;
+    email: string;
+    photoURL?: string;
+    courses?: any[];
+    joined?: string;
+};
+
 export default function ManageStudentsPage() {
-  const [students, setStudents] = useState([]);
+  const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -28,18 +38,19 @@ export default function ManageStudentsPage() {
     const q = query(collection(db, "users"), where("role", "==", "student"));
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const studentData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const studentData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student));
       setStudents(studentData);
       setLoading(false);
     }, (error) => {
       console.error("Error fetching students:", error);
+      toast({ title: "Error", description: "Failed to fetch students.", variant: "destructive" });
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [toast]);
 
-  const handleEdit = (student) => {
+  const handleEdit = (student: Student) => {
     setSelectedStudent(student);
     setIsFormOpen(true);
   }
@@ -49,7 +60,7 @@ export default function ManageStudentsPage() {
     setIsFormOpen(true);
   }
 
-  const handleDelete = async (userId) => {
+  const handleDelete = async (userId: string) => {
     try {
         await deleteUser(userId);
         toast({ title: "Success", description: "Student deleted successfully." });

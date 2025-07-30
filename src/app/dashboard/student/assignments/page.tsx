@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
@@ -12,8 +13,16 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { Badge } from "@/components/ui/badge";
 import { collection, onSnapshot, query, where, doc } from "firebase/firestore";
 
+type Assignment = {
+    id: string;
+    title: string;
+    courseName: string;
+    dueDate: string;
+    status: 'Graded' | 'Submitted' | 'Missing' | 'Pending';
+};
+
 export default function AllAssignmentsPage() {
-  const [assignments, setAssignments] = useState([]);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
 
@@ -33,7 +42,7 @@ export default function AllAssignmentsPage() {
       try {
         const studentAssignments = await getStudentAssignmentsWithStatus(user.uid);
         const sortedAssignments = studentAssignments.sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
-        setAssignments(sortedAssignments);
+        setAssignments(sortedAssignments as Assignment[]);
       } catch (error) {
         console.error("Error fetching assignments:", error);
       } finally {
@@ -55,7 +64,7 @@ export default function AllAssignmentsPage() {
     return () => unsubs.forEach(unsub => unsub());
   }, [user]);
 
-  const getStatusInfo = (status) => {
+  const getStatusInfo = (status: Assignment['status']) => {
     switch (status) {
       case 'Graded':
         return { icon: <CheckCircle2 className="h-5 w-5 text-green-500" />, badge: 'default', text: 'Graded' };

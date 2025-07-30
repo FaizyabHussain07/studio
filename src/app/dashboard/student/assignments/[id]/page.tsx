@@ -36,7 +36,8 @@ export default function AssignmentDetailPage() {
   }, []);
 
   useEffect(() => {
-    if (!user || !id) return;
+    if (!id) return;
+    if (!user) return;
 
     const fetchInitialData = async () => {
         setLoading(true);
@@ -44,8 +45,10 @@ export default function AssignmentDetailPage() {
             const assignment = await getAssignment(id);
             if (assignment) {
                 setAssignmentData(assignment);
-                const course = await getCourse(assignment.courseId);
-                setCourseName(course?.name || "Course");
+                if (assignment.courseId) {
+                    const course = await getCourse(assignment.courseId);
+                    setCourseName(course?.name || "Course");
+                }
             }
         } catch (error) {
              console.error("Error fetching assignment:", error);
@@ -53,6 +56,7 @@ export default function AssignmentDetailPage() {
             setLoading(false);
         }
     };
+    
     fetchInitialData();
     
     const unsubSubmission = getStudentSubmissionForAssignment(user.uid, id, (sub) => {

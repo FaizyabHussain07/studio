@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useForm } from "react-hook-form";
@@ -20,10 +21,21 @@ const quizSchema = z.object({
   externalUrl: z.string().url("Please enter a valid URL"),
 });
 
-export function QuizForm({ courses, quiz, onFinished }) {
+type Course = {
+    id: string;
+    name?: string;
+}
+
+type QuizFormProps = {
+    courses: Course[];
+    quiz: any | null;
+    onFinished: () => void;
+};
+
+export function QuizForm({ courses, quiz, onFinished }: QuizFormProps) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const form = useForm({
+  const form = useForm<z.infer<typeof quizSchema>>({
     resolver: zodResolver(quizSchema),
     defaultValues: {
       title: quiz?.title || "",
@@ -33,7 +45,7 @@ export function QuizForm({ courses, quiz, onFinished }) {
     },
   });
 
-  const onSubmit = async (data) => {
+  const onSubmit = async (data: z.infer<typeof quizSchema>) => {
     setLoading(true);
     try {
       if (quiz) {

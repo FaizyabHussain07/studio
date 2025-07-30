@@ -1,41 +1,58 @@
 
+
 'use client';
 
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useCallback } from "react";
-import { getPendingEnrollmentRequests, getCourse, getUser } from "@/lib/services";
-import { onSnapshot, collection, query, where, doc } from "firebase/firestore";
+import { getPendingEnrollmentRequests, getCourse } from "@/lib/services";
+import { onSnapshot, collection, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import Link from "next/link";
 import { ArrowRight, UserCheck } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CourseForm } from "@/components/forms/course-form";
 import { getStudentUsers, getCourses } from "@/lib/services";
 
+type Request = {
+    studentId: string;
+    studentName: string;
+    studentEmail: string;
+    courseId: string;
+    courseName: string;
+    requestDate: string;
+};
+
+type Student = {
+    id: string;
+    name: string;
+};
+
+type Course = {
+    id: string;
+    name: string;
+    description: string;
+    imageUrl: string;
+    enrolledStudentIds: string[];
+    completedStudentIds: string[];
+};
 
 export default function ManageRequestsPage() {
-  const [requests, setRequests] = useState([]);
+  const [requests, setRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [selectedCourse, setSelectedCourse] = useState(null);
-  const [allStudents, setAllStudents] = useState([]);
-  const [allCourses, setAllCourses] = useState([]);
-  const [currentRequest, setCurrentRequest] = useState(null);
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [allStudents, setAllStudents] = useState<Student[]>([]);
+  const [currentRequest, setCurrentRequest] = useState<Request | null>(null);
 
   const fetchAllData = useCallback(async () => {
-    setLoading(true);
     try {
-        const [students, courses, pendingRequests] = await Promise.all([
+        const [students, pendingRequests] = await Promise.all([
             getStudentUsers(),
-            getCourses(),
             getPendingEnrollmentRequests()
         ]);
-        setAllStudents(students);
-        setAllCourses(courses);
-        setRequests(pendingRequests);
+        setAllStudents(students as Student[]);
+        setRequests(pendingRequests as Request[]);
     } catch (e) {
         console.error("Failed to fetch data:", e);
     } finally {
@@ -44,6 +61,7 @@ export default function ManageRequestsPage() {
   }, []);
 
   useEffect(() => {
+    setLoading(true);
     fetchAllData();
     
     const studentsQuery = query(collection(db, "users"), where("role", "==", "student"));
@@ -58,14 +76,14 @@ export default function ManageRequestsPage() {
     };
   }, [fetchAllData]);
   
-  const handleApprove = async (request) => {
+  const handleApprove = async (request: Request) => {
     // We need to fetch the latest course data to ensure we have the most up-to-date student lists
     const courseToEdit = await getCourse(request.courseId);
     
     if (courseToEdit) {
         // The CourseForm will handle moving the student from pending to enrolled.
         // We just need to pass the course data and the student who made the request.
-        setSelectedCourse(courseToEdit);
+        setSelectedCourse(courseToEdit as Course);
         setCurrentRequest(request); // Pass the request context
         setIsFormOpen(true);
     }

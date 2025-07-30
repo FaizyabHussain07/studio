@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
@@ -9,11 +10,18 @@ import { useState, useEffect } from "react";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import Image from "next/image";
-import { onSnapshot, doc, collection, query, where, documentId } from "firebase/firestore";
+import { onSnapshot, doc } from "firebase/firestore";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getStudentCourses } from "@/lib/services";
 
+type Course = {
+    id: string;
+    name: string;
+    description: string;
+    imageUrl?: string;
+    status: 'enrolled' | 'pending' | 'completed';
+};
 
 const isValidImageUrl = (url: string | undefined | null): url is string => {
     if (!url || typeof url !== 'string') return false;
@@ -21,7 +29,7 @@ const isValidImageUrl = (url: string | undefined | null): url is string => {
 };
 
 export default function StudentCoursesPage() {
-  const [courses, setCourses] = useState<any[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
 
@@ -43,7 +51,7 @@ export default function StudentCoursesPage() {
     const fetchCourses = async () => {
         try {
             const studentCourses = await getStudentCourses(user.uid);
-            setCourses(studentCourses);
+            setCourses(studentCourses as Course[]);
         } catch (error) {
             console.error("Failed to fetch student courses:", error);
             setCourses([]);
@@ -69,7 +77,7 @@ export default function StudentCoursesPage() {
   const pendingCourses = courses.filter(c => c.status === 'pending');
   const completedCourses = courses.filter(c => c.status === 'completed');
 
-  const CourseCard = ({ course }: { course: any }) => {
+  const CourseCard = ({ course }: { course: Course }) => {
     const imageUrl = isValidImageUrl(course.imageUrl) ? course.imageUrl : 'https://placehold.co/600x400.png';
     return (
         <Card key={course.id} className="flex flex-col hover:shadow-lg transition-shadow duration-300">
