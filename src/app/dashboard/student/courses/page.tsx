@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
@@ -88,6 +87,7 @@ export default function StudentCoursesPage() {
                 fill
                 alt={course.name}
                 className="rounded-t-lg object-cover"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 />
             </div>
             <Badge 

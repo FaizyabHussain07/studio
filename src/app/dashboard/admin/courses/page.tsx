@@ -96,7 +96,7 @@ export default function ManageCoursesPage() {
         await deleteCourse(courseId);
         toast({ title: "Success", description: "Course deleted successfully." });
     } catch(error: any) {
-        console.error("Failed to delete course", error);
+        console.error("Failed to delete course:", error);
         toast({ title: "Error", description: "Could not delete course.", variant: "destructive" });
     }
   };
@@ -158,6 +158,7 @@ export default function ManageCoursesPage() {
                           alt={course.name}
                           fill
                           className="rounded-t-lg object-cover"
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                           data-ai-hint={course.dataAiHint || ''}
                         />
                       </div>

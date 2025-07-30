@@ -140,6 +140,7 @@ export default function StudentDashboardPage() {
                           fill
                           alt={course.name}
                           className="rounded-t-lg object-cover"
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                         />
                       </div>
                        <Badge className="absolute top-2 right-2 capitalize" variant={'secondary'}>{course.status}</Badge>
