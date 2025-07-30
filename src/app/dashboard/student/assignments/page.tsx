@@ -10,8 +10,9 @@ import { useState, useEffect } from "react";
 import { getStudentAssignmentsWithStatus } from "@/lib/services";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { Badge } from "@/components/ui/badge";
+import { Badge, badgeVariants } from "@/components/ui/badge";
 import { collection, onSnapshot, query, where, doc } from "firebase/firestore";
+import { VariantProps } from "class-variance-authority";
 
 type Assignment = {
     id: string;
@@ -20,6 +21,8 @@ type Assignment = {
     dueDate: string;
     status: 'Graded' | 'Submitted' | 'Missing' | 'Pending';
 };
+
+type BadgeVariant = VariantProps<typeof badgeVariants>["variant"];
 
 export default function AllAssignmentsPage() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -69,7 +72,7 @@ export default function AllAssignmentsPage() {
     return () => unsubs.forEach(unsub => unsub());
   }, [user]);
 
-  const getStatusInfo = (status: Assignment['status']) => {
+  const getStatusInfo = (status: Assignment['status']): { icon: JSX.Element, badge: BadgeVariant, text: string } => {
     switch (status) {
       case 'Graded':
         return { icon: <CheckCircle2 className="h-5 w-5 text-green-500" />, badge: 'default', text: 'Graded' };

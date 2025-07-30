@@ -5,27 +5,16 @@
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
+import { Badge, badgeVariants } from "@/components/ui/badge";
 import { FileText, ArrowLeft, CheckCircle2, XCircle, FileWarning } from "lucide-react";
 import { useState, useEffect } from "react";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { collection, onSnapshot, query, where, doc } from "firebase/firestore";
 import { useParams } from "next/navigation";
+import { Course, Assignment as AssignmentType } from "@/lib/types";
+import { VariantProps } from "class-variance-authority";
 
-type Course = {
-    id: string;
-    name: string;
-    description: string;
-    enrolledStudentIds?: string[];
-    completedStudentIds?: string[];
-};
-
-type Assignment = {
-    id: string;
-    title: string;
-    dueDate: string;
-};
 
 type Submission = {
     id: string;
@@ -33,13 +22,15 @@ type Submission = {
     status: 'Graded' | 'Submitted' | 'Needs Revision';
 };
 
+type BadgeVariant = VariantProps<typeof badgeVariants>["variant"];
+
 
 export default function CourseDetailPage() {
   const params = useParams();
   const id = params.id as string;
   const [user, setUser] = useState<User | null>(null);
   const [courseData, setCourseData] = useState<Course | null>(null);
-  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [assignments, setAssignments] = useState<AssignmentType[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -66,7 +57,7 @@ export default function CourseDetailPage() {
     
     const assignmentsQuery = query(collection(db, "assignments"), where("courseId", "==", id));
     const unsubAssignments = onSnapshot(assignmentsQuery, (snapshot) => {
-        const assignmentsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Assignment));
+        const assignmentsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AssignmentType));
         setAssignments(assignmentsData);
     });
 
@@ -99,7 +90,7 @@ export default function CourseDetailPage() {
   }, [user, assignments])
   
   
-  const getStatusInfo = (assignment: Assignment) => {
+  const getStatusInfo = (assignment: AssignmentType): { icon: JSX.Element; badge: BadgeVariant; badgeText: string } => {
     const submission = submissions.find(s => s.assignmentId === assignment.id);
 
     if (submission) {
