@@ -95,14 +95,12 @@ const seedCourses = async () => {
         const coursesRef = collection(db, 'courses');
         const snapshot = await getDocs(coursesRef);
         
-        // Let's just ensure all sample courses exist by ID, and if not, add them.
-        // This is safer than a full delete/re-seed which might wipe student enrollments.
         const existingIds = new Set(snapshot.docs.map(doc => doc.id));
         const batch = writeBatch(db);
 
         sampleCoursesData.forEach(course => {
+            const docRef = doc(db, 'courses', course.id);
             if (!existingIds.has(course.id)) {
-                const docRef = doc(db, 'courses', course.id);
                  batch.set(docRef, {
                     name: course.name,
                     description: course.description,
@@ -113,7 +111,6 @@ const seedCourses = async () => {
                     pendingStudentIds: [],
                 });
             } else {
-                 const docRef = doc(db, 'courses', course.id);
                  batch.update(docRef, {
                     name: course.name,
                     description: course.description,
@@ -206,7 +203,6 @@ export const updateUserCourses = async (courseId: string, enrolledStudentIds: st
 
     const allCurrentStudentIds = new Set([...enrolledStudentIds, ...completedStudentIds]);
     
-    // Remove course from students who are no longer associated with it
     for(const studentId of allPreviousStudentIds) {
         if (!allCurrentStudentIds.has(studentId)) {
             const studentRef = doc(db, 'users', studentId);
@@ -218,7 +214,6 @@ export const updateUserCourses = async (courseId: string, enrolledStudentIds: st
         }
     }
     
-    // Add or update course for currently associated students
     for (const studentId of allCurrentStudentIds) {
         const studentRef = doc(db, 'users', studentId);
         const studentData: any = studentMap.get(studentId);
@@ -236,7 +231,6 @@ export const updateUserCourses = async (courseId: string, enrolledStudentIds: st
     }
     
     let pendingIds = courseData?.pendingStudentIds || [];
-    // If we are approving a student, remove them from the pending list
     if (approvingStudentId) {
         pendingIds = pendingIds.filter((id: string) => id !== approvingStudentId);
     }
@@ -255,10 +249,8 @@ export const deleteCourse = async (courseId: string) => {
     const batch = writeBatch(db);
     const courseRef = doc(db, 'courses', courseId);
 
-    // Delete the course document itself
     batch.delete(courseRef);
 
-    // Remove the course from all users' course arrays
     const usersQuery = query(collection(db, 'users'), where('courses', '!=', []));
     const usersSnapshot = await getDocs(usersQuery);
     usersSnapshot.forEach(userDoc => {
@@ -269,42 +261,36 @@ export const deleteCourse = async (courseId: string) => {
         }
     });
 
-    // Find all assignments for the course
     const assignmentsQuery = query(collection(db, 'assignments'), where('courseId', '==', courseId));
     const assignmentsSnapshot = await getDocs(assignmentsQuery);
     const assignmentIds = assignmentsSnapshot.docs.map(doc => doc.id);
 
-    // Find and delete all submissions for those assignments
     if (assignmentIds.length > 0) {
-        // Firestore 'in' queries are limited to 30 values, so we chunk the array.
         for (let i = 0; i < assignmentIds.length; i += 30) {
             const chunk = assignmentIds.slice(i, i + 30);
             const submissionsQuery = query(collection(db, 'submissions'), where('assignmentId', 'in', chunk));
             const submissionsSnapshot = await getDocs(submissionsQuery);
             submissionsSnapshot.forEach(subDoc => {
-                batch.delete(subDoc.ref); // Delete each submission
+                batch.delete(subDoc.ref);
             });
         }
     }
     
-    // Delete all assignments for the course
     assignmentsSnapshot.forEach(assignmentDoc => {
         batch.delete(assignmentDoc.ref);
     });
 
-    // Delete all quizzes for the course
     const quizzesQuery = query(collection(db, 'quizzes'), where('courseId', '==', courseId));
     const quizzesSnapshot = await getDocs(quizzesQuery);
     quizzesSnapshot.forEach(quizDoc => {
         batch.delete(quizDoc.ref);
     });
 
-    // Commit all deletions in one atomic operation
     await batch.commit();
 }
 
 
-export const getCourses = async () => {
+export const getCourses = async (): Promise<any[]> => {
     const snapshot = await getDocs(collection(db, 'courses'));
     const courses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     return courses;
@@ -316,7 +302,7 @@ export const getCourse = async (id: string) => {
   return courseDoc.exists() ? { id: courseDoc.id, ...courseDoc.data() } : null;
 };
 
-export const getStudentCourses = async (studentId: string) => {
+export const getStudentCourses = async (studentId: string): Promise<any[]> => {
   const userDoc = await getUser(studentId);
   if (!userDoc || !userDoc.courses || userDoc.courses.length === 0) {
     return [];
@@ -328,10 +314,10 @@ export const getStudentCourses = async (studentId: string) => {
   }
   
   const courseIds = courseEnrollments.map((c: any) => c.courseId);
+  if (courseIds.length === 0) return [];
   
   const coursesRef = collection(db, 'courses');
   const courseDocs: any[] = [];
-  // Chunking to handle 'in' query limitation of 30 items
   for (let i = 0; i < courseIds.length; i += 30) {
       const chunk = courseIds.slice(i, i + 30);
       if (chunk.length > 0) {
@@ -346,15 +332,14 @@ export const getStudentCourses = async (studentId: string) => {
   return courseEnrollments
     .map((enrollment: any) => {
       const course = courseMap.get(enrollment.courseId);
-      // If the course doesn't exist in the map, it was deleted, so we filter it out.
       if (!course) return null;
       return { ...course, status: enrollment.status || 'enrolled' };
     })
-    .filter(Boolean); // This removes any null entries from the array.
+    .filter(Boolean);
 };
 
 
-export const getStudentCoursesWithProgress = async (studentId: string) => {
+export const getStudentCoursesWithProgress = async (studentId: string): Promise<any[]> => {
   const courses = await getStudentCourses(studentId);
   if (courses.length === 0) return [];
   
@@ -409,7 +394,7 @@ export const addPendingEnrollment = async (studentId: string, courseId: string, 
     await batch.commit();
 }
 
-export const getPendingEnrollmentRequests = async () => {
+export const getPendingEnrollmentRequests = async (): Promise<any[]> => {
     const allStudents: any[] = await getStudentUsers();
     const requests: any[] = [];
     const courseCache = new Map();
@@ -426,11 +411,9 @@ export const getPendingEnrollmentRequests = async () => {
                         courseName = courseDoc.name;
                         courseCache.set(pCourse.courseId, courseName);
                     } else {
-                        // This handles cases where the course was deleted, preventing a crash.
                         courseName = "Deleted Course"; 
                     }
                 }
-                 // Only add requests for courses that still exist.
                 if (courseName !== "Deleted Course") {
                     requests.push({
                         studentId: student.id,
@@ -471,19 +454,19 @@ export const deleteAssignment = async (assignmentId: string) => {
     await batch.commit();
 }
 
-export const getAssignments = async () => {
+export const getAssignments = async (): Promise<any[]> => {
   const snapshot = await getDocs(collection(db, 'assignments'));
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
-export const getAssignmentsByCourse = async (courseId: string) => {
+export const getAssignmentsByCourse = async (courseId: string): Promise<any[]> => {
     const q = query(collection(db, "assignments"), where("courseId", "==", courseId));
     const snapshot = await getDocs(q);
     const assignments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     return assignments.sort((a: any, b: any) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
 }
 
-const getAssignmentsByCourses = async (courseIds: string[]) => {
+const getAssignmentsByCourses = async (courseIds: string[]): Promise<any[]> => {
     if (!courseIds || courseIds.length === 0) return [];
     const assignments: any[] = [];
     for (let i = 0; i < courseIds.length; i += 30) {
@@ -497,8 +480,8 @@ const getAssignmentsByCourses = async (courseIds: string[]) => {
     return assignments;
 }
 
-export const getStudentAssignmentsWithStatus = async (studentId: string) => {
-    const courses = await getStudentCourses(studentId);
+export const getStudentAssignmentsWithStatus = async (studentId: string): Promise<any[]> => {
+    const courses: any[] = await getStudentCourses(studentId);
     if(courses.length === 0) return [];
 
     const enrolledCourses = courses.filter(c => c && c.status === 'enrolled');
@@ -511,13 +494,12 @@ export const getStudentAssignmentsWithStatus = async (studentId: string) => {
     const assignmentIds = assignments.map((a: any) => a.id);
     const submissions = await getSubmissionsByStudent(studentId, assignmentIds);
     
-    const courseMap = new Map(courses.map((c: any) => [c.id, c.name]));
+    const courseMap = new Map(enrolledCourses.map((c: any) => [c.id, c.name]));
 
     return assignments.map((assignment: any) => {
         const submission = submissions.find((s: any) => s.assignmentId === assignment.id);
         const courseName = courseMap.get(assignment.courseId);
         
-        // If the course doesn't exist anymore, don't include this assignment
         if (!courseName) return null;
 
         let status = 'Pending';
@@ -527,7 +509,7 @@ export const getStudentAssignmentsWithStatus = async (studentId: string) => {
             status = 'Missing';
         }
         return {...assignment, status, courseName };
-    }).filter(Boolean); // filter out nulls
+    }).filter(Boolean);
 };
 
 export const getAssignment = async (id: string) => {
@@ -556,7 +538,7 @@ export const updateSubmissionStatus = async (submissionId: string, status: strin
     await updateDoc(submissionRef, { status });
 }
 
-export const getSubmissions = async (count = 0) => {
+export const getSubmissions = async (count = 0): Promise<any[]> => {
     const submissionsRef = collection(db, "submissions");
     const q = count > 0 
         ? query(submissionsRef, orderBy("submissionDate", "desc"), limit(count))
@@ -581,40 +563,40 @@ export const getSubmissions = async (count = 0) => {
         }));
     }
 
-    const studentIdChunks = [];
+    const studentPromises = [];
     for (let i = 0; i < studentIds.length; i += 30) {
-        studentIdChunks.push(studentIds.slice(i, i + 30));
+        const chunk = studentIds.slice(i, i + 30);
+        if (chunk.length > 0) studentPromises.push(getDocs(query(collection(db, 'users'), where(documentId(), 'in', chunk))));
     }
-    const assignmentIdChunks = [];
+
+    const assignmentPromises = [];
     for (let i = 0; i < assignmentIds.length; i += 30) {
-        assignmentIdChunks.push(assignmentIds.slice(i, i + 30));
+        const chunk = assignmentIds.slice(i, i + 30);
+        if (chunk.length > 0) assignmentPromises.push(getDocs(query(collection(db, 'assignments'), where(documentId(), 'in', chunk))));
     }
-
-    const studentPromises = studentIdChunks.map(chunk => getDocs(query(collection(db, 'users'), where(documentId(), 'in', chunk))));
-    const assignmentPromises = assignmentIdChunks.map(chunk => getDocs(query(collection(db, 'assignments'), where(documentId(), 'in', chunk))));
-
+    
     const [studentSnapshots, assignmentSnapshots] = await Promise.all([
         Promise.all(studentPromises),
         Promise.all(assignmentPromises),
     ]);
     
     const studentMap = new Map();
-    studentSnapshots.forEach(snap => snap.docs.forEach(s => studentMap.set(s.id, s.data())));
+    studentSnapshots.flat().forEach(snap => snap.docs.forEach(s => studentMap.set(s.id, s.data())));
 
     const assignmentMap = new Map();
-    assignmentSnapshots.forEach(snap => snap.docs.forEach(a => assignmentMap.set(a.id, a.data())));
+    assignmentSnapshots.flat().forEach(snap => snap.docs.forEach(a => assignmentMap.set(a.id, a.data())));
     
     const courseIds = [...new Set(Array.from(assignmentMap.values()).map((a: any) => a.courseId).filter(Boolean))];
     let courseMap = new Map();
 
     if (courseIds.length > 0) {
-        const courseIdChunks = [];
+        const coursePromises = [];
         for (let i = 0; i < courseIds.length; i += 30) {
-            courseIdChunks.push(courseIds.slice(i, i + 30));
+            const chunk = courseIds.slice(i, i + 30);
+            if (chunk.length > 0) coursePromises.push(getDocs(query(collection(db, 'courses'), where(documentId(), 'in', chunk))));
         }
-        const coursePromises = courseIdChunks.map(chunk => getDocs(query(collection(db, 'courses'), where(documentId(), 'in', chunk))));
         const courseSnapshots = await Promise.all(coursePromises);
-        courseSnapshots.forEach(snap => snap.docs.forEach(c => courseMap.set(c.id, c.data())));
+        courseSnapshots.flat().forEach(snap => snap.docs.forEach(c => courseMap.set(c.id, c.data())));
     }
 
     return submissionsData.map((sub: any) => {
@@ -646,7 +628,7 @@ export const getSubmissions = async (count = 0) => {
 }
 
 
-export const getSubmissionsByAssignment = async (assignmentId: string) => {
+export const getSubmissionsByAssignment = async (assignmentId: string): Promise<any[]> => {
     const q = query(collection(db, "submissions"), where("assignmentId", "==", assignmentId));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -673,7 +655,7 @@ export const getStudentSubmissionForAssignment = (studentId: string, assignmentI
     });
 }
 
-export const getSubmissionsByStudent = async (studentId: string, assignmentIds: string[]) => {
+export const getSubmissionsByStudent = async (studentId: string, assignmentIds: string[]): Promise<any[]> => {
   if (!assignmentIds || assignmentIds.length === 0) return [];
   
   const submissions: any[] = [];
@@ -726,13 +708,13 @@ export const deleteQuiz = async (quizId: string) => {
     await deleteDoc(doc(db, 'quizzes', quizId));
 }
 
-export const getQuizzesByCourse = async (courseId: string) => {
+export const getQuizzesByCourse = async (courseId: string): Promise<any[]> => {
     const q = query(collection(db, "quizzes"), where("courseId", "==", courseId));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 }
 
-export const getStudentQuizzes = async (studentId: string) => {
+export const getStudentQuizzes = async (studentId: string): Promise<any[]> => {
     const courses: any[] = await getStudentCourses(studentId);
     if(courses.length === 0) return [];
 
@@ -746,14 +728,13 @@ export const getStudentQuizzes = async (studentId: string) => {
 
     return quizzes.map((quiz: any) => {
         const courseName = courseMap.get(quiz.courseId);
-        // If course doesn't exist, don't include quiz
         if (!courseName) return null;
         return {...quiz, courseName };
-    }).filter(Boolean); // filter out nulls
+    }).filter(Boolean);
 }
 
 
-const getQuizzesByCourses = async (courseIds: string[]) => {
+const getQuizzesByCourses = async (courseIds: string[]): Promise<any[]> => {
     if(courseIds.length === 0) return [];
     const quizzes: any[] = [];
     for (let i = 0; i < courseIds.length; i += 30) {
@@ -782,7 +763,7 @@ export const deleteNote = async (noteId: string) => {
     await deleteDoc(doc(db, 'notes', noteId));
 }
 
-export const getStudentNotes = async (studentId: string) => {
+export const getStudentNotes = async (studentId: string): Promise<any[]> => {
     const q = query(collection(db, 'notes'), where('assignedStudentIds', 'array-contains', studentId));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));

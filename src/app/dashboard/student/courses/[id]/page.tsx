@@ -13,7 +13,6 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { collection, onSnapshot, query, where, doc } from "firebase/firestore";
 import { useParams } from "next/navigation";
 
-// Define types for better type safety
 type Course = {
     id: string;
     name: string;
@@ -90,8 +89,6 @@ export default function CourseDetailPage() {
         return;
     }
     
-    // Firestore 'in' queries are limited to 30 items, so we might need to chunk this
-    // for courses with many assignments. For now, assuming < 30.
     const submissionsQuery = query(collection(db, "submissions"), where("studentId", "==", user.uid), where('assignmentId', 'in', assignmentIds));
     
     const unsubSubmissions = onSnapshot(submissionsQuery, (snapshot) => {

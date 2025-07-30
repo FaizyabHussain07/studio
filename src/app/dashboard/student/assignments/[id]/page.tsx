@@ -15,7 +15,6 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { Textarea } from "@/components/ui/textarea";
 import { useParams } from "next/navigation";
 
-// Define a type for your assignment data to avoid using `any`
 type Assignment = {
     courseId: string;
     title: string;
@@ -24,6 +23,15 @@ type Assignment = {
     attachments?: { name: string; url: string }[];
 };
 
+type Submission = {
+    id: string;
+    status: string;
+    textSubmission?: string;
+    fileDataUrl?: string;
+    fileName?: string;
+};
+
+
 export default function AssignmentDetailPage() {
   const params = useParams();
   const id = params.id as string;
@@ -31,7 +39,7 @@ export default function AssignmentDetailPage() {
   const [courseName, setCourseName] = useState("");
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
-  const [submission, setSubmission] = useState<any>(null); // Submission can be complex, `any` is okay for now
+  const [submission, setSubmission] = useState<Submission | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [textSubmission, setTextSubmission] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -78,7 +86,9 @@ export default function AssignmentDetailPage() {
     });
 
     return () => {
-      if (unsubSubmission) unsubSubmission();
+      if (typeof unsubSubmission === 'function') {
+        unsubSubmission();
+      }
     };
 
   }, [id, user]);
@@ -210,13 +220,13 @@ export default function AssignmentDetailPage() {
                   {status !== 'Pending' ? (
                       <div>
                           <p className="text-muted-foreground mb-4">You have already submitted this assignment.</p>
-                           {submission.textSubmission && (
+                           {submission?.textSubmission && (
                                 <div className="mb-4">
                                     <h4 className="font-semibold mb-2">Your Text Submission:</h4>
                                     <p className="text-sm text-muted-foreground bg-secondary p-3 rounded-md whitespace-pre-wrap">{submission.textSubmission}</p>
                                 </div>
                            )}
-                          {submission.fileDataUrl && (
+                          {submission?.fileDataUrl && (
                             <div>
                                <h4 className="font-semibold mb-2">Your Submitted File:</h4>
                                 <div className="border rounded-lg p-3 flex items-center justify-between">
