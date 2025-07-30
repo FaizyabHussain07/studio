@@ -19,3 +19,14 @@ export type Course = {
     completedStudentIds?: string[];
     pendingStudentIds?: string[];
 };
+
+export type User = {
+    id: string;
+    uid: string;
+    name: string;
+    email: string;
+    role: 'student' | 'admin';
+    courses: { courseId: string, status: 'enrolled' | 'pending' | 'completed' }[];
+    joined?: string;
+    photoURL?: string;
+}

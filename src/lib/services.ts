@@ -2,7 +2,7 @@
 
 import { db } from './firebase';
 import { collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, query, where, documentId, orderBy, limit, writeBatch, setDoc, onSnapshot, arrayUnion, arrayRemove } from 'firebase/firestore';
-import { Assignment, Course } from './types';
+import { Assignment, Course, User } from './types';
 
 const sampleCoursesData = [
     {
@@ -145,28 +145,28 @@ export const deleteUser = async (userId: string) => {
     await deleteDoc(doc(db, 'users', userId));
 }
 
-export const getUsers = async () => {
+export const getUsers = async (): Promise<User[]> => {
   const snapshot = await getDocs(collection(db, 'users'));
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
 };
 
-export const getStudentUsers = async () => {
+export const getStudentUsers = async (): Promise<User[]> => {
     const q = query(collection(db, "users"), where("role", "==", "student"));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
 }
 
-export const getUser = async (id: string) => {
+export const getUser = async (id: string): Promise<User | null> => {
   if (!id) return null;
   const userDocRef = doc(db, 'users', id);
   const userDoc = await getDoc(userDocRef);
   if (userDoc.exists()) {
-    return { id: userDoc.id, ...userDoc.data() };
+    return { id: userDoc.id, ...userDoc.data() } as User;
   }
   return null;
 };
 
-export const createCourse = async (courseData: any) => {
+export const createCourse = async (courseData: any): Promise<string> => {
   const newCourseRef = doc(collection(db, 'courses'));
   await setDoc(newCourseRef, {
     ...courseData,
