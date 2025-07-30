@@ -15,14 +15,23 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { Textarea } from "@/components/ui/textarea";
 import { useParams } from "next/navigation";
 
+// Define a type for your assignment data to avoid using `any`
+type Assignment = {
+    courseId: string;
+    title: string;
+    dueDate: string;
+    instructions: string;
+    attachments?: { name: string; url: string }[];
+};
+
 export default function AssignmentDetailPage() {
   const params = useParams();
   const id = params.id as string;
-  const [assignmentData, setAssignmentData] = useState<any>(null);
+  const [assignmentData, setAssignmentData] = useState<Assignment | null>(null);
   const [courseName, setCourseName] = useState("");
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
-  const [submission, setSubmission] = useState<any>(null);
+  const [submission, setSubmission] = useState<any>(null); // Submission can be complex, `any` is okay for now
   const [file, setFile] = useState<File | null>(null);
   const [textSubmission, setTextSubmission] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -36,18 +45,17 @@ export default function AssignmentDetailPage() {
   }, []);
 
   useEffect(() => {
-    if (!id) return;
-    if (!user) return;
+    if (!id || !user) return;
 
     const fetchInitialData = async () => {
         setLoading(true);
         try {
             const assignment = await getAssignment(id);
             if (assignment) {
-                setAssignmentData(assignment);
+                setAssignmentData(assignment as Assignment);
                 if (assignment.courseId) {
                     const course = await getCourse(assignment.courseId);
-                    setCourseName(course?.name || "Course");
+                    setCourseName(course?.name || "Unknown Course");
                 }
             }
         } catch (error) {
@@ -178,14 +186,14 @@ export default function AssignmentDetailPage() {
                     <CardTitle>Attachments</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    {assignmentData.attachments?.map((file: any) => (
+                    {assignmentData.attachments?.length ? assignmentData.attachments.map((file: any) => (
                         <Button key={file.name} variant="outline" asChild>
                             <a href={file.url} target="_blank" rel="noopener noreferrer">
                                 <Paperclip className="mr-2 h-4 w-4"/>
                                 {file.name}
                             </a>
                         </Button>
-                    )) || <p className="text-muted-foreground">No attachments for this assignment.</p>}
+                    )) : <p className="text-muted-foreground">No attachments for this assignment.</p>}
                 </CardContent>
             </Card>
         </div>
@@ -246,7 +254,7 @@ export default function AssignmentDetailPage() {
                             </Button>
                           </div>
                       )}
-                      <Button className="w-full" style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }} onClick={handleSubmission} disabled={isSubmitting}>
+                      <Button className="w-full" style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }} onClick={handleSubmission} disabled={isSubmitting || (!file && !textSubmission.trim())}>
                           {isSubmitting ? 'Submitting...' : 'Submit Assignment'}
                       </Button>
                     </>

@@ -41,7 +41,9 @@ export default function AllAssignmentsPage() {
       setLoading(true);
       try {
         const studentAssignments = await getStudentAssignmentsWithStatus(user.uid);
-        const sortedAssignments = studentAssignments.sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
+        const sortedAssignments = studentAssignments
+            .filter(a => a) // Filter out any null/undefined assignments
+            .sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
         setAssignments(sortedAssignments as Assignment[]);
       } catch (error) {
         console.error("Error fetching assignments:", error);
@@ -54,11 +56,14 @@ export default function AllAssignmentsPage() {
 
     const userDocRef = doc(db, 'users', user.uid);
     const submissionsQuery = query(collection(db, 'submissions'), where('studentId', '==', user.uid));
+    const coursesQuery = collection(db, 'courses');
+    const assignmentsQuery = collection(db, 'assignments');
 
     const unsubs = [
         onSnapshot(userDocRef, fetchAssignments),
-        onSnapshot(collection(db, 'assignments'), fetchAssignments),
         onSnapshot(submissionsQuery, fetchAssignments),
+        onSnapshot(coursesQuery, fetchAssignments),
+        onSnapshot(assignmentsQuery, fetchAssignments),
     ];
     
     return () => unsubs.forEach(unsub => unsub());

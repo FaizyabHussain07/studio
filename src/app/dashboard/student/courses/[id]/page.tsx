@@ -13,13 +13,35 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { collection, onSnapshot, query, where, doc } from "firebase/firestore";
 import { useParams } from "next/navigation";
 
+// Define types for better type safety
+type Course = {
+    id: string;
+    name: string;
+    description: string;
+    enrolledStudentIds?: string[];
+    completedStudentIds?: string[];
+};
+
+type Assignment = {
+    id: string;
+    title: string;
+    dueDate: string;
+};
+
+type Submission = {
+    id: string;
+    assignmentId: string;
+    status: 'Graded' | 'Submitted' | 'Needs Revision';
+};
+
+
 export default function CourseDetailPage() {
   const params = useParams();
   const id = params.id as string;
   const [user, setUser] = useState<User | null>(null);
-  const [courseData, setCourseData] = useState<any>(null);
-  const [assignments, setAssignments] = useState<any[]>([]);
-  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [courseData, setCourseData] = useState<Course | null>(null);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -35,7 +57,7 @@ export default function CourseDetailPage() {
 
     const unsubCourse = onSnapshot(doc(db, "courses", id), (docSnapshot) => {
       if (docSnapshot.exists()) {
-        setCourseData({ id: docSnapshot.id, ...docSnapshot.data() });
+        setCourseData({ id: docSnapshot.id, ...docSnapshot.data() } as Course);
       } else {
         setCourseData(null);
         console.error("Course not found");
@@ -45,7 +67,7 @@ export default function CourseDetailPage() {
     
     const assignmentsQuery = query(collection(db, "assignments"), where("courseId", "==", id));
     const unsubAssignments = onSnapshot(assignmentsQuery, (snapshot) => {
-        const assignmentsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const assignmentsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Assignment));
         setAssignments(assignmentsData);
     });
 
@@ -68,17 +90,19 @@ export default function CourseDetailPage() {
         return;
     }
     
+    // Firestore 'in' queries are limited to 30 items, so we might need to chunk this
+    // for courses with many assignments. For now, assuming < 30.
     const submissionsQuery = query(collection(db, "submissions"), where("studentId", "==", user.uid), where('assignmentId', 'in', assignmentIds));
     
     const unsubSubmissions = onSnapshot(submissionsQuery, (snapshot) => {
-        setSubmissions(snapshot.docs.map(doc => ({id: doc.id, ...doc.data()})));
+        setSubmissions(snapshot.docs.map(doc => ({id: doc.id, ...doc.data()} as Submission)));
     });
 
     return () => unsubSubmissions();
   }, [user, assignments])
   
   
-  const getStatusInfo = (assignment: any) => {
+  const getStatusInfo = (assignment: Assignment) => {
     const submission = submissions.find(s => s.assignmentId === assignment.id);
 
     if (submission) {
@@ -117,9 +141,9 @@ export default function CourseDetailPage() {
       </div>;
   }
   
-  const courseStatus = courseData.completedStudentIds?.includes(user?.uid) 
+  const courseStatus = courseData.completedStudentIds?.includes(user?.uid || '') 
     ? 'Completed' 
-    : courseData.enrolledStudentIds?.includes(user?.uid) 
+    : courseData.enrolledStudentIds?.includes(user?.uid || '') 
     ? 'In Progress' 
     : 'Not Enrolled';
 

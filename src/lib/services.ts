@@ -499,26 +499,33 @@ export const getStudentAssignmentsWithStatus = async (studentId: string) => {
     const courses = await getStudentCourses(studentId);
     if(courses.length === 0) return [];
 
-    const enrolledCourses = courses.filter(c => c.status === 'enrolled');
+    const enrolledCourses = courses.filter(c => c && c.status === 'enrolled');
     if (enrolledCourses.length === 0) return [];
 
-    const assignments = await getAssignmentsByCourses(enrolledCourses.map((c: any) => c.id));
+    const enrolledCourseIds = enrolledCourses.map((c: any) => c.id);
+    const assignments = await getAssignmentsByCourses(enrolledCourseIds);
     if (assignments.length === 0) return [];
     
     const assignmentIds = assignments.map((a: any) => a.id);
     const submissions = await getSubmissionsByStudent(studentId, assignmentIds);
     
+    const courseMap = new Map(courses.map((c: any) => [c.id, c.name]));
+
     return assignments.map((assignment: any) => {
         const submission = submissions.find((s: any) => s.assignmentId === assignment.id);
-        const course = courses.find((c: any) => c.id === assignment.courseId);
+        const courseName = courseMap.get(assignment.courseId);
+        
+        // If the course doesn't exist anymore, don't include this assignment
+        if (!courseName) return null;
+
         let status = 'Pending';
         if (submission) {
             status = submission.status || 'Submitted';
         } else if (new Date() > new Date(assignment.dueDate)) {
             status = 'Missing';
         }
-        return {...assignment, status, courseName: course?.name || 'Unknown' };
-    }).filter(a => a.courseName !== 'Unknown');
+        return {...assignment, status, courseName };
+    }).filter(Boolean); // filter out nulls
 };
 
 export const getAssignment = async (id: string) => {
@@ -604,9 +611,16 @@ export const getSubmissions = async (count = 0) => {
     return submissionsData.map((sub: any) => {
         const student = studentMap.get(sub.studentId);
         const assignment = assignmentMap.get(sub.assignmentId);
-
+        
         if (!assignment) {
-            return null; // Skip this submission if its assignment is deleted
+            return {
+                id: sub.id,
+                submissionDate: new Date(sub.submissionDate).toLocaleDateString(),
+                status: sub.status,
+                studentName: student?.name || 'Unknown Student',
+                assignmentTitle: 'Deleted Assignment',
+                courseName: 'Unknown Course',
+            };
         }
 
         const course = assignment.courseId ? courseMap.get(assignment.courseId) : null;
@@ -619,7 +633,7 @@ export const getSubmissions = async (count = 0) => {
             assignmentTitle: assignment?.title || 'Unknown Assignment',
             courseName: course?.name || 'Unknown Course',
         }
-    }).filter(sub => sub !== null); // Filter out the null (deleted) submissions
+    }).filter(sub => sub !== null);
 }
 
 
@@ -713,7 +727,7 @@ export const getStudentQuizzes = async (studentId: string) => {
     const courses: any[] = await getStudentCourses(studentId);
     if(courses.length === 0) return [];
 
-    const enrolledCourses = courses.filter(c => c.status === 'enrolled');
+    const enrolledCourses = courses.filter(c => c && c.status === 'enrolled');
     if(enrolledCourses.length === 0) return [];
 
     const courseIds = enrolledCourses.map(c => c.id);
@@ -723,8 +737,10 @@ export const getStudentQuizzes = async (studentId: string) => {
 
     return quizzes.map(quiz => {
         const courseName = courseMap.get(quiz.courseId);
-        return {...quiz, courseName: courseName || 'Unknown' };
-    }).filter(q => q.courseName !== 'Unknown');
+        // If course doesn't exist, don't include quiz
+        if (!courseName) return null;
+        return {...quiz, courseName };
+    }).filter(Boolean); // filter out nulls
 }
 
 
