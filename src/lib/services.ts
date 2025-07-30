@@ -94,22 +94,16 @@ const seedCourses = async () => {
     try {
         const coursesRef = collection(db, 'courses');
         const snapshot = await getDocs(coursesRef);
+        
+        // Let's just ensure all sample courses exist by ID, and if not, add them.
+        // This is safer than a full delete/re-seed which might wipe student enrollments.
         const existingIds = new Set(snapshot.docs.map(doc => doc.id));
-        const sampleIds = new Set(sampleCoursesData.map(c => c.id));
+        const batch = writeBatch(db);
 
-        const areDifferent = snapshot.size !== sampleIds.size || !snapshot.docs.every(doc => sampleIds.has(doc.id));
-
-        if (areDifferent) {
-            console.log("Course data mismatch detected. Re-seeding database...");
-            const batch = writeBatch(db);
-
-            snapshot.docs.forEach(doc => {
-                batch.delete(doc.ref);
-            });
-            
-            sampleCoursesData.forEach(course => {
+        sampleCoursesData.forEach(course => {
+            if (!existingIds.has(course.id)) {
                 const docRef = doc(db, 'courses', course.id);
-                batch.set(docRef, {
+                 batch.set(docRef, {
                     name: course.name,
                     description: course.description,
                     imageUrl: course.imageUrl,
@@ -118,11 +112,19 @@ const seedCourses = async () => {
                     completedStudentIds: [],
                     pendingStudentIds: [],
                 });
-            });
-            
-            await batch.commit();
-            console.log("Courses re-seeded successfully.");
-        }
+            } else {
+                 const docRef = doc(db, 'courses', course.id);
+                 batch.update(docRef, {
+                    name: course.name,
+                    description: course.description,
+                    imageUrl: course.imageUrl,
+                    dataAiHint: course.dataAiHint,
+                });
+            }
+        });
+        
+        await batch.commit();
+
     } catch (error) {
         console.error("Error during course seeding:", error);
     }
@@ -568,8 +570,15 @@ export const getSubmissions = async (count = 0) => {
     const studentIds = [...new Set(submissionsData.map((sub: any) => sub.studentId).filter(Boolean))];
     const assignmentIds = [...new Set(submissionsData.map((sub: any) => sub.assignmentId).filter(Boolean))];
 
-    if (studentIds.length === 0 || assignmentIds.length === 0) {
-        return [];
+    if (studentIds.length === 0) {
+        return submissionsData.map((sub:any) => ({
+             id: sub.id,
+             submissionDate: new Date(sub.submissionDate).toLocaleDateString(),
+             status: sub.status,
+             studentName: 'Unknown Student',
+             assignmentTitle: 'Unknown Assignment',
+             courseName: 'Unknown Course'
+        }));
     }
 
     const studentIdChunks = [];
@@ -735,7 +744,7 @@ export const getStudentQuizzes = async (studentId: string) => {
 
     const courseMap = new Map(courses.map(c => [c.id, c.name]));
 
-    return quizzes.map(quiz => {
+    return quizzes.map((quiz: any) => {
         const courseName = courseMap.get(quiz.courseId);
         // If course doesn't exist, don't include quiz
         if (!courseName) return null;

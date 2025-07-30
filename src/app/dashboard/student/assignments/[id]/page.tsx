@@ -57,9 +57,12 @@ export default function AssignmentDetailPage() {
                     const course = await getCourse(assignment.courseId);
                     setCourseName(course?.name || "Unknown Course");
                 }
+            } else {
+                setAssignmentData(null);
             }
         } catch (error) {
              console.error("Error fetching assignment:", error);
+             setAssignmentData(null);
         } finally {
             setLoading(false);
         }

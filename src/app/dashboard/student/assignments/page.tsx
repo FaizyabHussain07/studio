@@ -42,9 +42,9 @@ export default function AllAssignmentsPage() {
       try {
         const studentAssignments = await getStudentAssignmentsWithStatus(user.uid);
         const sortedAssignments = studentAssignments
-            .filter(a => a) // Filter out any null/undefined assignments
+            .filter((a): a is Assignment => a !== null) // Filter out any null/undefined assignments
             .sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
-        setAssignments(sortedAssignments as Assignment[]);
+        setAssignments(sortedAssignments);
       } catch (error) {
         console.error("Error fetching assignments:", error);
       } finally {
