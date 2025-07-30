@@ -2,6 +2,7 @@
 
 import { db } from './firebase';
 import { collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, query, where, documentId, orderBy, limit, writeBatch, setDoc, onSnapshot, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { Assignment } from './types';
 
 const sampleCoursesData = [
     {
@@ -512,10 +513,13 @@ export const getStudentAssignmentsWithStatus = async (studentId: string): Promis
     }).filter(Boolean);
 };
 
-export const getAssignment = async (id: string) => {
+export const getAssignment = async (id: string): Promise<Assignment | null> => {
   if (!id) return null;
   const assignmentDoc = await getDoc(doc(db, 'assignments', id));
-  return assignmentDoc.exists() ? { id: assignmentDoc.id, ...assignmentDoc.data() } : null;
+  if (!assignmentDoc.exists()) {
+    return null;
+  }
+  return { id: assignmentDoc.id, ...assignmentDoc.data() } as Assignment;
 };
 
 export const createSubmission = async (submissionData: any) => {

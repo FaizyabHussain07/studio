@@ -14,14 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { Textarea } from "@/components/ui/textarea";
 import { useParams } from "next/navigation";
-
-type Assignment = {
-    courseId: string;
-    title: string;
-    dueDate: string;
-    instructions: string;
-    attachments?: { name: string; url: string }[];
-};
+import { Assignment } from "@/lib/types";
 
 type Submission = {
     id: string;
@@ -60,7 +53,7 @@ export default function AssignmentDetailPage() {
         try {
             const assignment = await getAssignment(id);
             if (assignment) {
-                setAssignmentData(assignment as Assignment);
+                setAssignmentData(assignment);
                 if (assignment.courseId) {
                     const course = await getCourse(assignment.courseId);
                     setCourseName(course?.name || "Unknown Course");
