@@ -2,7 +2,7 @@
 
 import { db } from './firebase';
 import { collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, query, where, documentId, orderBy, limit, writeBatch, setDoc, onSnapshot, arrayUnion, arrayRemove } from 'firebase/firestore';
-import { Assignment } from './types';
+import { Assignment, Course } from './types';
 
 const sampleCoursesData = [
     {
@@ -291,16 +291,16 @@ export const deleteCourse = async (courseId: string) => {
 }
 
 
-export const getCourses = async (): Promise<any[]> => {
+export const getCourses = async (): Promise<Course[]> => {
     const snapshot = await getDocs(collection(db, 'courses'));
-    const courses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const courses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course));
     return courses;
 };
 
-export const getCourse = async (id: string) => {
+export const getCourse = async (id: string): Promise<Course | null> => {
   if (!id) return null;
   const courseDoc = await getDoc(doc(db, 'courses', id));
-  return courseDoc.exists() ? { id: courseDoc.id, ...courseDoc.data() } : null;
+  return courseDoc.exists() ? { id: courseDoc.id, ...courseDoc.data() } as Course : null;
 };
 
 export const getStudentCourses = async (studentId: string): Promise<any[]> => {
