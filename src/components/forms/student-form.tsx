@@ -31,13 +31,11 @@ export function StudentForm({ student, onFinished }: { student: any | null, onFi
   const isEditing = !!student;
   const formSchema = isEditing ? studentUpdateSchema : studentCreateSchema;
   
-  const defaultValues = isEditing 
-    ? { name: student.name || "", email: student.email || "" } 
-    : { name: "", email: "", password: "" };
-
   const form = useForm({
     resolver: zodResolver(formSchema),
-    defaultValues: defaultValues,
+    defaultValues: isEditing 
+      ? { name: student.name || "", email: student.email || "" }
+      : { name: "", email: "", password: "" },
   });
 
   const onSubmit = async (data: any) => {
