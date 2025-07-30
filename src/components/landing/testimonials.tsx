@@ -7,19 +7,19 @@ const testimonials = [
     name: "Ali Khan",
     role: "Student",
     quote: "The structured courses and dedicated instructors have profoundly deepened my understanding of the Quran. It's an invaluable resource for any serious student.",
-    avatar: "/WhatsApp_Image_2025-07-07_at_16.40.56_083d1ca9-removebg-preview.png"
+    avatar: "https://media.istockphoto.com/id/1477583639/vector/user-profile-icon-vector-avatar-or-person-icon-profile-picture-portrait-symbol-vector.jpg?s=612x612&w=0&k=20&c=OWGIPPkZIWLPvnQS14ZSyHMoGtVTn1zS8cAgLy1Uh24="
   },
   {
     name: "Fatima Ahmed",
     role: "Student",
     quote: "I love the flexibility of the platform. I can access my lessons and assignments anytime, which fits perfectly with my busy schedule. The user interface is so intuitive!",
-    avatar: "/WhatsApp_Image_2025-07-07_at_16.40.56_083d1ca9-removebg-preview.png"
+    avatar: "https://media.istockphoto.com/id/1477583639/vector/user-profile-icon-vector-avatar-or-person-icon-profile-picture-portrait-symbol-vector.jpg?s=612x612&w=0&k=20&c=OWGIPPkZIWLPvnQS14ZSyHMoGtVTn1zS8cAgLy1Uh24="
   },
   {
     name: "Zainab Omar",
     role: "Student",
     quote: "Faizyab Al-Quran has been a blessing. The interactive assignments and timely feedback from the admin have made my learning journey engaging and effective.",
-    avatar: "/WhatsApp_Image_2025-07-07_at_16.40.56_083d1ca9-removebg-preview.png"
+    avatar: "https://media.istockphoto.com/id/1477583639/vector/user-profile-icon-vector-avatar-or-person-icon-profile-picture-portrait-symbol-vector.jpg?s=612x612&w=0&k=20&c=OWGIPPkZIWLPvnQS14ZSyHMoGtVTn1zS8cAgLy1Uh24="
   },
 ];
 
