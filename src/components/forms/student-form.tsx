@@ -27,13 +27,17 @@ const studentUpdateSchema = z.object({
 export function StudentForm({ student, onFinished }: { student: any | null, onFinished: () => void }) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+
+  const isEditing = !!student;
+  const formSchema = isEditing ? studentUpdateSchema : studentCreateSchema;
+  
+  const defaultValues = isEditing 
+    ? { name: student.name || "", email: student.email || "" } 
+    : { name: "", email: "", password: "" };
+
   const form = useForm({
-    resolver: zodResolver(student ? studentUpdateSchema : studentCreateSchema),
-    defaultValues: {
-      name: student?.name || "",
-      email: student?.email || "",
-      password: "",
-    },
+    resolver: zodResolver(formSchema),
+    defaultValues: defaultValues,
   });
 
   const onSubmit = async (data: any) => {
