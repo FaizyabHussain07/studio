@@ -2,7 +2,7 @@
 
 import { db } from './firebase';
 import { collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, query, where, documentId, orderBy, limit, writeBatch, setDoc, onSnapshot, arrayUnion, arrayRemove, Timestamp } from 'firebase/firestore';
-import { Assignment, Course, User } from './types';
+import { Assignment, Course, User, Schedule } from './types';
 
 const sampleCoursesData = [
     {
@@ -919,10 +919,10 @@ export const getSchedulesByStudent = async (studentId: string): Promise<any[]> =
     
     if (snapshot.empty) return [];
 
-    const schedulesData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    const schedulesData = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Schedule));
     
     // Sort by classDate client-side to avoid needing a composite index
-    schedulesData.sort((a: any, b: any) => new Date(b.classDate).getTime() - new Date(a.classDate).getTime());
+    schedulesData.sort((a, b) => new Date(b.classDate).getTime() - new Date(a.classDate).getTime());
 
     const courseIds = [...new Set(schedulesData.map((s: any) => s.courseId))];
     const courseMap = new Map();
