@@ -14,7 +14,7 @@ import {
   SidebarInset,
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LayoutDashboard, Users, BookCopy, PenSquare, LogOut, Settings, HelpCircle, GraduationCap, UserCheck, StickyNote } from "lucide-react";
+import { LayoutDashboard, Users, BookCopy, PenSquare, LogOut, Settings, HelpCircle, GraduationCap, UserCheck, StickyNote, Calendar } from "lucide-react";
 import { Logo } from "@/components/logo";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,7 @@ const adminNav = [
   { name: "Dashboard", href: "/dashboard/admin", icon: LayoutDashboard },
   { name: "Students", href: "/dashboard/admin/students", icon: Users },
   { name: "Courses", href: "/dashboard/admin/courses", icon: BookCopy },
+  { name: "Schedules", href: "/dashboard/admin/schedules", icon: Calendar },
   { name: "Assignments", href: "/dashboard/admin/assignments", icon: PenSquare },
   { name: "Quizzes", href: "/dashboard/admin/quizzes", icon: GraduationCap },
   { name: "Notes", href: "/dashboard/admin/notes", icon: StickyNote },

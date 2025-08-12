@@ -881,3 +881,59 @@ export const getStudentNotes = async (studentId: string): Promise<any[]> => {
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 }
+
+// --- SCHEDULE SERVICES --- //
+export const createSchedule = async (scheduleData: any) => {
+    const newScheduleRef = await addDoc(collection(db, 'schedules'), {
+        ...scheduleData,
+        createdAt: Timestamp.now(),
+    });
+
+    const student = await getUser(scheduleData.studentId);
+    const course = await getCourse(scheduleData.courseId);
+
+    if (student && course) {
+        await createNotification(
+            scheduleData.studentId,
+            'New Class Scheduled',
+            `A new class for "${course.name}" has been scheduled.`,
+            `/dashboard/student/schedule`
+        );
+    }
+    
+    return newScheduleRef.id;
+}
+
+export const updateSchedule = async (id: string, scheduleData: any) => {
+    await updateDoc(doc(db, 'schedules', id), scheduleData);
+}
+
+export const deleteSchedule = async (scheduleId: string) => {
+    await deleteDoc(doc(db, 'schedules', scheduleId));
+}
+
+export const getSchedulesByStudent = async (studentId: string): Promise<any[]> => {
+    const q = query(collection(db, 'schedules'), where('studentId', '==', studentId), orderBy('classDate', 'desc'));
+    const snapshot = await getDocs(q);
+    
+    if (snapshot.empty) return [];
+
+    const schedulesData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    
+    const courseIds = [...new Set(schedulesData.map((s: any) => s.courseId))];
+    const courseMap = new Map();
+
+    for (let i = 0; i < courseIds.length; i += 30) {
+        const chunk = courseIds.slice(i, i + 30);
+        const coursesQuery = query(collection(db, 'courses'), where(documentId(), 'in', chunk));
+        const coursesSnapshot = await getDocs(coursesQuery);
+        coursesSnapshot.forEach(courseDoc => {
+            courseMap.set(courseDoc.id, courseDoc.data().name);
+        });
+    }
+
+    return schedulesData.map(schedule => ({
+        ...schedule,
+        courseName: courseMap.get(schedule.courseId) || 'Unknown Course'
+    }));
+};
