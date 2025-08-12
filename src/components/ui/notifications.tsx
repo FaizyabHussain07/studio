@@ -5,7 +5,7 @@ import { useState, useEffect }from 'react';
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Bell, CheckCheck } from "lucide-react";
-import { onSnapshot, collection, query, where, orderBy, limit, writeBatch } from 'firebase/firestore';
+import { onSnapshot, collection, query, where, orderBy, limit, writeBatch, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -80,7 +80,9 @@ export function Notifications() {
     
      const handleMarkAsRead = async (id: string) => {
         const notifRef = doc(db, 'notifications', id);
-        await writeBatch(db).update(notifRef, { isRead: true }).commit();
+        const batch = writeBatch(db);
+        batch.update(notifRef, { isRead: true });
+        await batch.commit();
     }
 
     const unreadCount = notifications.filter(n => !n.isRead).length;
