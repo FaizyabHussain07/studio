@@ -1,7 +1,6 @@
 
-
 import { db } from './firebase';
-import { collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, query, where, documentId, orderBy, limit, writeBatch, setDoc, onSnapshot, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, query, where, documentId, orderBy, limit, writeBatch, setDoc, onSnapshot, arrayUnion, arrayRemove, Timestamp } from 'firebase/firestore';
 import { Assignment, Course, User } from './types';
 
 const sampleCoursesData = [
@@ -130,6 +129,37 @@ const seedCourses = async () => {
 
 seedCourses();
 
+// --- NOTIFICATION SERVICE --- //
+export const createNotification = async (userId: string, title: string, message: string, link: string) => {
+    await addDoc(collection(db, 'notifications'), {
+        userId,
+        title,
+        message,
+        link,
+        isRead: false,
+        createdAt: Timestamp.now(),
+    });
+};
+
+const createBulkNotifications = async (userIds: string[], title: string, message: string, link: string) => {
+    if (!userIds || userIds.length === 0) return;
+    const batch = writeBatch(db);
+    userIds.forEach(userId => {
+        const notifRef = doc(collection(db, 'notifications'));
+        batch.set(notifRef, {
+            userId,
+            title,
+            message,
+            link,
+            isRead: false,
+            createdAt: Timestamp.now(),
+        });
+    });
+    await batch.commit();
+}
+
+
+// --- USER SERVICES --- //
 export const createUser = async (userData: any) => {
   const userRef = doc(db, 'users', userData.uid);
   await setDoc(userRef, userData);
@@ -166,6 +196,7 @@ export const getUser = async (id: string): Promise<User | null> => {
   return null;
 };
 
+// --- COURSE SERVICES --- //
 export const createCourse = async (courseData: any): Promise<string> => {
   const newCourseRef = doc(collection(db, 'courses'));
   await setDoc(newCourseRef, {
@@ -191,7 +222,7 @@ export const updateUserCourses = async (courseId: string, enrolledStudentIds: st
     const courseRef = doc(db, 'courses', courseId);
     
     const courseDoc = await getDoc(courseRef);
-    const courseData = courseDoc.data();
+    const courseData = courseDoc.data() as Course;
     
     const prevEnrolledIds = courseData?.enrolledStudentIds || [];
     const prevCompletedIds = courseData?.completedStudentIds || [];
@@ -215,6 +246,7 @@ export const updateUserCourses = async (courseId: string, enrolledStudentIds: st
         }
     }
     
+    const newEnrolledStudents = [];
     for (const studentId of allCurrentStudentIds) {
         const studentRef = doc(db, 'users', studentId);
         const studentData: any = studentMap.get(studentId);
@@ -223,6 +255,7 @@ export const updateUserCourses = async (courseId: string, enrolledStudentIds: st
             let courses = studentData.courses?.filter((c: any) => c.courseId !== courseId) || [];
             
             if (enrolledStudentIds.includes(studentId)) {
+                if(!prevEnrolledIds.includes(studentId)) newEnrolledStudents.push(studentId);
                 courses.push({ courseId, status: 'enrolled' });
             } else if (completedStudentIds.includes(studentId)) {
                 courses.push({ courseId, status: 'completed' });
@@ -243,6 +276,15 @@ export const updateUserCourses = async (courseId: string, enrolledStudentIds: st
     });
 
     await batch.commit();
+
+    if(newEnrolledStudents.length > 0) {
+        await createBulkNotifications(
+            newEnrolledStudents,
+            'Course Enrollment Approved',
+            `You have been enrolled in the course: "${courseData.name}".`,
+            `/dashboard/student/courses/${courseId}`
+        );
+    }
 }
 
 
@@ -431,10 +473,21 @@ export const getPendingEnrollmentRequests = async (): Promise<any[]> => {
     return requests;
 };
 
-
+// --- ASSIGNMENT SERVICES --- //
 export const createAssignment = async (assignmentData: any) => {
-  const newAssignment = await addDoc(collection(db, 'assignments'), assignmentData);
-  return newAssignment.id;
+  const newAssignmentRef = await addDoc(collection(db, 'assignments'), assignmentData);
+  
+  const course = await getCourse(assignmentData.courseId) as Course;
+  if(course && course.enrolledStudentIds && course.enrolledStudentIds.length > 0) {
+      await createBulkNotifications(
+          course.enrolledStudentIds,
+          'New Assignment Posted',
+          `A new assignment "${assignmentData.title}" has been added to your course "${course.name}".`,
+          `/dashboard/student/assignments/${newAssignmentRef.id}`
+      );
+  }
+
+  return newAssignmentRef.id;
 };
 
 export const updateAssignment = async (id: string, assignmentData: any) => {
@@ -522,24 +575,58 @@ export const getAssignment = async (id: string): Promise<Assignment | null> => {
   return { id: assignmentDoc.id, ...assignmentDoc.data() } as Assignment;
 };
 
+// --- SUBMISSION SERVICES --- //
 export const createSubmission = async (submissionData: any) => {
     const q = query(collection(db, 'submissions'), where('studentId', '==', submissionData.studentId), where('assignmentId', '==', submissionData.assignmentId));
     const existingSubmission = await getDocs(q);
 
+    let submissionId;
     if (existingSubmission.empty) {
         const newSubmissionRef = doc(collection(db, 'submissions'));
         await setDoc(newSubmissionRef, { ...submissionData, id: newSubmissionRef.id });
-        return newSubmissionRef.id;
+        submissionId = newSubmissionRef.id;
     } else {
         const submissionDocRef = existingSubmission.docs[0].ref;
         await updateDoc(submissionDocRef, submissionData);
-        return submissionDocRef.id;
+        submissionId = submissionDocRef.id;
     }
+    
+    const student = await getUser(submissionData.studentId);
+    const assignment = await getAssignment(submissionData.assignmentId);
+    const adminUser = await getDocs(query(collection(db, 'users'), where('role', '==', 'admin'), limit(1)));
+
+    if (student && assignment && !adminUser.empty) {
+        const adminId = adminUser.docs[0].id;
+        await createNotification(
+            adminId,
+            'New Submission Received',
+            `${student.name} has submitted their work for the assignment "${assignment.title}".`,
+            `/dashboard/admin/assignments/${assignment.id}/submissions`
+        );
+    }
+    
+    return submissionId;
 }
 
 export const updateSubmissionStatus = async (submissionId: string, status: string) => {
     const submissionRef = doc(db, 'submissions', submissionId);
     await updateDoc(submissionRef, { status });
+
+    if(status === 'Graded' || status === 'Needs Revision') {
+        const submissionDoc = await getDoc(submissionRef);
+        const submissionData = submissionDoc.data();
+        if(submissionData) {
+            const assignment = await getAssignment(submissionData.assignmentId);
+             if (assignment) {
+                 await createNotification(
+                     submissionData.studentId,
+                     `Assignment Status Updated`,
+                     `Your submission for "${assignment.title}" has been marked as: ${status}.`,
+                     `/dashboard/student/assignments/${assignment.id}`
+                 )
+             }
+        }
+    }
 }
 
 export const getSubmissions = async (count = 0): Promise<any[]> => {
@@ -699,9 +786,22 @@ export const getStudentAssignmentStatus = async (studentId: string, assignmentId
   return snapshot.docs[0].data().status || 'Submitted';
 }
 
+
+// --- QUIZ SERVICES --- //
 export const createQuiz = async (quizData: any) => {
-    const newQuiz = await addDoc(collection(db, 'quizzes'), quizData);
-    return newQuiz.id;
+    const newQuizRef = await addDoc(collection(db, 'quizzes'), quizData);
+
+    const course = await getCourse(quizData.courseId) as Course;
+    if(course && course.enrolledStudentIds && course.enrolledStudentIds.length > 0) {
+        await createBulkNotifications(
+            course.enrolledStudentIds,
+            'New Quiz Posted',
+            `A new quiz "${quizData.title}" has been added to your course "${course.name}".`,
+            `/dashboard/student/quizzes`
+        );
+    }
+    
+    return newQuizRef.id;
 }
 
 export const updateQuiz = async (id: string, quizData: any) => {
@@ -754,8 +854,17 @@ const getQuizzesByCourses = async (courseIds: string[]): Promise<any[]> => {
     return quizzes;
 }
 
+// --- NOTE SERVICES --- //
 export const createNote = async (noteData: any) => {
     const newNoteRef = await addDoc(collection(db, 'notes'), noteData);
+    
+     await createBulkNotifications(
+        noteData.assignedStudentIds,
+        'New Note Shared',
+        `A new note "${noteData.name}" has been shared with you.`,
+        `/dashboard/student/notes`
+    );
+
     return newNoteRef.id;
 }
 

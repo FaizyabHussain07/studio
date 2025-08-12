@@ -22,6 +22,7 @@ import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { Notifications } from "@/components/ui/notifications";
 
 
 const studentNav = [
@@ -116,9 +117,12 @@ export default function StudentDashboardLayout({
       <SidebarInset>
         <header className="flex items-center justify-between p-4 border-b">
           <SidebarTrigger/>
-          <Button variant="ghost" size="icon">
-              <UserIcon />
-          </Button>
+           <div className="flex items-center gap-2">
+              <Notifications />
+              <Button variant="ghost" size="icon">
+                  <UserIcon />
+              </Button>
+           </div>
         </header>
         <main className="p-4 md:p-6 bg-secondary/40 min-h-[calc(100vh-65px)]">{children}</main>
       </SidebarInset>
