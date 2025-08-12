@@ -1,4 +1,5 @@
 
+
 import { db } from './firebase';
 import { collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, query, where, documentId, orderBy, limit, writeBatch, setDoc, onSnapshot, arrayUnion, arrayRemove, Timestamp } from 'firebase/firestore';
 import { Assignment, Course, User } from './types';
@@ -913,27 +914,36 @@ export const deleteSchedule = async (scheduleId: string) => {
 }
 
 export const getSchedulesByStudent = async (studentId: string): Promise<any[]> => {
-    const q = query(collection(db, 'schedules'), where('studentId', '==', studentId), orderBy('classDate', 'desc'));
+    const q = query(collection(db, 'schedules'), where('studentId', '==', studentId));
     const snapshot = await getDocs(q);
     
     if (snapshot.empty) return [];
 
     const schedulesData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     
+    // Sort by classDate client-side to avoid needing a composite index
+    schedulesData.sort((a: any, b: any) => new Date(b.classDate).getTime() - new Date(a.classDate).getTime());
+
     const courseIds = [...new Set(schedulesData.map((s: any) => s.courseId))];
     const courseMap = new Map();
 
-    for (let i = 0; i < courseIds.length; i += 30) {
-        const chunk = courseIds.slice(i, i + 30);
-        const coursesQuery = query(collection(db, 'courses'), where(documentId(), 'in', chunk));
-        const coursesSnapshot = await getDocs(coursesQuery);
-        coursesSnapshot.forEach(courseDoc => {
-            courseMap.set(courseDoc.id, courseDoc.data().name);
-        });
+    if (courseIds.length > 0) {
+        for (let i = 0; i < courseIds.length; i += 30) {
+            const chunk = courseIds.slice(i, i + 30);
+            const coursesQuery = query(collection(db, 'courses'), where(documentId(), 'in', chunk));
+            const coursesSnapshot = await getDocs(coursesQuery);
+            coursesSnapshot.forEach(courseDoc => {
+                courseMap.set(courseDoc.id, courseDoc.data().name);
+            });
+        }
     }
+
 
     return schedulesData.map(schedule => ({
         ...schedule,
         courseName: courseMap.get(schedule.courseId) || 'Unknown Course'
     }));
 };
+
+// Re-aliasing for consistency in other files if they use getStudentSchedules
+export const getStudentSchedules = getSchedulesByStudent;
