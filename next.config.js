@@ -1,5 +1,9 @@
 
 /** @type {import('next').NextConfig} */
+
+// Load environment variables from .env.local
+require('dotenv').config({ path: './.env.local' });
+
 const nextConfig = {
   /* config options here */
   typescript: {
@@ -22,6 +26,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'i.ibb.co',
       },
+      {
+        protocol: 'https',
+        hostname: 'media.istockphoto.com',
+      }
     ],
   },
 };
