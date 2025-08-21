@@ -173,7 +173,50 @@ export const updateUser = async (id: string, userData: any) => {
 }
 
 export const deleteUser = async (userId: string) => {
-    await deleteDoc(doc(db, 'users', userId));
+    if (!userId) {
+        throw new Error("User ID is required to delete a user.");
+    }
+
+    const batch = writeBatch(db);
+
+    // 1. Delete the user document
+    const userRef = doc(db, 'users', userId);
+    batch.delete(userRef);
+
+    // 2. Delete all submissions by this user
+    const submissionsQuery = query(collection(db, 'submissions'), where('studentId', '==', userId));
+    const submissionsSnapshot = await getDocs(submissionsQuery);
+    submissionsSnapshot.forEach(doc => batch.delete(doc.ref));
+    
+    // 3. Delete all schedules for this user
+    const schedulesQuery = query(collection(db, 'schedules'), where('studentId', '==', userId));
+    const schedulesSnapshot = await getDocs(schedulesQuery);
+    schedulesSnapshot.forEach(doc => batch.delete(doc.ref));
+
+    // 4. Remove user from all courses (enrolled, completed, pending)
+    const coursesQuery = query(collection(db, 'courses'), where('enrolledStudentIds', 'array-contains', userId));
+    const coursesSnapshot = await getDocs(coursesQuery);
+    coursesSnapshot.forEach(courseDoc => {
+        batch.update(courseDoc.ref, { enrolledStudentIds: arrayRemove(userId) });
+    });
+
+    const completedCoursesQuery = query(collection(db, 'courses'), where('completedStudentIds', 'array-contains', userId));
+    const completedCoursesSnapshot = await getDocs(completedCoursesQuery);
+    completedCoursesSnapshot.forEach(courseDoc => {
+        batch.update(courseDoc.ref, { completedStudentIds: arrayRemove(userId) });
+    });
+
+    const pendingCoursesQuery = query(collection(db, 'courses'), where('pendingStudentIds', 'array-contains', userId));
+    const pendingCoursesSnapshot = await getDocs(pendingCoursesQuery);
+    pendingCoursesSnapshot.forEach(courseDoc => {
+        batch.update(courseDoc.ref, { pendingStudentIds: arrayRemove(userId) });
+    });
+
+    await batch.commit();
+
+    // Note: Deleting the Firebase Auth user requires admin privileges and is best done
+    // from a secure server environment (like a Firebase Function), not directly from the client.
+    // The logic above only cleans up the Firestore database.
 }
 
 export const getUsers = async (): Promise<User[]> => {
