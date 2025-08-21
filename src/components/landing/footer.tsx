@@ -1,6 +1,7 @@
+
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
-import { Github, Twitter, Linkedin } from "lucide-react";
+import { Github, Twitter, Linkedin, Mail } from "lucide-react";
 import Link from "next/link";
 
 export default function Footer() {
@@ -14,17 +15,22 @@ export default function Footer() {
           </p>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" asChild>
-              <Link href="#" aria-label="Twitter">
+              <a href="mailto:faizyab.al.quran@gmail.com" aria-label="Email">
+                <Mail className="h-5 w-5" />
+              </a>
+            </Button>
+            <Button variant="ghost" size="icon" asChild>
+              <Link href="https://x.com/FaizyabHus74391" aria-label="Twitter" target="_blank">
                 <Twitter className="h-5 w-5" />
               </Link>
             </Button>
             <Button variant="ghost" size="icon" asChild>
-              <Link href="#" aria-label="GitHub">
+              <Link href="https://github.com/FaizyabHussain07/studio" aria-label="GitHub" target="_blank">
                 <Github className="h-5 w-5" />
               </Link>
             </Button>
             <Button variant="ghost" size="icon" asChild>
-              <Link href="#" aria-label="LinkedIn">
+              <Link href="https://www.linkedin.com/in/faizyabhussain/" aria-label="LinkedIn" target="_blank">
                 <Linkedin className="h-5 w-5" />
               </Link>
             </Button>
