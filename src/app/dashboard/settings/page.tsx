@@ -15,7 +15,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { uploadProfilePicture } from '@/lib/storage';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
@@ -96,17 +95,26 @@ export default function ProfileSettingsPage() {
       const file = event.target.files[0];
       setUploading(true);
 
-      try {
-          const photoURL = await uploadProfilePicture(user.uid, file);
-          await updateProfile(user, { photoURL });
-          await updateUser(user.uid, { photoURL });
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = async () => {
+          const photoURL = reader.result as string;
+          try {
+              await updateProfile(user, { photoURL });
+              await updateUser(user.uid, { photoURL });
 
-          toast({ title: 'Success', description: 'Profile picture updated successfully.' });
-          setUser({ ...user, photoURL }); // Force re-render with new image
-      } catch (error) {
-          console.error("Error uploading avatar:", error);
-          toast({ title: 'Error', description: 'Failed to upload new profile picture.', variant: 'destructive'});
-      } finally {
+              toast({ title: 'Success', description: 'Profile picture updated successfully.' });
+              setUser({ ...user, photoURL }); // Force re-render with new image
+          } catch (error) {
+              console.error("Error uploading avatar:", error);
+              toast({ title: 'Error', description: 'Failed to upload new profile picture.', variant: 'destructive'});
+          } finally {
+              setUploading(false);
+          }
+      };
+      reader.onerror = (error) => {
+          console.error("Error converting file to Data URL:", error);
+          toast({ title: 'Error', description: 'Failed to read the image file.', variant: 'destructive'});
           setUploading(false);
       }
   }
@@ -200,4 +208,3 @@ export default function ProfileSettingsPage() {
     </div>
   );
 }
-
