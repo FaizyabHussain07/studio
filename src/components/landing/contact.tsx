@@ -18,6 +18,11 @@ export default function Contact() {
           </CardHeader>
           <CardContent>
             <form action="https://formsubmit.co/faizyab.al.quran@gmail.com" method="POST" className="space-y-4">
+              {/* Formspree settings */}
+              <input type="hidden" name="_template" value="table" />
+              <input type="hidden" name="_next" value="https://faizyab-al-quran.app-prototyper.app/landing/thank-you" />
+              <input type="hidden" name="_autoresponse" value="Thank you for contacting Faizyab Al-Quran! We have received your message and will get back to you shortly." />
+              
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Name</Label>
