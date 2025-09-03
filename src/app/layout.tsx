@@ -2,6 +2,8 @@
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
+import GoogleTagManager from '@/components/analytics/google-tag-manager';
+import { Suspense } from 'react';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://faizyab-al-quran.vercel.app'),
@@ -27,9 +29,19 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=PT+Sans:wght@400;700&display=swap" rel="stylesheet" />
-        <meta name="google-site-verification" content="googled5e9f1c43ffe54df" />
+        <Suspense>
+            <GoogleTagManager />
+        </Suspense>
       </head>
       <body className="font-body antialiased" suppressHydrationWarning>
+        <noscript>
+          <iframe
+            src={`https://www.googletagmanager.com/ns.html?id=${process.env.NEXT_PUBLIC_GTM_ID}`}
+            height="0"
+            width="0"
+            style={{ display: 'none', visibility: 'hidden' }}
+          />
+        </noscript>
         {children}
         <Toaster />
       </body>
