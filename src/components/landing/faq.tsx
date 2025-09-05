@@ -7,8 +7,8 @@ import {
 
 const faqs = [
   {
-    question: "Who is considered an admin?",
-    answer: "The user with the email 'syedfaizyabhussain07@gmail.com' is automatically granted admin privileges. All other registered users will have student accounts.",
+    question: "How do I enroll in a course?",
+    answer: "You can browse available courses on our homepage. To enroll, click the 'Enroll Now' button on any course card. This will take you to the sign-up page where you can create your student account. Once your account is created, an enrollment request will be automatically sent to the administrator for approval.",
   },
   {
     question: "Is the platform mobile-responsive?",
