@@ -2,9 +2,7 @@
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
-import GoogleTagManager from '@/components/analytics/google-tag-manager';
-import GoogleAnalytics from '@/components/analytics/google-analytics';
-import { Suspense } from 'react';
+import { Analytics } from '@/components/analytics/analytics';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://faizyab-al-quran.vercel.app'),
@@ -30,8 +28,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=PT+Sans:wght@400;700&display=swap" rel="stylesheet" />
-        <GoogleTagManager />
-        <GoogleAnalytics />
+        <Analytics />
       </head>
       <body className="font-body antialiased" suppressHydrationWarning>
         <noscript>
