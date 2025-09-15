@@ -3,18 +3,19 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
-import { Download, ArrowLeft } from "lucide-react";
+import { ArrowLeft, BookOpen } from "lucide-react";
 import Header from "@/components/landing/header";
 import Footer from "@/components/landing/footer";
 
-const allResources = [
+export const allResources = [
     {
         id: "holy-quran",
         title: "The Holy Quran",
         description: "The central religious text of Islam, which Muslims believe to be a revelation from God.",
         imageUrl: "https://i.ibb.co/Hfc2SKFN/close-up-islamic-new-year-with-quran-book.jpg",
         dataAiHint: "holy quran",
-        pdfUrl: "/placeholder.pdf" 
+        pdfUrl: "/placeholder.pdf",
+        pages: 30 // Example page count
     },
     {
         id: "noorani-qaida",
@@ -22,7 +23,8 @@ const allResources = [
         description: "A basic book for beginners to learn how to read the Quran with Tajweed.",
         imageUrl: "https://i.ibb.co/FN7JFYq/close-up-islamic-new-year-with-quran-book-1.jpg",
         dataAiHint: "qaida book",
-        pdfUrl: "/placeholder.pdf"
+        pdfUrl: "/placeholder.pdf",
+        pages: 20
     },
     {
         id: "basic-diniyat",
@@ -30,7 +32,8 @@ const allResources = [
         description: "Fundamental Islamic knowledge covering the basics of faith, worship, and daily life.",
         imageUrl: "https://i.ibb.co/ymSBrR0W/close-up-islamic-new-year-with-quran-book-2.jpg",
         dataAiHint: "islamic knowledge",
-        pdfUrl: "/placeholder.pdf"
+        pdfUrl: "/placeholder.pdf",
+        pages: 25
     },
     // Add more books here
 ];
@@ -50,7 +53,7 @@ export default function ResourcesPage() {
                     </Button>
                     <h1 className="font-headline text-4xl md:text-5xl font-bold">Digital Library</h1>
                     <p className="text-muted-foreground text-lg max-w-2xl mt-2">
-                        Access essential Islamic texts and learning materials. Download PDFs to study anytime, anywhere.
+                        Access essential Islamic texts and learning materials. Read online or download PDFs to study anytime, anywhere.
                     </p>
                 </div>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -74,10 +77,10 @@ export default function ResourcesPage() {
                     </CardContent>
                     <CardFooter className="p-6 pt-0">
                         <Button asChild className="w-full">
-                        <a href={resource.pdfUrl} download>
-                            <Download className="mr-2 h-4 w-4" />
-                            Download PDF
-                        </a>
+                          <Link href={`/resources/${resource.id}`}>
+                            <BookOpen className="mr-2 h-4 w-4" />
+                            Read Book
+                          </Link>
                         </Button>
                     </CardFooter>
                     </Card>
