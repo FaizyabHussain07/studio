@@ -2,6 +2,7 @@ import Header from '@/components/landing/header';
 import Hero from '@/components/landing/hero';
 import About from '@/components/landing/about';
 import Features from '@/components/landing/features';
+import Resources from '@/components/landing/resources';
 import HowItWorks from '@/components/landing/how-it-works';
 import Courses from '@/components/landing/courses';
 import Testimonials from '@/components/landing/testimonials';
@@ -17,6 +18,7 @@ export default function Home() {
         <Hero />
         <About />
         <Features />
+        <Resources />
         <Courses />
         <HowItWorks />
         <Testimonials />

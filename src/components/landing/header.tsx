@@ -18,6 +18,7 @@ import { Skeleton } from '../ui/skeleton';
 const navLinks = [
   { name: 'About', href: '#about' },
   { name: 'Features', href: '#features' },
+  { name: 'Resources', href: '#resources' },
   { name: 'Courses', href: '#courses' },
   { name: 'Testimonials', href: '#testimonials' },
   { name: 'FAQ', href: '#faq' },
