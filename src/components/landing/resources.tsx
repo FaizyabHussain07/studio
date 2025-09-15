@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
-import { Download } from "lucide-react";
+import { Download, ArrowRight } from "lucide-react";
 
 const sampleResources = [
     {
@@ -72,6 +72,13 @@ export default function Resources() {
               </CardFooter>
             </Card>
           ))}
+        </div>
+         <div className="text-center mt-12">
+            <Button asChild size="lg">
+                <Link href="/resources">
+                    View All Resources <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+            </Button>
         </div>
       </div>
     </section>
