@@ -66,7 +66,6 @@ export function ResourceForm({ resource, onFinished }: ResourceFormProps) {
     }
   }, [resource, form]);
   
-
   const onSubmit = async (data: z.infer<typeof resourceSchema>) => {
     setLoading(true);
     try {

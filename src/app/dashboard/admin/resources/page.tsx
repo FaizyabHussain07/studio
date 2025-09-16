@@ -15,14 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import { onSnapshot, collection } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import Image from "next/image";
+import { Resource } from "@/lib/types";
 
-type Resource = {
-  id: string;
-  title: string;
-  description?: string;
-  coverImageUrl?: string;
-  pageCount: number;
-};
 
 export default function ManageResourcesPage() {
   const [resources, setResources] = useState<Resource[]>([]);
@@ -37,10 +31,7 @@ export default function ManageResourcesPage() {
             const data = doc.data();
             return { 
                 id: doc.id, 
-                title: data.title,
-                description: data.description,
-                coverImageUrl: data.coverImageUrl,
-                pageCount: data.pages?.length || 0
+                ...data
             } as Resource;
         });
         setResources(resourcesData);
@@ -135,7 +126,7 @@ export default function ManageResourcesPage() {
                             <p className="text-sm text-muted-foreground line-clamp-1">{resource.description}</p>
                         </div>
                       </TableCell>
-                      <TableCell>{resource.pageCount}</TableCell>
+                      <TableCell>{resource.pages?.length || 0}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>

@@ -50,7 +50,7 @@ export type Schedule = {
 export type Resource = {
     id: string;
     title: string;
-    description: string;
+    description?: string;
     coverImageUrl?: string;
     dataAiHint?: string;
     pdfDataUrl?: string;
