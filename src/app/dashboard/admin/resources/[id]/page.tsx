@@ -8,7 +8,7 @@ import { ArrowLeft, FileUp, X, GripVertical, Image as ImageIcon, BookOpen } from
 import Image from "next/image";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect } from 'react';
-import { getResource, updateResourcePages } from "@/lib/services";
+import { getResource, updateResourcePages, addPageToResource } from "@/lib/services";
 import { Resource, ResourcePage } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { onSnapshot, doc } from "firebase/firestore";
@@ -56,18 +56,16 @@ export default function ManageResourcePages({ params }: { params: { id: string }
 
         setIsUploading(true);
         const files = Array.from(e.target.files);
-        const currentPages = resource.pages || [];
-        const newPages = [...currentPages];
-        let lastPageNumber = currentPages.length > 0 ? Math.max(...currentPages.map(p => p.pageNumber)) : 0;
+        let lastPageNumber = resource.pages.length > 0 ? Math.max(...resource.pages.map(p => p.pageNumber)) : 0;
         
         try {
             for (const file of files) {
                 const imageUrl = await fileToDataUrl(file);
                 lastPageNumber++;
-                newPages.push({ pageNumber: lastPageNumber, imageUrl });
+                // Instead of updating all pages, we append one by one for speed
+                await addPageToResource(resource.id, { pageNumber: lastPageNumber, imageUrl });
             }
-            await updateResourcePages(resource.id, newPages);
-            toast({ title: "Success", description: `${files.length} page(s) uploaded and saved successfully.` });
+            toast({ title: "Success", description: `${files.length} page(s) uploaded successfully.` });
         } catch (error) {
             toast({ title: "Error reading files", description: "Could not process all selected page images.", variant: "destructive" });
         } finally {
