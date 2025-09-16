@@ -995,7 +995,14 @@ export const getStudentSchedules = getSchedulesByStudent;
 // --- RESOURCE SERVICES --- //
 
 export const createResource = async (resourceData: any) => {
-    const newResourceRef = await addDoc(collection(db, 'resources'), resourceData);
+    const newResourceRef = await addDoc(collection(db, 'resources'), {
+        title: resourceData.title,
+        description: resourceData.description,
+        coverImageUrl: resourceData.coverImageUrl || null,
+        pdfDataUrl: resourceData.pdfDataUrl || null,
+        pdfFileName: resourceData.pdfFileName || null,
+        pages: resourceData.pages || [],
+    });
     return newResourceRef.id;
 };
 

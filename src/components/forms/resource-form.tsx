@@ -11,11 +11,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { createResource, updateResource, getResource } from "@/lib/services";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
-import { File, X } from "lucide-react";
-
-const fileSchema = z.custom<File>((v) => v instanceof File, {
-  message: "File is required",
-});
 
 const resourceSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -92,6 +87,8 @@ export function ResourceForm({ resource, onFinished }: ResourceFormProps) {
       try {
         if(data.pages) {
             payload.pages = JSON.parse(data.pages);
+        } else {
+            payload.pages = existingData?.pages || [];
         }
       } catch (e) {
           toast({ title: "Invalid JSON", description: "The 'pages' field contains invalid JSON.", variant: "destructive"});
