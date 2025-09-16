@@ -47,6 +47,11 @@ export type Schedule = {
     createdAt: any;
 };
 
+export type ResourcePage = {
+    pageNumber: number;
+    imageUrl: string;
+};
+
 export type Resource = {
     id: string;
     title: string;
@@ -55,5 +60,5 @@ export type Resource = {
     dataAiHint?: string;
     pdfDataUrl?: string;
     pdfFileName?: string;
-    pages: { pageNumber: number, imageUrl: string }[];
+    pages: ResourcePage[];
 }

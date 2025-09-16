@@ -118,15 +118,19 @@ export default function ManageResourcesPage() {
                   resources.map((resource) => (
                     <TableRow key={resource.id}>
                       <TableCell className="font-medium flex items-center gap-4">
-                        {resource.coverImageUrl && (
+                        {resource.coverImageUrl ? (
                            <Image src={resource.coverImageUrl} alt={resource.title} width={40} height={50} className="rounded-sm object-cover"/>
+                        ) : (
+                          <div className="w-10 h-[50px] bg-secondary rounded-sm flex items-center justify-center">
+                            <BookOpen className="h-6 w-6 text-muted-foreground"/>
+                          </div>
                         )}
                         <div>
                             <p>{resource.title}</p>
                             <p className="text-sm text-muted-foreground line-clamp-1">{resource.description}</p>
                         </div>
                       </TableCell>
-                      <TableCell>{resource.pages?.length || 0}</TableCell>
+                      <TableCell>{Array.isArray(resource.pages) ? resource.pages.length : 0}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
