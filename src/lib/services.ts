@@ -990,3 +990,30 @@ export const getSchedulesByStudent = async (studentId: string): Promise<any[]> =
 
 // Re-aliasing for consistency in other files if they use getStudentSchedules
 export const getStudentSchedules = getSchedulesByStudent;
+
+
+// --- RESOURCE SERVICES --- //
+
+export const createResource = async (resourceData: any) => {
+    const newResourceRef = await addDoc(collection(db, 'resources'), resourceData);
+    return newResourceRef.id;
+};
+
+export const updateResource = async (id: string, resourceData: any) => {
+    await updateDoc(doc(db, 'resources', id), resourceData);
+};
+
+export const deleteResource = async (id: string) => {
+    await deleteDoc(doc(db, 'resources', id));
+};
+
+export const getResources = async (): Promise<any[]> => {
+    const snapshot = await getDocs(collection(db, 'resources'));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
+
+export const getResource = async (id: string): Promise<any | null> => {
+  if (!id) return null;
+  const resourceDoc = await getDoc(doc(db, 'resources', id));
+  return resourceDoc.exists() ? { id: resourceDoc.id, ...resourceDoc.data() } : null;
+};

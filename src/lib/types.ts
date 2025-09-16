@@ -46,3 +46,14 @@ export type Schedule = {
     meetingPassword?: string;
     createdAt: any;
 };
+
+export type Resource = {
+    id: string;
+    title: string;
+    description: string;
+    coverImageUrl?: string;
+    dataAiHint?: string;
+    pdfDataUrl?: string;
+    pdfFileName?: string;
+    pages: { pageNumber: number, imageUrl: string }[];
+}
