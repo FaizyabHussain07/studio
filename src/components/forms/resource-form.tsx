@@ -36,7 +36,6 @@ const fileToDataUrl = (file: File): Promise<string> => {
 export function ResourceForm({ resource, onFinished }: ResourceFormProps) {
   const [loading, setLoading] = useState(false);
   const [existingData, setExistingData] = useState<any>(null);
-
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof resourceSchema>>({
