@@ -997,7 +997,7 @@ export const getStudentSchedules = getSchedulesByStudent;
 export const createResource = async (resourceData: any) => {
     const newResourceRef = await addDoc(collection(db, 'resources'), {
         ...resourceData,
-        pages: resourceData.pages || [] // Ensure pages is always an array
+        pages: resourceData.pages || []
     });
     return newResourceRef.id;
 };
@@ -1005,6 +1005,19 @@ export const createResource = async (resourceData: any) => {
 export const updateResource = async (id: string, resourceData: any) => {
     await updateDoc(doc(db, 'resources', id), resourceData);
 };
+
+export const addPageToResource = async (resourceId: string, pageData: { pageNumber: number, imageUrl: string }) => {
+    const resourceRef = doc(db, 'resources', resourceId);
+    await updateDoc(resourceRef, {
+        pages: arrayUnion(pageData)
+    });
+};
+
+export const updateResourcePages = async (resourceId: string, pages: any[]) => {
+    const resourceRef = doc(db, 'resources', resourceId);
+    await updateDoc(resourceRef, { pages });
+};
+
 
 export const deleteResource = async (id: string) => {
     await deleteDoc(doc(db, 'resources', id));
@@ -1022,6 +1035,5 @@ export const getResource = async (id: string): Promise<any | null> => {
     return null;
   }
   const data = resourceDoc.data();
-  // Ensure pages is always an array
   return { id: resourceDoc.id, ...data, pages: data.pages || [] };
 };

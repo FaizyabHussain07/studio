@@ -1,12 +1,12 @@
 
 'use client';
 
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, PlusCircle, BookOpen, Download } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { useState, useEffect, useMemo } from 'react';
+import { MoreHorizontal, PlusCircle, BookOpen, Download, HardDriveUpload } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { useState, useEffect } from 'react';
 import { deleteResource } from "@/lib/services";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ResourceForm } from "@/components/forms/resource-form";
@@ -16,6 +16,7 @@ import { onSnapshot, collection } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import Image from "next/image";
 import { Resource } from "@/lib/types";
+import Link from "next/link";
 
 
 export default function ManageResourcesPage() {
@@ -32,7 +33,7 @@ export default function ManageResourcesPage() {
             return { 
                 id: doc.id, 
                 ...data,
-                pages: data.pages || [] // Ensure pages is always an array
+                pages: data.pages || []
             } as Resource;
         });
         setResources(resourcesData);
@@ -70,11 +71,11 @@ export default function ManageResourcesPage() {
       </div>
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-2xl">
             <DialogHeader>
                 <DialogTitle>{selectedResource ? 'Edit Resource' : 'Create New Resource'}</DialogTitle>
                 <DialogDescription>
-                  {selectedResource ? 'Edit the book details and manage its pages.' : 'Fill in the details for the book below. You can add pages after creating it.'}
+                  {selectedResource ? 'Edit the details for this resource.' : 'Fill in the details for the new book.'}
                 </DialogDescription>
             </DialogHeader>
             <ResourceForm resource={selectedResource} onFinished={() => setIsFormOpen(false)} />
@@ -119,15 +120,17 @@ export default function ManageResourcesPage() {
                   resources.map((resource) => (
                     <TableRow key={resource.id}>
                       <TableCell className="font-medium flex items-center gap-4">
-                        {resource.coverImageUrl ? (
-                           <Image src={resource.coverImageUrl} alt={resource.title} width={40} height={50} className="rounded-sm object-cover"/>
-                        ) : (
-                          <div className="w-10 h-[50px] bg-secondary rounded-sm flex items-center justify-center">
-                            <BookOpen className="h-6 w-6 text-muted-foreground"/>
-                          </div>
-                        )}
+                        <Link href={`/dashboard/admin/resources/${resource.id}`} className="flex-shrink-0">
+                            {resource.coverImageUrl ? (
+                               <Image src={resource.coverImageUrl} alt={resource.title} width={40} height={50} className="rounded-sm object-cover"/>
+                            ) : (
+                              <div className="w-10 h-[50px] bg-secondary rounded-sm flex items-center justify-center">
+                                <BookOpen className="h-6 w-6 text-muted-foreground"/>
+                              </div>
+                            )}
+                        </Link>
                         <div>
-                            <p>{resource.title}</p>
+                           <Link href={`/dashboard/admin/resources/${resource.id}`} className="font-semibold hover:underline">{resource.title}</Link>
                             <p className="text-sm text-muted-foreground line-clamp-1">{resource.description}</p>
                         </div>
                       </TableCell>
@@ -142,7 +145,11 @@ export default function ManageResourcesPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => handleEdit(resource)}>Edit</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEdit(resource)}>Edit Details</DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                                <Link href={`/dashboard/admin/resources/${resource.id}`}>Manage Pages</Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                     <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive cursor-pointer">Delete</DropdownMenuItem>
