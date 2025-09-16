@@ -995,7 +995,10 @@ export const getStudentSchedules = getSchedulesByStudent;
 // --- RESOURCE SERVICES --- //
 
 export const createResource = async (resourceData: any) => {
-    const newResourceRef = await addDoc(collection(db, 'resources'), resourceData);
+    const newResourceRef = await addDoc(collection(db, 'resources'), {
+        ...resourceData,
+        pages: resourceData.pages || [] // Ensure pages is always an array
+    });
     return newResourceRef.id;
 };
 
@@ -1015,5 +1018,10 @@ export const getResources = async (): Promise<any[]> => {
 export const getResource = async (id: string): Promise<any | null> => {
   if (!id) return null;
   const resourceDoc = await getDoc(doc(db, 'resources', id));
-  return resourceDoc.exists() ? { id: resourceDoc.id, ...resourceDoc.data() } : null;
+  if (!resourceDoc.exists()) {
+    return null;
+  }
+  const data = resourceDoc.data();
+  // Ensure pages is always an array
+  return { id: resourceDoc.id, ...data, pages: data.pages || [] };
 };

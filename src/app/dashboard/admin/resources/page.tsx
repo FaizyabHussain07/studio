@@ -31,7 +31,8 @@ export default function ManageResourcesPage() {
             const data = doc.data();
             return { 
                 id: doc.id, 
-                ...data
+                ...data,
+                pages: data.pages || [] // Ensure pages is always an array
             } as Resource;
         });
         setResources(resourcesData);
@@ -73,7 +74,7 @@ export default function ManageResourcesPage() {
             <DialogHeader>
                 <DialogTitle>{selectedResource ? 'Edit Resource' : 'Create New Resource'}</DialogTitle>
                 <DialogDescription>
-                  Fill in the details for the book below. All content is saved in the database.
+                  {selectedResource ? 'Edit the book details and manage its pages.' : 'Fill in the details for the book below. You can add pages after creating it.'}
                 </DialogDescription>
             </DialogHeader>
             <ResourceForm resource={selectedResource} onFinished={() => setIsFormOpen(false)} />
