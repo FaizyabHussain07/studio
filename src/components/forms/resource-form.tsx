@@ -35,7 +35,6 @@ const fileToDataUrl = (file: File): Promise<string> => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as string);
     reader.onerror = reject;
-    reader.readAsDataURL(file);
   });
 };
 
