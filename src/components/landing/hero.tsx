@@ -8,10 +8,10 @@ export default function Hero() {
     <section id="hero" className="container grid lg:grid-cols-2 gap-12 items-center py-20 md:py-32">
       <div className="flex flex-col items-start space-y-6">
         <h1 className="font-headline text-4xl md:text-6xl font-bold leading-tight tracking-tighter">
-          Embark on a Journey of Knowledge & Faith
+          Faizyab Al-Quran: A Modern Platform for Knowledge & Faith
         </h1>
         <p className="text-lg text-muted-foreground max-w-xl">
-          Faizyab Al-Quran offers a modern, interactive platform for Quranic and academic learning, inspired by the best of online education.
+          Welcome to Faizyab Al-Quran, a comprehensive online learning management system (LMS). We offer an interactive platform for both Quranic and academic studies, inspired by the best of online education.
         </p>
         <div className="flex flex-col sm:flex-row gap-4">
           <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90" asChild>
