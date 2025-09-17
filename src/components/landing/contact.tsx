@@ -61,12 +61,8 @@ export default function Contact() {
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Formsubmit.co settings */}
               <input type="hidden" name="_next" value="https://faizyab-al-quran.vercel.app/" />
-              {/* This template ensures the ADMIN receives a table */}
               <input type="hidden" name="_template" value="table" />
-              {/* This sets the SUBJECT for the user's auto-response */}
-              <input type="hidden" name="_subject" value="Thank you" />
-              {/* This sets the BODY for the user's auto-response. Data will not be included. */}
-              <input type="hidden" name="_autoresponse" value="Thank you for contacting Faizyab Al-Quran! We have received your message and will get back to you shortly." />
+              <input type="hidden" name="_subject" value="New Contact Form Submission" />
               
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
