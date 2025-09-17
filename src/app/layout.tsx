@@ -46,6 +46,12 @@ const organizationSchema = {
   "name": "Faizyab Al-Quran",
   "url": "https://faizyab-al-quran.vercel.app",
   "logo": "https://faizyab-al-quran.vercel.app/WhatsApp_Image_2025-07-07_at_16.40.56_083d1ca9-removebg-preview.png",
+  "description": "Faizyab Al-Quran is a comprehensive online learning platform (LMS) for Quranic and academic studies, providing role-based dashboards for students and admins to manage courses and progress.",
+  "founder": {
+    "@type": "Person",
+    "name": "Syed Faizyab Hussain",
+    "url": "https://www.linkedin.com/in/faizyabhussain/"
+  },
   "sameAs": [
     "https://x.com/FaizyabHus74391",
     "https://www.youtube.com/@FaizyabAlQuran",
