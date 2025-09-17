@@ -1,3 +1,4 @@
+
 import Header from '@/components/landing/header';
 import Hero from '@/components/landing/hero';
 import About from '@/components/landing/about';
@@ -8,7 +9,13 @@ import Courses from '@/components/landing/courses';
 import Testimonials from '@/components/landing/testimonials';
 import Faq from '@/components/landing/faq';
 import Contact from '@/components/landing/contact';
+import { Metadata } from 'next';
 import Footer from '@/components/landing/footer';
+
+export const metadata: Metadata = {
+    title: 'Faizyab Al-Quran - Modern Learning Platform for Knowledge & Faith',
+    description: 'Welcome to Faizyab Al-Quran, a comprehensive online learning management system (LMS). We offer an interactive platform for both Quranic and academic studies, inspired by the best of online education.',
+}
 
 export default function Home() {
   return (

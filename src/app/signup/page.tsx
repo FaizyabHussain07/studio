@@ -13,6 +13,13 @@ import { useToast } from "@/hooks/use-toast";
 import { useState, Suspense } from "react";
 import { Logo } from "@/components/logo";
 
+// This is a client component, so we can't export metadata directly.
+// But for completeness, if this were a server component, you would add:
+// export const metadata: Metadata = {
+//   title: 'Sign Up',
+//   description: 'Create a new student account to join the Faizyab Al-Quran learning community.',
+// }
+
 function SignUpComponent() {
   const router = useRouter();
   const searchParams = useSearchParams();

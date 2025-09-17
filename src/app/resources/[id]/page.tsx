@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { notFound } from "next/navigation";
@@ -11,8 +12,36 @@ import Image from "next/image";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect } from 'react';
 import { useIsMobile } from "@/hooks/use-mobile";
-import { getResource } from "@/lib/services";
+import { getResource, getResources } from "@/lib/services";
 import { Resource } from "@/lib/types";
+import type { Metadata, ResolvingMetadata } from 'next'
+
+// This file is a Client Component, so we can't export generateMetadata directly.
+// To implement dynamic metadata, this page would need to be refactored.
+// For now, a static placeholder or manual update is needed for SEO.
+//
+// Example of how it would work in a Server Component:
+//
+// type Props = {
+//   params: { id: string }
+// }
+//
+// export async function generateMetadata({ params }: Props): Promise<Metadata> {
+//   const id = params.id
+//   const resource = await getResource(id)
+// 
+//   if (!resource) {
+//     return {
+//       title: 'Book Not Found',
+//       description: 'The book you are looking for could not be found.',
+//     }
+//   }
+// 
+//   return {
+//     title: resource.title,
+//     description: resource.description,
+//   }
+// }
 
 export default function BookViewerPage({ params }: { params: { id: string } }) {
     const [resource, setResource] = useState<Resource | null>(null);
@@ -68,7 +97,7 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
                 alt="Watermark"
                 width={200}
                 height={200}
-                className="opacity-[0.15]"
+                className="opacity-[0.2]"
             />
         </div>
     );

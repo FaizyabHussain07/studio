@@ -10,6 +10,14 @@ import { auth } from '@/lib/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/logo";
+import { Metadata } from "next";
+
+// This is a client component, so we can't export metadata directly.
+// But for completeness, if this were a server component, you would add:
+// export const metadata: Metadata = {
+//   title: 'Sign In',
+//   description: 'Access your Faizyab Al-Quran student or admin dashboard.',
+// }
 
 export default function LoginPage() {
   const router = useRouter();

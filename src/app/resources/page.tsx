@@ -12,6 +12,14 @@ import Footer from "@/components/landing/footer";
 import { useState, useEffect } from "react";
 import { getResources } from "@/lib/services";
 import { Resource } from "@/lib/types";
+import { Metadata } from "next";
+
+// This is a client component, so we can't export metadata directly.
+// If it were a server component, we would add:
+// export const metadata: Metadata = {
+//   title: 'Digital Library',
+//   description: 'Explore the full digital library of Faizyab Al-Quran. Access essential Islamic texts and learning materials to study anytime, anywhere.',
+// };
 
 export default function ResourcesPage() {
   const [resources, setResources] = useState<Resource[]>([]);
