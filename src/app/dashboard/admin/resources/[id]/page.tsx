@@ -4,28 +4,23 @@
 import { notFound, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowLeft, FileUp, X, GripVertical, Image as ImageIcon, BookOpen } from "lucide-react";
+import { ArrowLeft, PlusCircle, X, BookOpen, Save, Trash2, GripVertical } from "lucide-react";
 import Image from "next/image";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect } from 'react';
-import { getResource, updateResourcePages, addPageToResource } from "@/lib/services";
+import { getResource, updateResourcePages } from "@/lib/services";
 import { Resource, ResourcePage } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { onSnapshot, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-
-const fileToDataUrl = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-    });
-  };
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function ManageResourcePages({ params }: { params: { id: string } }) {
     const [resource, setResource] = useState<Resource | null>(null);
+    const [pages, setPages] = useState<ResourcePage[]>([]);
     const [loading, setLoading] = useState(true);
-    const [isUploading, setIsUploading] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     const { toast } = useToast();
     const router = useRouter();
     
@@ -36,10 +31,12 @@ export default function ManageResourcePages({ params }: { params: { id: string }
                 const data = doc.data() as Omit<Resource, 'id'>;
                 const sortedPages = data.pages?.sort((a,b) => a.pageNumber - b.pageNumber) || [];
                 setResource({ id: doc.id, ...data, pages: sortedPages });
+                setPages(sortedPages);
             } else {
                 setResource(null);
-                 toast({ title: "Error", description: "This resource could not be found.", variant: "destructive" });
-                 router.push('/dashboard/admin/resources');
+                setPages([]);
+                toast({ title: "Error", description: "This resource could not be found.", variant: "destructive" });
+                router.push('/dashboard/admin/resources');
             }
             setLoading(false);
         }, (error) => {
@@ -51,42 +48,40 @@ export default function ManageResourcePages({ params }: { params: { id: string }
         return () => unsubscribe();
     }, [params.id, toast, router]);
 
-    const handlePageFilesChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (!e.target.files || !resource) return;
-
-        setIsUploading(true);
-        const files = Array.from(e.target.files);
-        let lastPageNumber = resource.pages.length > 0 ? Math.max(...resource.pages.map(p => p.pageNumber)) : 0;
-        
-        try {
-            for (const file of files) {
-                const imageUrl = await fileToDataUrl(file);
-                lastPageNumber++;
-                // Instead of updating all pages, we append one by one for speed
-                await addPageToResource(resource.id, { pageNumber: lastPageNumber, imageUrl });
-            }
-            toast({ title: "Success", description: `${files.length} page(s) uploaded successfully.` });
-        } catch (error) {
-            toast({ title: "Error reading files", description: "Could not process all selected page images.", variant: "destructive" });
-        } finally {
-            setIsUploading(false);
-            e.target.value = '';
-        }
+    const handleAddPage = () => {
+        const newPageNumber = pages.length > 0 ? Math.max(...pages.map(p => p.pageNumber)) + 1 : 1;
+        setPages([...pages, { pageNumber: newPageNumber, imageUrl: '' }]);
     };
 
-    const handleRemovePage = async (pageNumberToRemove: number) => {
+    const handleRemovePage = (indexToRemove: number) => {
+        setPages(pages.filter((_, index) => index !== indexToRemove));
+    };
+
+    const handlePageChange = (index: number, field: 'pageNumber' | 'imageUrl', value: string | number) => {
+        const newPages = [...pages];
+        if (field === 'pageNumber') {
+            newPages[index][field] = Number(value);
+        } else {
+            newPages[index][field] = value as string;
+        }
+        setPages(newPages);
+    };
+
+    const handleSavePages = async () => {
         if (!resource) return;
-        const updatedPages = resource.pages
-            .filter(p => p.pageNumber !== pageNumberToRemove)
-            .map((p, index) => ({ ...p, pageNumber: index + 1 })); // Re-order page numbers
-        
+        setIsSaving(true);
         try {
-            await updateResourcePages(resource.id, updatedPages);
-            toast({ title: "Page Removed", description: "The page has been removed successfully."});
+            const sortedPages = [...pages].sort((a, b) => a.pageNumber - b.pageNumber);
+            await updateResourcePages(resource.id, sortedPages);
+            toast({ title: "Success", description: "Book pages have been saved successfully." });
         } catch (error) {
-            toast({ title: "Error", description: "Could not remove the page.", variant: "destructive"});
+            console.error("Error saving pages:", error);
+            toast({ title: "Error", description: "Could not save the pages.", variant: "destructive" });
+        } finally {
+            setIsSaving(false);
         }
     };
+
 
     if (loading) {
       return (
@@ -124,46 +119,54 @@ export default function ManageResourcePages({ params }: { params: { id: string }
             </div>
             
              <Card>
-                <CardHeader>
-                    <CardTitle>Manage Book Pages</CardTitle>
-                    <CardDescription>Upload one or more images for the book's pages. Pages are automatically saved and ordered.</CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle>Manage Book Pages</CardTitle>
+                        <CardDescription>Add, remove, and reorder pages by specifying a page number and image URL.</CardDescription>
+                    </div>
+                    <Button onClick={handleSavePages} disabled={isSaving}>
+                        <Save className="mr-2 h-4 w-4"/>
+                        {isSaving ? 'Saving...' : 'Save Pages'}
+                    </Button>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="relative border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center text-center">
-                        <FileUp className="h-10 w-10 text-muted-foreground mb-2"/>
-                        <p className="text-muted-foreground">Drag & drop page images here, or</p>
-                        <Button variant="link" className="p-0 h-auto" type="button" disabled={isUploading}>
-                            <label htmlFor="pages-upload" className="cursor-pointer">
-                               {isUploading ? 'Uploading...' : 'click to browse'}
-                            </label>
-                        </Button>
-                        <input id="pages-upload" type="file" className="sr-only" onChange={handlePageFilesChange} disabled={isUploading} multiple accept="image/*"/>
-                    </div>
-
-                    {(resource.pages?.length || 0) > 0 ? (
-                        <div className="space-y-2">
-                            <h4 className="font-medium">Uploaded Pages ({resource.pages.length})</h4>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                                {resource.pages.map((page, index) => (
-                                    <Card key={page.imageUrl} className="relative group p-2">
-                                        <div className="relative aspect-[8/11] w-full overflow-hidden rounded-md bg-secondary">
-                                            <Image src={page.imageUrl} alt={`Page ${page.pageNumber}`} fill className="object-contain" />
-                                        </div>
-                                        <div className="absolute top-1 right-1 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Button type="button" size="icon" variant="destructive" className="h-7 w-7" onClick={() => handleRemovePage(page.pageNumber)}>
-                                                <X className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                        <div className="absolute bottom-1 left-1 bg-background/80 px-1.5 py-0.5 rounded-full text-xs font-bold">
-                                            {page.pageNumber}
-                                        </div>
-                                    </Card>
-                                ))}
-                            </div>
+                     {(pages || []).length > 0 ? (
+                        <div className="space-y-4">
+                            {pages.map((page, index) => (
+                                <div key={index} className="flex items-end gap-4 p-4 border rounded-lg">
+                                    <div className="grid gap-2" style={{width: '100px'}}>
+                                        <Label htmlFor={`page-num-${index}`}>Page No.</Label>
+                                        <Input 
+                                            id={`page-num-${index}`}
+                                            type="number" 
+                                            value={page.pageNumber} 
+                                            onChange={(e) => handlePageChange(index, 'pageNumber', e.target.value)}
+                                            className="font-mono"
+                                        />
+                                    </div>
+                                    <div className="grid gap-2 flex-1">
+                                        <Label htmlFor={`page-url-${index}`}>Image URL</Label>
+                                        <Input
+                                            id={`page-url-${index}`}
+                                            type="url"
+                                            placeholder="https://example.com/image.png"
+                                            value={page.imageUrl}
+                                            onChange={(e) => handlePageChange(index, 'imageUrl', e.target.value)}
+                                        />
+                                    </div>
+                                    <Button variant="ghost" size="icon" onClick={() => handleRemovePage(index)}>
+                                        <Trash2 className="h-4 w-4 text-destructive"/>
+                                    </Button>
+                                </div>
+                            ))}
                         </div>
                     ) : (
-                        <p className="text-center text-sm text-muted-foreground py-4">No pages uploaded for this book yet.</p>
+                        <p className="text-center text-sm text-muted-foreground py-8">No pages added for this book yet. Click below to start.</p>
                     )}
+                     <Button variant="outline" onClick={handleAddPage} className="w-full border-dashed">
+                        <PlusCircle className="mr-2 h-4 w-4"/>
+                        Add Page
+                    </Button>
                 </CardContent>
             </Card>
 

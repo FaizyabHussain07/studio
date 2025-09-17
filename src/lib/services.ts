@@ -2,7 +2,7 @@
 
 import { db } from './firebase';
 import { collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, query, where, documentId, orderBy, limit, writeBatch, setDoc, onSnapshot, arrayUnion, arrayRemove, Timestamp } from 'firebase/firestore';
-import { Assignment, Course, User, Schedule } from './types';
+import { Assignment, Course, User, Schedule, ResourcePage } from './types';
 
 const sampleCoursesData = [
     {
@@ -1006,14 +1006,7 @@ export const updateResource = async (id: string, resourceData: any) => {
     await updateDoc(doc(db, 'resources', id), resourceData);
 };
 
-export const addPageToResource = async (resourceId: string, pageData: { pageNumber: number, imageUrl: string }) => {
-    const resourceRef = doc(db, 'resources', resourceId);
-    await updateDoc(resourceRef, {
-        pages: arrayUnion(pageData)
-    });
-};
-
-export const updateResourcePages = async (resourceId: string, pages: any[]) => {
+export const updateResourcePages = async (resourceId: string, pages: ResourcePage[]) => {
     const resourceRef = doc(db, 'resources', resourceId);
     await updateDoc(resourceRef, { pages });
 };
