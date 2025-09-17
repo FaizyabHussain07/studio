@@ -60,6 +60,18 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
     
     const canGoNext = currentPage + pagesToShow < totalPages;
     const canGoPrev = currentPage > 0;
+    
+    const Watermark = () => (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+            <Image
+                src="/WhatsApp_Image_2025-07-07_at_16.40.56_083d1ca9-removebg-preview.png"
+                alt="Watermark"
+                width={200}
+                height={200}
+                className="opacity-10"
+            />
+        </div>
+    );
 
     if (loading) {
       return (
@@ -136,7 +148,7 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                                       {isMobile ? (
                                         sortedPages[currentPage] && (
-                                          <Card className="overflow-hidden shadow-lg w-full md:col-span-2">
+                                          <Card className="overflow-hidden shadow-lg w-full md:col-span-2 relative">
                                             <div className="relative aspect-[8/11] w-full">
                                               <Image
                                                 src={sortedPages[currentPage].imageUrl}
@@ -146,13 +158,14 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
                                                 sizes="100vw"
                                                 priority
                                               />
+                                              <Watermark />
                                             </div>
                                           </Card>
                                         )
                                       ) : (
                                         <>
                                           {sortedPages.slice(currentPage, currentPage + 2).map((page) => (
-                                            <Card key={page.pageNumber} className="overflow-hidden shadow-lg w-full">
+                                            <Card key={page.pageNumber} className="overflow-hidden shadow-lg w-full relative">
                                               <div className="relative aspect-[8/11] w-full">
                                                 <Image
                                                   src={page.imageUrl}
@@ -162,6 +175,7 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
                                                   sizes="50vw"
                                                   priority={page.pageNumber <= 2}
                                                 />
+                                                <Watermark />
                                               </div>
                                             </Card>
                                           ))}
