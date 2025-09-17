@@ -14,7 +14,7 @@ import {
   SidebarInset,
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LayoutDashboard, BookOpen, ClipboardList, LogOut, User as UserIcon, GraduationCap, StickyNote, Calendar, Search } from "lucide-react";
+import { LayoutDashboard, BookOpen, ClipboardList, LogOut, User as UserIcon, GraduationCap, StickyNote, Calendar, Search, Library } from "lucide-react";
 import { Logo } from "@/components/logo";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,7 @@ const studentNav = [
   { name: "Browse Courses", href: "/dashboard/student/browse-courses", icon: Search },
   { name: "All Assignments", href: "/dashboard/student/assignments", icon: ClipboardList },
   { name: "Quizzes", href: "/dashboard/student/quizzes", icon: GraduationCap },
+  { name: "Library", href: "/dashboard/student/library", icon: Library },
   { name: "Notes", href: "/dashboard/student/notes", icon: StickyNote },
 ];
 
