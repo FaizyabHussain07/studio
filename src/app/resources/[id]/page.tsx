@@ -6,7 +6,7 @@ import Header from "@/components/landing/header";
 import Footer from "@/components/landing/footer";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowLeft, Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, Download, ChevronLeft, ChevronRight, BookOpen } from "lucide-react";
 import Image from "next/image";
 import { Card } from "@/components/ui/card";
 import { useState, useEffect } from 'react';
@@ -53,9 +53,8 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
     }
 
     const sortedPages = resource.pages?.sort((a,b) => a.pageNumber - b.pageNumber) || [];
-    const pageImages = sortedPages.map(p => p.imageUrl);
     const pagesToShow = isMobile ? 1 : 2;
-    const totalPages = pageImages.length;
+    const totalPages = sortedPages.length;
 
     const handleNextPage = () => {
         setCurrentPage((prev) => Math.min(prev + pagesToShow, totalPages - pagesToShow));
@@ -98,15 +97,15 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
                      {totalPages > 0 ? (
                          <div className="flex flex-col items-center gap-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-6xl">
-                                {pageImages.slice(currentPage, currentPage + pagesToShow).map((pageUrl, index) => (
-                                <Card key={index} className="overflow-hidden shadow-lg w-full">
+                                {sortedPages.slice(currentPage, currentPage + pagesToShow).map((page, index) => (
+                                <Card key={page.pageNumber} className="overflow-hidden shadow-lg w-full">
                                     <div className="relative aspect-[8/11] w-full">
                                     <Image
-                                            src={pageUrl}
-                                            alt={`Page ${currentPage + index + 1} of ${resource.title}`}
+                                            src={page.imageUrl}
+                                            alt={`Page ${page.pageNumber} of ${resource.title}`}
                                             fill
                                             className="object-contain"
-                                            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 80vw, 1024px"
+                                            sizes="(max-width: 768px) 100vw, 50vw"
                                             priority={currentPage + index < 2}
                                     />
                                     </div>
@@ -126,7 +125,8 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
                             </div>
                         </div>
                      ) : (
-                        <Card className="text-center p-12">
+                        <Card className="text-center p-12 flex flex-col items-center">
+                            <BookOpen className="h-16 w-16 text-muted-foreground mb-4" />
                             <h3 className="text-xl font-semibold">No Pages Available</h3>
                             <p className="text-muted-foreground mt-2">The pages for this book have not been uploaded yet.</p>
                         </Card>
