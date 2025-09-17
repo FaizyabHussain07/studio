@@ -107,7 +107,7 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
                             </div>
                             {resource.pdfUrl && (
                                 <Button asChild size="lg">
-                                    <a href={resource.pdfUrl} download={resource.pdfFileName} target="_blank" rel="noopener noreferrer">
+                                    <a href={resource.pdfUrl} download={resource.pdfFileName}>
                                         <Download className="mr-2 h-4 w-4" />
                                         Download Full PDF
                                     </a>
