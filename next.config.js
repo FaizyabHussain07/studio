@@ -25,6 +25,10 @@ const nextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'ibb.co',
+      },
+      {
+        protocol: 'https',
         hostname: 'media.istockphoto.com',
       },
       {
