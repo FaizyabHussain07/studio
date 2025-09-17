@@ -98,18 +98,18 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
                          <div className="flex flex-col items-center gap-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-6xl">
                                 {sortedPages.slice(currentPage, currentPage + pagesToShow).map((page, index) => (
-                                <Card key={page.pageNumber} className="overflow-hidden shadow-lg w-full">
-                                    <div className="relative aspect-[8/11] w-full">
-                                    <Image
-                                            src={page.imageUrl}
-                                            alt={`Page ${page.pageNumber} of ${resource.title}`}
-                                            fill
-                                            className="object-contain"
-                                            sizes="(max-width: 768px) 100vw, 50vw"
-                                            priority={currentPage + index < 2}
-                                    />
-                                    </div>
-                                </Card>
+                                    <Card key={page.pageNumber} className="overflow-hidden shadow-lg w-full">
+                                        <div className="relative aspect-[8/11] w-full">
+                                            <Image
+                                                src={page.imageUrl}
+                                                alt={`Page ${page.pageNumber} of ${resource.title}`}
+                                                fill
+                                                className="object-contain"
+                                                sizes="(max-width: 768px) 100vw, 50vw"
+                                                priority={currentPage + index < 2}
+                                            />
+                                        </div>
+                                    </Card>
                                 ))}
                             </div>
                             <div className="flex items-center justify-center gap-4 w-full">
