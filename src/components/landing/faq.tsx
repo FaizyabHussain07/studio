@@ -28,13 +28,30 @@ const faqs = [
   },
 ];
 
+const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faqs.map(faq => ({
+        "@type": "Question",
+        "name": faq.question,
+        "acceptedAnswer": {
+            "@type": "Answer",
+            "text": faq.answer
+        }
+    }))
+};
+
 
 export default function Faq() {
   return (
     <section id="faq" className="container py-20 md:py-32">
+       <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
       <div className="text-center space-y-4 mb-12">
         <h2 className="font-headline text-3xl md:text-4xl font-bold">Frequently Asked Questions</h2>
-        <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+        <p className="text-muted-foreground text-lg max-w-3xl mx-auto">
           Have questions? We've got answers. If you can't find what you're looking for, feel free to contact us.
         </p>
       </div>

@@ -1,10 +1,11 @@
 import { MetadataRoute } from 'next'
-import { allResources } from './resources/page';
+import { getResources } from '@/lib/services';
  
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://faizyab-al-quran.vercel.app';
+  const resources = await getResources();
 
-  const resourcePages = allResources.map((resource) => ({
+  const resourcePages = resources.map((resource) => ({
     url: `${baseUrl}/resources/${resource.id}`,
     lastModified: new Date(),
     changeFrequency: 'monthly' as const,
