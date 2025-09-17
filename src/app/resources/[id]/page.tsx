@@ -68,7 +68,7 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
                 alt="Watermark"
                 width={200}
                 height={200}
-                className="opacity-10"
+                className="opacity-[0.15]"
             />
         </div>
     );
