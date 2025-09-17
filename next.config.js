@@ -32,7 +32,8 @@ const nextConfig = {
         hostname: 'media.istockphoto.com',
       },
       {
-        protocol: 'https',
+        protocol: 'https'
+        ,
         hostname: 'picsum.photos',
       }
     ],

@@ -23,11 +23,15 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
     useEffect(() => {
         const fetchResource = async () => {
             setLoading(true);
-            const resourceData = await getResource(params.id);
-            if (resourceData) {
+            try {
+                const resourceData = await getResource(params.id);
                 setResource(resourceData);
+            } catch (error) {
+                console.error("Failed to fetch resource:", error);
+                setResource(null);
+            } finally {
+                setLoading(false);
             }
-            setLoading(false);
         };
         fetchResource();
     }, [params.id]);
@@ -48,9 +52,10 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
         notFound();
     }
 
+    const sortedPages = resource.pages?.sort((a,b) => a.pageNumber - b.pageNumber) || [];
+    const pageImages = sortedPages.map(p => p.imageUrl);
     const pagesToShow = isMobile ? 1 : 2;
-    const totalPages = resource.pages?.length || 0;
-    const pageImages = resource.pages?.sort((a,b) => a.pageNumber - b.pageNumber).map(p => p.imageUrl) || [];
+    const totalPages = pageImages.length;
 
     const handleNextPage = () => {
         setCurrentPage((prev) => Math.min(prev + pagesToShow, totalPages - pagesToShow));
@@ -94,7 +99,7 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
                          <div className="flex flex-col items-center gap-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-6xl">
                                 {pageImages.slice(currentPage, currentPage + pagesToShow).map((pageUrl, index) => (
-                                <Card key={pageUrl} className="overflow-hidden shadow-lg w-full">
+                                <Card key={index} className="overflow-hidden shadow-lg w-full">
                                     <div className="relative aspect-[8/11] w-full">
                                     <Image
                                             src={pageUrl}
