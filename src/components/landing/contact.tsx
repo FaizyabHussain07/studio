@@ -33,10 +33,6 @@ export default function Contact() {
           description: "Thank you for contacting us. We'll get back to you soon.",
         });
         (event.target as HTMLFormElement).reset();
-         // Wait a moment for the user to see the toast, then reload
-        setTimeout(() => {
-          window.location.reload();
-        }, 2000);
       } else {
         throw new Error("Form submission failed");
       }
@@ -62,7 +58,7 @@ export default function Contact() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form action="https://formsubmit.co/faizyab.al.quran@gmail.com" method="POST" className="space-y-4">
               {/* Formspree settings */}
               <input type="hidden" name="_template" value="table" />
               <input type="hidden" name="_next" value="https://faizyab-al-quran.vercel.app/" />
