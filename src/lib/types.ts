@@ -64,7 +64,7 @@ export type Resource = {
     description?: string;
     coverImageUrl?: string;
     dataAiHint?: string;
-    pdfDataUrl?: string;
+    pdfUrl?: string;
     pdfFileName?: string;
     pages: ResourcePage[];
     toc?: ResourceTOCItem[];

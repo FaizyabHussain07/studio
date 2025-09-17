@@ -16,21 +16,14 @@ import { Resource } from "@/lib/types";
 const resourceSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
-  coverImage: z.any().optional(),
-  pdfFile: z.any().optional(),
+  coverImageUrl: z.string().url("Must be a valid URL for the cover image").optional().or(z.literal('')),
+  pdfUrl: z.string().url("Must be a valid URL for the PDF").optional().or(z.literal('')),
+  pdfFileName: z.string().optional(),
 });
 
 type ResourceFormProps = {
     resource: Resource | null;
     onFinished: () => void;
-};
-
-const fileToDataUrl = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-  });
 };
 
 export function ResourceForm({ resource, onFinished }: ResourceFormProps) {
@@ -42,6 +35,9 @@ export function ResourceForm({ resource, onFinished }: ResourceFormProps) {
     defaultValues: {
       title: resource?.title || "",
       description: resource?.description || "",
+      coverImageUrl: resource?.coverImageUrl || "",
+      pdfUrl: resource?.pdfUrl || "",
+      pdfFileName: resource?.pdfFileName || "",
     },
   });
 
@@ -51,30 +47,30 @@ export function ResourceForm({ resource, onFinished }: ResourceFormProps) {
       const payload: any = {
         title: data.title,
         description: data.description,
+        coverImageUrl: data.coverImageUrl,
+        pdfUrl: data.pdfUrl,
       };
 
-      if (data.coverImage instanceof File) {
-        payload.coverImageUrl = await fileToDataUrl(data.coverImage);
-      } else if (resource?.coverImageUrl) {
-        payload.coverImageUrl = resource.coverImageUrl;
-      }
-      
-      if (data.pdfFile instanceof File) {
-        payload.pdfDataUrl = await fileToDataUrl(data.pdfFile);
-        payload.pdfFileName = data.pdfFile.name;
-      } else if (resource?.pdfDataUrl) {
-        payload.pdfDataUrl = resource.pdfDataUrl;
-        payload.pdfFileName = resource.pdfFileName;
+      // Extract filename from URL if not provided
+      if (data.pdfUrl && !data.pdfFileName) {
+        try {
+            const url = new URL(data.pdfUrl);
+            const pathname = url.pathname;
+            payload.pdfFileName = pathname.substring(pathname.lastIndexOf('/') + 1) || `${data.title.replace(/\s+/g, '-')}.pdf`;
+        } catch (_) {
+            payload.pdfFileName = `${data.title.replace(/\s+/g, '-')}.pdf`;
+        }
+      } else {
+        payload.pdfFileName = data.pdfFileName;
       }
 
+
       if (resource) {
-        // When updating, we preserve the existing pages and TOC.
         payload.pages = resource.pages || [];
         payload.toc = resource.toc || [];
         await updateResource(resource.id, payload);
         toast({ title: "Success", description: "Resource details updated successfully." });
       } else {
-        // When creating, pages and toc array are initialized as empty.
         payload.pages = [];
         payload.toc = [];
         await createResource(payload);
@@ -118,39 +114,33 @@ export function ResourceForm({ resource, onFinished }: ResourceFormProps) {
             </FormItem>
           )}
         />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="coverImage"
-            render={({ field: { onChange, value, ...rest } }) => (
-              <FormItem>
-                <FormLabel>Cover Image</FormLabel>
-                 {resource?.coverImageUrl && !value && (
-                      <div className="text-xs text-muted-foreground">Current cover exists. Upload a new file to replace it.</div>
-                  )}
-                <FormControl>
-                  <Input type="file" accept="image/*" onChange={(e) => onChange(e.target.files?.[0])} {...rest} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="pdfFile"
-            render={({ field: { onChange, value, ...rest } }) => (
-              <FormItem>
-                <FormLabel>Full PDF (Optional)</FormLabel>
-                {resource?.pdfFileName && !value && (
-                      <div className="text-xs text-muted-foreground">Current: {resource.pdfFileName}. Upload to replace.</div>
+        <div className="grid grid-cols-1 gap-4">
+            <FormField
+                control={form.control}
+                name="coverImageUrl"
+                render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Cover Image URL</FormLabel>
+                    <FormControl>
+                    <Input type="url" placeholder="https://example.com/cover.jpg" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
                 )}
-                <FormControl>
-                  <Input type="file" accept=".pdf" onChange={(e) => onChange(e.target.files?.[0])} {...rest}/>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+            />
+            <FormField
+                control={form.control}
+                name="pdfUrl"
+                render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Full PDF URL (Optional)</FormLabel>
+                    <FormControl>
+                    <Input type="url" placeholder="https://example.com/book.pdf" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
+                )}
+            />
         </div>
         <Button type="submit" disabled={loading}>{loading ? 'Saving...' : 'Save Resource'}</Button>
       </form>

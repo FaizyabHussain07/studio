@@ -105,9 +105,9 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
                                 <h1 className="font-headline text-4xl font-bold">{resource.title}</h1>
                                 <p className="text-muted-foreground mt-1 max-w-2xl">{resource.description}</p>
                             </div>
-                            {resource.pdfDataUrl && (
+                            {resource.pdfUrl && (
                                 <Button asChild size="lg">
-                                    <a href={resource.pdfDataUrl} download={resource.pdfFileName}>
+                                    <a href={resource.pdfUrl} download={resource.pdfFileName} target="_blank" rel="noopener noreferrer">
                                         <Download className="mr-2 h-4 w-4" />
                                         Download Full PDF
                                     </a>
