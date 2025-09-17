@@ -1,15 +1,15 @@
 
 'use client';
 
-import { notFound, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowLeft, PlusCircle, X, BookOpen, Save, Trash2, GripVertical } from "lucide-react";
+import { ArrowLeft, PlusCircle, BookOpen, Save, Trash2, BookMarked } from "lucide-react";
 import Image from "next/image";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect } from 'react';
-import { getResource, updateResourcePages } from "@/lib/services";
-import { Resource, ResourcePage } from "@/lib/types";
+import { updateResourcePages, updateResourceTOC } from "@/lib/services";
+import { Resource, ResourcePage, ResourceTOCItem } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { onSnapshot, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -19,8 +19,10 @@ import { Label } from "@/components/ui/label";
 export default function ManageResourcePages({ params }: { params: { id: string } }) {
     const [resource, setResource] = useState<Resource | null>(null);
     const [pages, setPages] = useState<ResourcePage[]>([]);
+    const [toc, setToc] = useState<ResourceTOCItem[]>([]);
     const [loading, setLoading] = useState(true);
-    const [isSaving, setIsSaving] = useState(false);
+    const [isSavingPages, setIsSavingPages] = useState(false);
+    const [isSavingTOC, setIsSavingTOC] = useState(false);
     const { toast } = useToast();
     const router = useRouter();
     
@@ -30,11 +32,13 @@ export default function ManageResourcePages({ params }: { params: { id: string }
             if (doc.exists()) {
                 const data = doc.data() as Omit<Resource, 'id'>;
                 const sortedPages = data.pages?.sort((a,b) => a.pageNumber - b.pageNumber) || [];
-                setResource({ id: doc.id, ...data, pages: sortedPages });
+                setResource({ id: doc.id, ...data, pages: sortedPages, toc: data.toc || [] });
                 setPages(sortedPages);
+                setToc(data.toc || []);
             } else {
                 setResource(null);
                 setPages([]);
+                setToc([]);
                 toast({ title: "Error", description: "This resource could not be found.", variant: "destructive" });
                 router.push('/dashboard/admin/resources');
             }
@@ -69,7 +73,7 @@ export default function ManageResourcePages({ params }: { params: { id: string }
 
     const handleSavePages = async () => {
         if (!resource) return;
-        setIsSaving(true);
+        setIsSavingPages(true);
         try {
             const sortedPages = [...pages].sort((a, b) => a.pageNumber - b.pageNumber);
             await updateResourcePages(resource.id, sortedPages);
@@ -78,7 +82,40 @@ export default function ManageResourcePages({ params }: { params: { id: string }
             console.error("Error saving pages:", error);
             toast({ title: "Error", description: "Could not save the pages.", variant: "destructive" });
         } finally {
-            setIsSaving(false);
+            setIsSavingPages(false);
+        }
+    };
+    
+    // TOC handlers
+    const handleAddTOCItem = () => {
+        setToc([...toc, { title: '', startPage: 1 }]);
+    };
+
+    const handleRemoveTOCItem = (indexToRemove: number) => {
+        setToc(toc.filter((_, index) => index !== indexToRemove));
+    };
+
+    const handleTOCChange = (index: number, field: 'title' | 'startPage' | 'endPage', value: string | number) => {
+        const newToc = [...toc];
+        if (field === 'title') {
+            newToc[index][field] = value as string;
+        } else {
+            newToc[index][field] = Number(value);
+        }
+        setToc(newToc);
+    };
+
+    const handleSaveTOC = async () => {
+        if (!resource) return;
+        setIsSavingTOC(true);
+        try {
+            await updateResourceTOC(resource.id, toc);
+            toast({ title: "Success", description: "Table of Contents saved successfully." });
+        } catch (error) {
+            console.error("Error saving TOC:", error);
+            toast({ title: "Error", description: "Could not save the Table of Contents.", variant: "destructive" });
+        } finally {
+            setIsSavingTOC(false);
         }
     };
 
@@ -94,7 +131,7 @@ export default function ManageResourcePages({ params }: { params: { id: string }
     }
     
     if (!resource) {
-        notFound();
+        return <div className="text-center p-8">Resource not found.</div>;
     }
 
     return (
@@ -106,10 +143,10 @@ export default function ManageResourcePages({ params }: { params: { id: string }
             </Button>
             <div className="flex items-start gap-6">
                  {resource.coverImageUrl ? (
-                    <Image src={resource.coverImageUrl} alt={resource.title} width={100} height={140} className="rounded-md object-cover"/>
+                    <Image src={resource.coverImageUrl} alt={resource.title} width={100} height={140} className="rounded-md object-cover shadow-md"/>
                 ) : (
-                    <div className="w-[100px] h-[140px] bg-secondary rounded-md flex items-center justify-center">
-                    <BookOpen className="h-12 w-12 text-muted-foreground"/>
+                    <div className="w-[100px] h-[140px] bg-secondary rounded-md flex items-center justify-center border">
+                        <BookOpen className="h-12 w-12 text-muted-foreground"/>
                     </div>
                 )}
                 <div>
@@ -124,16 +161,16 @@ export default function ManageResourcePages({ params }: { params: { id: string }
                         <CardTitle>Manage Book Pages</CardTitle>
                         <CardDescription>Add, remove, and reorder pages by specifying a page number and image URL.</CardDescription>
                     </div>
-                    <Button onClick={handleSavePages} disabled={isSaving}>
+                    <Button onClick={handleSavePages} disabled={isSavingPages}>
                         <Save className="mr-2 h-4 w-4"/>
-                        {isSaving ? 'Saving...' : 'Save Pages'}
+                        {isSavingPages ? 'Saving...' : 'Save Pages'}
                     </Button>
                 </CardHeader>
                 <CardContent className="space-y-4">
                      {(pages || []).length > 0 ? (
-                        <div className="space-y-4">
+                        <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
                             {pages.map((page, index) => (
-                                <div key={index} className="flex items-end gap-4 p-4 border rounded-lg">
+                                <div key={index} className="flex items-end gap-4 p-4 border rounded-lg bg-secondary/30">
                                     <div className="grid gap-2" style={{width: '100px'}}>
                                         <Label htmlFor={`page-num-${index}`}>Page No.</Label>
                                         <Input 
@@ -154,7 +191,7 @@ export default function ManageResourcePages({ params }: { params: { id: string }
                                             onChange={(e) => handlePageChange(index, 'imageUrl', e.target.value)}
                                         />
                                     </div>
-                                    <Button variant="ghost" size="icon" onClick={() => handleRemovePage(index)}>
+                                    <Button variant="ghost" size="icon" onClick={() => handleRemovePage(index)} title="Remove Page">
                                         <Trash2 className="h-4 w-4 text-destructive"/>
                                     </Button>
                                 </div>
@@ -166,6 +203,66 @@ export default function ManageResourcePages({ params }: { params: { id: string }
                      <Button variant="outline" onClick={handleAddPage} className="w-full border-dashed">
                         <PlusCircle className="mr-2 h-4 w-4"/>
                         Add Page
+                    </Button>
+                </CardContent>
+            </Card>
+
+             <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle>Manage Table of Contents</CardTitle>
+                        <CardDescription>Define chapters and their page ranges for easy navigation.</CardDescription>
+                    </div>
+                    <Button onClick={handleSaveTOC} disabled={isSavingTOC}>
+                        <Save className="mr-2 h-4 w-4"/>
+                        {isSavingTOC ? 'Saving...' : 'Save TOC'}
+                    </Button>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                     {(toc || []).length > 0 ? (
+                        <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+                            {toc.map((item, index) => (
+                                <div key={index} className="flex items-end gap-4 p-4 border rounded-lg bg-secondary/30">
+                                    <div className="grid gap-2 flex-1">
+                                        <Label htmlFor={`toc-title-${index}`}>Chapter Title</Label>
+                                        <Input 
+                                            id={`toc-title-${index}`}
+                                            type="text"
+                                            placeholder="e.g., Chapter 1: Introduction"
+                                            value={item.title} 
+                                            onChange={(e) => handleTOCChange(index, 'title', e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="grid gap-2" style={{width: '100px'}}>
+                                        <Label htmlFor={`toc-start-${index}`}>Start Page</Label>
+                                        <Input
+                                            id={`toc-start-${index}`}
+                                            type="number"
+                                            value={item.startPage}
+                                            onChange={(e) => handleTOCChange(index, 'startPage', e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="grid gap-2" style={{width: '100px'}}>
+                                        <Label htmlFor={`toc-end-${index}`}>End Page</Label>
+                                        <Input
+                                            id={`toc-end-${index}`}
+                                            type="number"
+                                            value={item.endPage || ''}
+                                            onChange={(e) => handleTOCChange(index, 'endPage', e.target.value)}
+                                        />
+                                    </div>
+                                    <Button variant="ghost" size="icon" onClick={() => handleRemoveTOCItem(index)} title="Remove Chapter">
+                                        <Trash2 className="h-4 w-4 text-destructive"/>
+                                    </Button>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-center text-sm text-muted-foreground py-8">No chapters added yet. Click below to create the Table of Contents.</p>
+                    )}
+                     <Button variant="outline" onClick={handleAddTOCItem} className="w-full border-dashed">
+                        <PlusCircle className="mr-2 h-4 w-4"/>
+                        Add Chapter
                     </Button>
                 </CardContent>
             </Card>

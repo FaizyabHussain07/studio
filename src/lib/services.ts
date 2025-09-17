@@ -2,7 +2,7 @@
 
 import { db } from './firebase';
 import { collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, query, where, documentId, orderBy, limit, writeBatch, setDoc, onSnapshot, arrayUnion, arrayRemove, Timestamp } from 'firebase/firestore';
-import { Assignment, Course, User, Schedule, ResourcePage } from './types';
+import { Assignment, Course, User, Schedule, ResourcePage, ResourceTOCItem } from './types';
 
 const sampleCoursesData = [
     {
@@ -997,7 +997,8 @@ export const getStudentSchedules = getSchedulesByStudent;
 export const createResource = async (resourceData: any) => {
     const newResourceRef = await addDoc(collection(db, 'resources'), {
         ...resourceData,
-        pages: resourceData.pages || []
+        pages: resourceData.pages || [],
+        toc: resourceData.toc || []
     });
     return newResourceRef.id;
 };
@@ -1011,6 +1012,10 @@ export const updateResourcePages = async (resourceId: string, pages: ResourcePag
     await updateDoc(resourceRef, { pages });
 };
 
+export const updateResourceTOC = async (resourceId: string, toc: ResourceTOCItem[]) => {
+    const resourceRef = doc(db, 'resources', resourceId);
+    await updateDoc(resourceRef, { toc });
+}
 
 export const deleteResource = async (id: string) => {
     await deleteDoc(doc(db, 'resources', id));
@@ -1028,5 +1033,5 @@ export const getResource = async (id: string): Promise<any | null> => {
     return null;
   }
   const data = resourceDoc.data();
-  return { id: resourceDoc.id, ...data, pages: data.pages || [] };
+  return { id: resourceDoc.id, ...data, pages: data.pages || [], toc: data.toc || [] };
 };

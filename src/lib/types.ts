@@ -52,6 +52,12 @@ export type ResourcePage = {
     imageUrl: string;
 };
 
+export type ResourceTOCItem = {
+    title: string;
+    startPage: number;
+    endPage?: number;
+}
+
 export type Resource = {
     id: string;
     title: string;
@@ -61,4 +67,5 @@ export type Resource = {
     pdfDataUrl?: string;
     pdfFileName?: string;
     pages: ResourcePage[];
+    toc?: ResourceTOCItem[];
 }

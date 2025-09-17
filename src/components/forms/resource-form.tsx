@@ -68,13 +68,15 @@ export function ResourceForm({ resource, onFinished }: ResourceFormProps) {
       }
 
       if (resource) {
-        // When updating, we preserve the existing pages.
+        // When updating, we preserve the existing pages and TOC.
         payload.pages = resource.pages || [];
+        payload.toc = resource.toc || [];
         await updateResource(resource.id, payload);
         toast({ title: "Success", description: "Resource details updated successfully." });
       } else {
-        // When creating, pages array is initialized as empty.
+        // When creating, pages and toc array are initialized as empty.
         payload.pages = [];
+        payload.toc = [];
         await createResource(payload);
         toast({ title: "Success", description: "Resource created successfully." });
       }

@@ -6,9 +6,9 @@ import Header from "@/components/landing/header";
 import Footer from "@/components/landing/footer";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowLeft, Download, ChevronLeft, ChevronRight, BookOpen } from "lucide-react";
+import { ArrowLeft, Download, ChevronLeft, ChevronRight, BookOpen, ListTree } from "lucide-react";
 import Image from "next/image";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect } from 'react';
 import { useIsMobile } from "@/hooks/use-mobile";
 import { getResource } from "@/lib/services";
@@ -36,6 +36,31 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
         fetchResource();
     }, [params.id]);
 
+    const sortedPages = resource?.pages?.sort((a,b) => a.pageNumber - b.pageNumber) || [];
+    const pagesToShow = isMobile ? 1 : 2;
+    const totalPages = sortedPages.length;
+
+    const handleNextPage = () => {
+        setCurrentPage((prev) => Math.min(prev + pagesToShow, totalPages - pagesToShow + (isMobile ? 0 : 1)));
+    };
+
+    const handlePrevPage = () => {
+        setCurrentPage((prev) => Math.max(prev - pagesToShow, 0));
+    };
+
+    const goToPage = (pageNumber: number) => {
+        // Find the index of the page with the given page number
+        const pageIndex = sortedPages.findIndex(p => p.pageNumber === pageNumber);
+        if(pageIndex !== -1) {
+            // In two-page view, we want to land on an even-numbered index to show pages correctly (e.g., 0, 2, 4...)
+            const targetIndex = isMobile ? pageIndex : Math.floor(pageIndex / 2) * 2;
+            setCurrentPage(targetIndex);
+        }
+    };
+    
+    const canGoNext = currentPage + pagesToShow < totalPages;
+    const canGoPrev = currentPage > 0;
+
     if (loading) {
       return (
         <div className="flex flex-col min-h-screen">
@@ -51,21 +76,6 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
     if (!resource) {
         notFound();
     }
-
-    const sortedPages = resource.pages?.sort((a,b) => a.pageNumber - b.pageNumber) || [];
-    const pagesToShow = isMobile ? 1 : 2;
-    const totalPages = sortedPages.length;
-
-    const handleNextPage = () => {
-        setCurrentPage((prev) => Math.min(prev + pagesToShow, totalPages - pagesToShow));
-    };
-
-    const handlePrevPage = () => {
-        setCurrentPage((prev) => Math.max(prev - pagesToShow, 0));
-    };
-    
-    const canGoNext = currentPage + pagesToShow < totalPages;
-    const canGoPrev = currentPage > 0;
 
     return (
         <div className="flex flex-col min-h-screen">
@@ -93,45 +103,93 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
                             )}
                         </div>
                     </div>
-                    
-                     {totalPages > 0 ? (
-                         <div className="flex flex-col items-center gap-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-6xl">
-                                {sortedPages.slice(currentPage, currentPage + pagesToShow).map((page, index) => (
-                                    <Card key={page.pageNumber} className="overflow-hidden shadow-lg w-full">
-                                        <div className="relative aspect-[8/11] w-full">
-                                            <Image
-                                                src={page.imageUrl}
-                                                alt={`Page ${page.pageNumber} of ${resource.title}`}
+
+                    <div className="grid lg:grid-cols-4 gap-8">
+                         {resource.toc && resource.toc.length > 0 && (
+                            <div className="lg:col-span-1">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center gap-2">
+                                            <ListTree className="h-5 w-5"/>
+                                            Table of Contents
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="p-0">
+                                        <ul className="divide-y">
+                                            {resource.toc.sort((a, b) => a.startPage - b.startPage).map((item, index) => (
+                                                <li key={index}>
+                                                    <button onClick={() => goToPage(item.startPage)} className="w-full text-left p-4 hover:bg-secondary/50 transition-colors flex justify-between items-center">
+                                                        <span>{item.title}</span>
+                                                        <span className="text-muted-foreground text-sm">{item.startPage}</span>
+                                                    </button>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        )}
+                        
+                        <div className={resource.toc && resource.toc.length > 0 ? 'lg:col-span-3' : 'lg:col-span-4'}>
+                             {totalPages > 0 ? (
+                                <div className="flex flex-col items-center gap-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+                                      {isMobile ? (
+                                        sortedPages[currentPage] && (
+                                          <Card className="overflow-hidden shadow-lg w-full md:col-span-2">
+                                            <div className="relative aspect-[8/11] w-full">
+                                              <Image
+                                                src={sortedPages[currentPage].imageUrl}
+                                                alt={`Page ${sortedPages[currentPage].pageNumber} of ${resource.title}`}
                                                 fill
                                                 className="object-contain"
-                                                sizes="(max-width: 768px) 100vw, 50vw"
-                                                priority={currentPage + index < 2}
-                                            />
+                                                sizes="100vw"
+                                                priority
+                                              />
+                                            </div>
+                                          </Card>
+                                        )
+                                      ) : (
+                                        <>
+                                          {sortedPages.slice(currentPage, currentPage + 2).map((page) => (
+                                            <Card key={page.pageNumber} className="overflow-hidden shadow-lg w-full">
+                                              <div className="relative aspect-[8/11] w-full">
+                                                <Image
+                                                  src={page.imageUrl}
+                                                  alt={`Page ${page.pageNumber} of ${resource.title}`}
+                                                  fill
+                                                  className="object-contain"
+                                                  sizes="50vw"
+                                                  priority={page.pageNumber <= 2}
+                                                />
+                                              </div>
+                                            </Card>
+                                          ))}
+                                        </>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center justify-center gap-4 w-full">
+                                        <Button variant="outline" onClick={handlePrevPage} disabled={!canGoPrev}>
+                                            <ChevronLeft className="mr-2 h-4 w-4" /> Previous
+                                        </Button>
+                                        <div className="text-sm text-muted-foreground font-medium">
+                                            Page {sortedPages[currentPage]?.pageNumber || 0}
+                                            {!isMobile && sortedPages[currentPage + 1] ? ` - ${sortedPages[currentPage + 1]?.pageNumber}` : ''} of {totalPages}
                                         </div>
-                                    </Card>
-                                ))}
-                            </div>
-                            <div className="flex items-center justify-center gap-4 w-full">
-                                <Button variant="outline" onClick={handlePrevPage} disabled={!canGoPrev}>
-                                    <ChevronLeft className="mr-2 h-4 w-4" /> Previous
-                                </Button>
-                                <div className="text-sm text-muted-foreground font-medium">
-                                    Page {currentPage + 1}{pagesToShow > 1 && currentPage + 2 <= totalPages ? ` - ${currentPage + 2}`: ''} of {totalPages}
+                                        <Button variant="outline" onClick={handleNextPage} disabled={!canGoNext}>
+                                            Next <ChevronRight className="ml-2 h-4 w-4" />
+                                        </Button>
+                                    </div>
                                 </div>
-                                <Button variant="outline" onClick={handleNextPage} disabled={!canGoNext}>
-                                    Next <ChevronRight className="ml-2 h-4 w-4" />
-                                </Button>
-                            </div>
+                             ) : (
+                                <Card className="text-center p-12 flex flex-col items-center">
+                                    <BookOpen className="h-16 w-16 text-muted-foreground mb-4" />
+                                    <h3 className="text-xl font-semibold">No Pages Available</h3>
+                                    <p className="text-muted-foreground mt-2">The pages for this book have not been uploaded yet.</p>
+                                </Card>
+                             )}
                         </div>
-                     ) : (
-                        <Card className="text-center p-12 flex flex-col items-center">
-                            <BookOpen className="h-16 w-16 text-muted-foreground mb-4" />
-                            <h3 className="text-xl font-semibold">No Pages Available</h3>
-                            <p className="text-muted-foreground mt-2">The pages for this book have not been uploaded yet.</p>
-                        </Card>
-                     )}
-
+                    </div>
                 </div>
             </main>
             <Footer />
