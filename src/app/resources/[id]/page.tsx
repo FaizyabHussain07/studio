@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft, Download, ChevronLeft, ChevronRight, BookOpen, ListTree } from "lucide-react";
 import Image from "next/image";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { useState, useEffect } from 'react';
 import { useIsMobile } from "@/hooks/use-mobile";
 import { getResource, getResources } from "@/lib/services";
@@ -183,35 +183,45 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                                   {isMobile ? (
                                     sortedPages[currentPage] && (
-                                      <Card className="overflow-hidden shadow-lg w-full md:col-span-2 relative">
-                                        <div className="relative aspect-[8/11] w-full">
-                                          <Image
-                                            src={sortedPages[currentPage].imageUrl}
-                                            alt={`Page ${sortedPages[currentPage].pageNumber} of ${resource.title}`}
-                                            fill
-                                            className="object-contain"
-                                            sizes="100vw"
-                                            priority
-                                          />
-                                          <Watermark />
-                                        </div>
+                                      <Card className="overflow-hidden shadow-lg w-full md:col-span-2 flex flex-col">
+                                        <CardContent className="p-0 relative flex-grow">
+                                            <div className="relative aspect-[8/11] w-full">
+                                            <Image
+                                                src={sortedPages[currentPage].imageUrl}
+                                                alt={`Page ${sortedPages[currentPage].pageNumber} of ${resource.title}`}
+                                                fill
+                                                className="object-contain"
+                                                sizes="100vw"
+                                                priority
+                                            />
+                                            <Watermark />
+                                            </div>
+                                        </CardContent>
+                                        <CardFooter className="p-2 justify-center text-sm text-muted-foreground bg-secondary/50 border-t">
+                                            Page {sortedPages[currentPage].pageNumber}
+                                        </CardFooter>
                                       </Card>
                                     )
                                   ) : (
                                     <>
                                       {sortedPages.slice(currentPage, currentPage + 2).map((page) => (
-                                        <Card key={page.pageNumber} className="overflow-hidden shadow-lg w-full relative">
-                                          <div className="relative aspect-[8/11] w-full">
-                                            <Image
-                                              src={page.imageUrl}
-                                              alt={`Page ${page.pageNumber} of ${resource.title}`}
-                                              fill
-                                              className="object-contain"
-                                              sizes="50vw"
-                                              priority={page.pageNumber <= 2}
-                                            />
-                                            <Watermark />
-                                          </div>
+                                        <Card key={page.pageNumber} className="overflow-hidden shadow-lg w-full flex flex-col">
+                                           <CardContent className="p-0 relative flex-grow">
+                                                <div className="relative aspect-[8/11] w-full">
+                                                    <Image
+                                                    src={page.imageUrl}
+                                                    alt={`Page ${page.pageNumber} of ${resource.title}`}
+                                                    fill
+                                                    className="object-contain"
+                                                    sizes="50vw"
+                                                    priority={page.pageNumber <= 2}
+                                                    />
+                                                    <Watermark />
+                                                </div>
+                                           </CardContent>
+                                            <CardFooter className="p-2 justify-center text-sm text-muted-foreground bg-secondary/50 border-t">
+                                                Page {page.pageNumber}
+                                            </CardFooter>
                                         </Card>
                                       ))}
                                     </>
@@ -221,10 +231,6 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
                                     <Button variant="outline" onClick={handlePrevPage} disabled={!canGoPrev}>
                                         <ChevronLeft className="mr-2 h-4 w-4" /> Previous
                                     </Button>
-                                    <div className="text-sm text-muted-foreground font-medium">
-                                        Page {sortedPages[currentPage]?.pageNumber || 0}
-                                        {!isMobile && sortedPages[currentPage + 1] ? ` - ${sortedPages[currentPage + 1]?.pageNumber}` : ''} of {totalPages}
-                                    </div>
                                     <Button variant="outline" onClick={handleNextPage} disabled={!canGoNext}>
                                         Next <ChevronRight className="ml-2 h-4 w-4" />
                                     </Button>
