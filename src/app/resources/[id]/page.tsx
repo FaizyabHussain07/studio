@@ -81,6 +81,14 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
             setIsTocOpen(false);
         }
     };
+
+    const goToViewerPage = (pageNumber: number) => {
+        const pageIndex = sortedPages.findIndex(p => p.pageNumber === pageNumber);
+        if(pageIndex !== -1) {
+            setViewerPageIndex(pageIndex);
+            setIsTocOpen(false); // Close TOC modal
+        }
+    };
     
     const canGoNext = currentPageIndex + pagesToShow < totalPages;
     const canGoPrev = currentPageIndex > 0;
@@ -202,33 +210,6 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
                                 <p className="text-muted-foreground mt-1 max-w-2xl">{resource.description}</p>
                             </div>
                             <div className="flex items-center gap-2">
-                                {resource.toc && resource.toc.length > 0 && (
-                                    <Dialog open={isTocOpen} onOpenChange={setIsTocOpen}>
-                                        <DialogTrigger asChild>
-                                            <Button variant="outline">
-                                                <ListTree className="mr-2 h-4 w-4"/>
-                                                Table of Contents
-                                            </Button>
-                                        </DialogTrigger>
-                                        <DialogContent className="sm:max-w-[425px]">
-                                            <DialogHeader>
-                                                <DialogTitle>Table of Contents</DialogTitle>
-                                            </DialogHeader>
-                                            <div className="max-h-96 overflow-y-auto">
-                                                 <ul className="divide-y">
-                                                    {resource.toc.sort((a, b) => a.startPage - b.startPage).map((item, index) => (
-                                                        <li key={index}>
-                                                            <button onClick={() => goToPage(item.startPage)} className="w-full text-left p-4 hover:bg-secondary/50 transition-colors flex justify-between items-center rounded-md">
-                                                                <span className="font-medium">{item.title}</span>
-                                                                <span className="text-muted-foreground text-sm">Page {item.startPage}</span>
-                                                            </button>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        </DialogContent>
-                                    </Dialog>
-                                )}
                                 {resource.pdfUrl && (
                                     <Button asChild>
                                         <a href={resource.pdfUrl} download={resource.pdfFileName}>
@@ -315,7 +296,7 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
             <Dialog open={isViewerOpen} onOpenChange={setIsViewerOpen}>
                 <DialogContent 
                     className="max-w-none w-screen h-screen p-0 border-0 bg-black/80 backdrop-blur-sm flex items-center justify-center overflow-hidden" 
-                    closeButtonClass="top-4 right-4 text-white bg-black/50 hover:bg-black/75 hover:text-white"
+                    closeButtonClass="top-4 right-4 text-white bg-black/50 hover:bg-black/75 hover:text-white z-50"
                 >
                     {/* Previous Button */}
                     <Button variant="ghost" size="icon" className="absolute left-4 top-1/2 -translate-y-1/2 z-50 text-white bg-black/50 hover:bg-black/75 hover:text-white disabled:opacity-50 disabled:hover:bg-black/50" onClick={goToPrevViewerPage} disabled={viewerPageIndex <= 0}>
@@ -374,9 +355,40 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
                          <p className="absolute bottom-4 text-white bg-black/50 px-3 py-1 rounded-full text-sm">
                             Page {sortedPages[viewerPageIndex]?.pageNumber} of {totalPages}
                         </p>
-                         <Button variant="ghost" size="icon" className="absolute top-4 right-16 z-50 text-white bg-black/50 hover:bg-black/75 hover:text-white" onClick={(e) => { e.stopPropagation(); setIsZoomed(!isZoomed); }}>
-                             {isZoomed ? <ZoomOut className="h-6 w-6"/> : <ZoomIn className="h-6 w-6"/>}
-                         </Button>
+                        
+                        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2">
+                             {resource.toc && resource.toc.length > 0 && (
+                                <Dialog open={isTocOpen} onOpenChange={setIsTocOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button variant="ghost" className="text-white bg-black/50 hover:bg-black/75 hover:text-white">
+                                            <ListTree className="mr-2 h-5 w-5"/>
+                                            Contents
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-md">
+                                        <DialogHeader>
+                                            <DialogTitle>Table of Contents</DialogTitle>
+                                        </DialogHeader>
+                                        <div className="max-h-96 overflow-y-auto">
+                                             <ul className="divide-y">
+                                                {resource.toc.sort((a, b) => a.startPage - b.startPage).map((item, index) => (
+                                                    <li key={index}>
+                                                        <button onClick={() => goToViewerPage(item.startPage)} className="w-full text-left p-4 hover:bg-secondary/50 transition-colors flex justify-between items-center rounded-md">
+                                                            <span className="font-medium">{item.title}</span>
+                                                            <span className="text-muted-foreground text-sm">Page {item.startPage}</span>
+                                                        </button>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    </DialogContent>
+                                </Dialog>
+                            )}
+
+                             <Button variant="ghost" size="icon" className="text-white bg-black/50 hover:bg-black/75 hover:text-white" onClick={(e) => { e.stopPropagation(); setIsZoomed(!isZoomed); }}>
+                                 {isZoomed ? <ZoomOut className="h-6 w-6"/> : <ZoomIn className="h-6 w-6"/>}
+                             </Button>
+                        </div>
                     </div>
 
                     {/* Next Button */}
@@ -399,4 +411,5 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
         </div>
     )
 }
+
 
