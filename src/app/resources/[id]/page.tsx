@@ -10,7 +10,7 @@ import Link from "next/link";
 import { ArrowLeft, Download, ChevronLeft, ChevronRight, BookOpen, ListTree, X, ZoomIn, ZoomOut } from "lucide-react";
 import Image from "next/image";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useIsMobile } from "@/hooks/use-mobile";
 import { getResource } from "@/lib/services";
 import { Resource } from "@/lib/types";
@@ -28,6 +28,13 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
     const [isViewerOpen, setIsViewerOpen] = useState(false);
     const [viewerPageIndex, setViewerPageIndex] = useState(0);
     const [isZoomed, setIsZoomed] = useState(false);
+
+    // Refs and state for panning
+    const viewerRef = useRef<HTMLDivElement>(null);
+    const [isPanning, setIsPanning] = useState(false);
+    const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+    const [scrollPos, setScrollPos] = useState({ left: 0, top: 0 });
+
 
     useEffect(() => {
         const fetchResource = async () => {
@@ -89,7 +96,7 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
 
     const goToPrevViewerPage = useCallback(() => {
         if (viewerPageIndex > 0) {
-            setViewerPageIndex(prev => prev - 1);
+            setViewerPageIndex(prev => prev + 1);
             setIsZoomed(false);
         }
     }, [viewerPageIndex]);
@@ -108,6 +115,38 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isViewerOpen, goToNextViewerPage, goToPrevViewerPage]);
+
+
+    // Panning logic
+    const handleMouseDown = (e: React.MouseEvent) => {
+        if (!isZoomed || !viewerRef.current) return;
+        setIsPanning(true);
+        setStartPos({ x: e.clientX, y: e.clientY });
+        setScrollPos({ left: viewerRef.current.scrollLeft, top: viewerRef.current.scrollTop });
+        viewerRef.current.style.cursor = 'grabbing';
+    };
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (!isPanning || !viewerRef.current) return;
+        e.preventDefault();
+        const dx = e.clientX - startPos.x;
+        const dy = e.clientY - startPos.y;
+        viewerRef.current.scrollLeft = scrollPos.left - dx;
+        viewerRef.current.scrollTop = scrollPos.top - dy;
+    };
+
+    const handleMouseUp = () => {
+        if (!viewerRef.current) return;
+        setIsPanning(false);
+        if(isZoomed) viewerRef.current.style.cursor = 'grab';
+    };
+
+    const handleMouseLeave = () => {
+        if (isPanning && viewerRef.current) {
+            setIsPanning(false);
+            if(isZoomed) viewerRef.current.style.cursor = 'grab';
+        }
+    };
     
     const Watermark = () => (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
@@ -266,7 +305,7 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
             {/* Fullscreen Viewer Dialog */}
             <Dialog open={isViewerOpen} onOpenChange={setIsViewerOpen}>
                 <DialogContent 
-                    className="max-w-none w-screen h-screen p-0 border-0 bg-black/80 backdrop-blur-sm flex items-center justify-center overflow-auto" 
+                    className="max-w-none w-screen h-screen p-0 border-0 bg-black/80 backdrop-blur-sm flex items-center justify-center overflow-hidden" 
                     closeButtonClass="top-4 right-4 text-white bg-black/50 hover:bg-black/75 hover:text-white"
                 >
                     {/* Previous Button */}
@@ -276,18 +315,31 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
                     
                     {/* Image Viewer */}
                     <div 
-                        className="relative w-full h-full flex items-center justify-center"
-                        onClick={(e) => {
-                            // Only toggle zoom if clicking on the container, not the image itself when zoomed
-                            if (e.target === e.currentTarget) {
-                                setIsZoomed(isZoomed => !isZoomed);
-                            }
+                        ref={viewerRef}
+                        className="relative w-full h-full flex items-center justify-center overflow-auto hide-scrollbar"
+                        onMouseDown={handleMouseDown}
+                        onMouseMove={handleMouseMove}
+                        onMouseUp={handleMouseUp}
+                        onMouseLeave={handleMouseLeave}
+                        onTouchStart={(e) => {
+                            if (!isZoomed || !viewerRef.current) return;
+                            setIsPanning(true);
+                            setStartPos({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+                            setScrollPos({ left: viewerRef.current.scrollLeft, top: viewerRef.current.scrollTop });
                         }}
+                        onTouchMove={(e) => {
+                            if (!isPanning || !viewerRef.current) return;
+                            const dx = e.touches[0].clientX - startPos.x;
+                            const dy = e.touches[0].clientY - startPos.y;
+                            viewerRef.current.scrollLeft = scrollPos.left - dx;
+                            viewerRef.current.scrollTop = scrollPos.top - dy;
+                        }}
+                        onTouchEnd={() => setIsPanning(false)}
                     >
                         {sortedPages[viewerPageIndex] && (
                              <div className={cn(
                                 "relative transition-transform duration-300",
-                                isZoomed ? 'scale-150 cursor-grab' : 'scale-100 cursor-zoom-in'
+                                isZoomed ? 'scale-150' : 'scale-100'
                              )}>
                                 <Image
                                     src={sortedPages[viewerPageIndex].imageUrl}
@@ -299,10 +351,13 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
                                         isZoomed ? "cursor-grab" : "cursor-zoom-in"
                                     )}
                                     onClick={(e) => {
-                                        e.stopPropagation(); // prevent container click
-                                        setIsZoomed(!isZoomed);
+                                        if(!isPanning) {
+                                            e.stopPropagation();
+                                            setIsZoomed(!isZoomed);
+                                        }
                                     }}
                                     priority
+                                    draggable="false"
                                 />
                                 <Watermark />
                              </div>
@@ -323,6 +378,16 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
             </Dialog>
 
             <Footer />
+            <style jsx global>{`
+                .hide-scrollbar::-webkit-scrollbar {
+                    display: none;
+                }
+                .hide-scrollbar {
+                    -ms-overflow-style: none;
+                    scrollbar-width: none;
+                }
+            `}</style>
         </div>
     )
 }
+
