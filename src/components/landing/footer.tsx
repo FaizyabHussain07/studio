@@ -25,14 +25,9 @@ const FacebookIcon = (props: React.SVGProps<SVGSVGElement>) => (
         width="24" 
         height="24" 
         viewBox="0 0 24 24" 
-        fill="none" 
-        stroke="currentColor" 
-        strokeWidth="2" 
-        strokeLinecap="round" 
-        strokeLinejoin="round"
         {...props}
     >
-        <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" fill="#1877F2" stroke="none" />
+        <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" fill="#1877F2" />
     </svg>
 );
 
@@ -43,12 +38,51 @@ export default function Footer() {
       <div className="container py-8">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <Logo showText={true} />
+           <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" asChild className="transition-transform hover:scale-125">
+              <a href="mailto:faizyab.al.quran@gmail.com" aria-label="Email">
+                <Mail className="text-red-600" />
+              </a>
+            </Button>
+            <Button variant="ghost" size="icon" asChild className="transition-transform hover:scale-125">
+              <a href="https://x.com/FaizyabHus74391" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
+                <Twitter className="text-sky-500" fill="currentColor" />
+              </a>
+            </Button>
+             <Button variant="ghost" size="icon" asChild className="transition-transform hover:scale-125">
+              <a href="https://www.youtube.com/@FaizyabAlQuran" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
+                 <Youtube className="text-red-600" />
+              </a>
+            </Button>
+             <Button variant="ghost" size="icon" asChild className="transition-transform hover:scale-125">
+               <a href="https://whatsapp.com/channel/0029Vb1JCt9CBtxIbIs9FJ3p" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+                <WhatsAppIcon />
+              </a>
+            </Button>
+            <Button variant="ghost" size="icon" asChild className="transition-transform hover:scale-125">
+              <a href="https://www.facebook.com/people/Faizyab-Al-Quran/61580511984639/" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+                <FacebookIcon />
+              </a>
+            </Button>
+            <Button variant="ghost" size="icon" asChild className="transition-transform hover:scale-125">
+              <a href="https://github.com/FaizyabHussain07/studio" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+                <Github />
+              </a>
+            </Button>
+             <Button variant="ghost" size="icon" asChild className="transition-transform hover:scale-125">
+              <a href="https://www.linkedin.com/company/faizyab-al-quran/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+                <Linkedin className="text-blue-700" fill="currentColor"/>
+              </a>
+            </Button>
+            <Button variant="ghost" size="icon" asChild className="transition-transform hover:scale-125">
+              <a href="https://faizyab-hussain07.vercel.app/" target="_blank" rel="noopener noreferrer" aria-label="Portfolio">
+                <Briefcase />
+              </a>
+            </Button>
+          </div>
           <p className="text-sm text-muted-foreground">
             © {new Date().getFullYear()} Faizyab Al-Quran. All rights reserved.
           </p>
-          <div className="flex items-center gap-2">
-            
-          </div>
         </div>
       </div>
     </footer>
