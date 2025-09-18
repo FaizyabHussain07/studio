@@ -47,46 +47,7 @@ export default function Footer() {
             © {new Date().getFullYear()} Faizyab Al-Quran. All rights reserved.
           </p>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" asChild className="transition-transform hover:scale-125">
-              <a href="mailto:faizyab.al.quran@gmail.com" aria-label="Email">
-                <Mail className="h-5 w-5 text-[#c71610]" />
-              </a>
-            </Button>
-            <Button variant="ghost" size="icon" asChild className="transition-transform hover:scale-125">
-              <Link href="https://x.com/FaizyabHus74391" aria-label="Twitter" target="_blank">
-                <Twitter className="h-5 w-5 fill-[#1DA1F2] text-white" strokeWidth={0}/>
-              </Link>
-            </Button>
-             <Button variant="ghost" size="icon" asChild className="transition-transform hover:scale-125">
-                <a href="https://www.youtube.com/@FaizyabAlQuran" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
-                    <Youtube className="h-5 w-5 text-[#FF0000]" />
-                </a>
-            </Button>
-             <Button variant="ghost" size="icon" asChild className="transition-transform hover:scale-125">
-                <a href="https://whatsapp.com/channel/0029Vb1JCt9CBtxIbIs9FJ3p" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
-                    <WhatsAppIcon className="h-5 w-5" />
-                </a>
-            </Button>
-            <Button variant="ghost" size="icon" asChild className="transition-transform hover:scale-125">
-                <a href="https://www.facebook.com/people/Faizyab-Al-Quran/61580511984639/" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
-                    <FacebookIcon className="h-5 w-5" />
-                </a>
-            </Button>
-            <Button variant="ghost" size="icon" asChild className="transition-transform hover:scale-125">
-              <Link href="https://github.com/FaizyabHussain07/studio" aria-label="GitHub" target="_blank">
-                <Github className="h-5 w-5 fill-current" />
-              </Link>
-            </Button>
-            <Button variant="ghost" size="icon" asChild className="transition-transform hover:scale-125">
-              <Link href="https://www.linkedin.com/company/faizyab-al-quran/" aria-label="LinkedIn" target="_blank">
-                <Linkedin className="h-5 w-5 text-[#0077B5] fill-[#0077B5]" />
-              </Link>
-            </Button>
-             <Button variant="ghost" size="icon" asChild className="transition-transform hover:scale-125">
-              <Link href="https://faizyab-hussain07.vercel.app/" aria-label="Portfolio" target="_blank">
-                <Briefcase className="h-5 w-5" />
-              </Link>
-            </Button>
+            
           </div>
         </div>
       </div>
