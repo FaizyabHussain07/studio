@@ -265,22 +265,43 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
             
             {/* Fullscreen Viewer Dialog */}
             <Dialog open={isViewerOpen} onOpenChange={setIsViewerOpen}>
-                <DialogContent className="max-w-none w-screen h-screen p-0 border-0 bg-black/80 backdrop-blur-sm flex items-center justify-center" closeButtonClass="top-4 right-4 text-white bg-black/50 hover:bg-black/75 hover:text-white">
+                <DialogContent 
+                    className="max-w-none w-screen h-screen p-0 border-0 bg-black/80 backdrop-blur-sm flex items-center justify-center overflow-auto" 
+                    closeButtonClass="top-4 right-4 text-white bg-black/50 hover:bg-black/75 hover:text-white"
+                >
                     {/* Previous Button */}
                     <Button variant="ghost" size="icon" className="absolute left-4 top-1/2 -translate-y-1/2 z-50 text-white bg-black/50 hover:bg-black/75 hover:text-white disabled:opacity-50 disabled:hover:bg-black/50" onClick={goToPrevViewerPage} disabled={viewerPageIndex <= 0}>
                         <ChevronLeft className="h-8 w-8" />
                     </Button>
                     
                     {/* Image Viewer */}
-                    <div className="relative w-full h-full flex items-center justify-center" onClick={() => setIsZoomed(!isZoomed)}>
+                    <div 
+                        className="relative w-full h-full flex items-center justify-center"
+                        onClick={(e) => {
+                            // Only toggle zoom if clicking on the container, not the image itself when zoomed
+                            if (e.target === e.currentTarget) {
+                                setIsZoomed(isZoomed => !isZoomed);
+                            }
+                        }}
+                    >
                         {sortedPages[viewerPageIndex] && (
-                             <div className={cn("relative transition-transform duration-300 cursor-zoom-in", isZoomed ? 'scale-150 cursor-zoom-out' : 'scale-100')}>
+                             <div className={cn(
+                                "relative transition-transform duration-300",
+                                isZoomed ? 'scale-150 cursor-grab' : 'scale-100 cursor-zoom-in'
+                             )}>
                                 <Image
                                     src={sortedPages[viewerPageIndex].imageUrl}
                                     alt={`Page ${sortedPages[viewerPageIndex].pageNumber}`}
                                     width={1200}
                                     height={1600}
-                                    className="max-w-[80vw] max-h-[85vh] object-contain shadow-2xl"
+                                    className={cn(
+                                        "max-w-[80vw] max-h-[85vh] object-contain shadow-2xl",
+                                        isZoomed ? "cursor-grab" : "cursor-zoom-in"
+                                    )}
+                                    onClick={(e) => {
+                                        e.stopPropagation(); // prevent container click
+                                        setIsZoomed(!isZoomed);
+                                    }}
                                     priority
                                 />
                                 <Watermark />
