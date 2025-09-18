@@ -51,6 +51,15 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
         };
         fetchResource();
     }, [params.id]);
+    
+    useEffect(() => {
+        // When the zoom state changes to true, center the view.
+        if (isZoomed && viewerRef.current) {
+          const { scrollWidth, clientWidth, scrollHeight, clientHeight } = viewerRef.current;
+          viewerRef.current.scrollLeft = (scrollWidth - clientWidth) / 2;
+          viewerRef.current.scrollTop = (scrollHeight - clientHeight) / 2;
+        }
+    }, [isZoomed]);
 
     const sortedPages = resource?.pages?.sort((a,b) => a.pageNumber - b.pageNumber) || [];
     const pagesToShow = isMobile ? 1 : 2;
@@ -96,7 +105,7 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
 
     const goToPrevViewerPage = useCallback(() => {
         if (viewerPageIndex > 0) {
-            setViewerPageIndex(prev => prev + 1);
+            setViewerPageIndex(prev => prev - 1);
             setIsZoomed(false);
         }
     }, [viewerPageIndex]);
