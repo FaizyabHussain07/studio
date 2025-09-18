@@ -57,7 +57,7 @@ const organizationSchema = {
     "https://www.youtube.com/@FaizyabAlQuran",
     "https://whatsapp.com/channel/0029Vb1JCt9CBtxIbIs9FJ3p",
     "https://github.com/FaizyabHussain07/studio",
-    "https://www.linkedin.com/in/faizyabhussain/"
+    "https://www.linkedin.com/company/faizyab-al-quran/"
   ],
   "contactPoint": {
     "@type": "ContactPoint",
