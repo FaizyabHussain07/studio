@@ -78,7 +78,7 @@ export default function Footer() {
               </Link>
             </Button>
             <Button variant="ghost" size="icon" asChild className="transition-transform hover:scale-125">
-              <Link href="https://www.linkedin.com/in/faizyabhussain/" aria-label="LinkedIn" target="_blank">
+              <Link href="https://www.linkedin.com/company/faizyab-al-quran/" aria-label="LinkedIn" target="_blank">
                 <Linkedin className="h-5 w-5 text-[#0077B5] fill-[#0077B5]" />
               </Link>
             </Button>

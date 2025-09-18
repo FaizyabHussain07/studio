@@ -6,12 +6,14 @@ export default function About() {
     <section id="about" className="bg-secondary/50 py-20 md:py-32">
       <div className="container grid md:grid-cols-2 gap-12 items-center">
         <div className="relative aspect-square md:aspect-[4/5] rounded-xl overflow-hidden shadow-lg">
-           <Image
-            src="/ChatGPT Image Apr 5, 2025, 07_56_20 PM (1).png"
-            alt="Founder of Faizyab Al-Quran"
-            fill
-            className="object-cover"
-          />
+          <Link href="https://www.linkedin.com/in/faizyabhussain/" target="_blank" rel="noopener noreferrer">
+            <Image
+              src="/ChatGPT Image Apr 5, 2025, 07_56_20 PM (1).png"
+              alt="Founder of Faizyab Al-Quran"
+              fill
+              className="object-cover"
+            />
+          </Link>
         </div>
         <div className="space-y-4">
           <h2 className="font-headline text-3xl md:text-4xl font-bold">A Message from the Founder</h2>
