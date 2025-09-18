@@ -17,6 +17,23 @@ const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
+const FacebookIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg 
+        xmlns="http://www.w3.org/2000/svg" 
+        width="24" 
+        height="24" 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        stroke="currentColor" 
+        strokeWidth="2" 
+        strokeLinecap="round" 
+        strokeLinejoin="round"
+        {...props}
+    >
+        <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" fill="#1877F2" stroke="#1877F2" />
+    </svg>
+);
+
 
 export default function Footer() {
   return (
@@ -35,7 +52,7 @@ export default function Footer() {
             </Button>
             <Button variant="ghost" size="icon" asChild>
               <Link href="https://x.com/FaizyabHus74391" aria-label="Twitter" target="_blank">
-                <Twitter className="h-5 w-5 fill-current" />
+                <Twitter className="h-5 w-5 fill-[#1DA1F2] text-[#1DA1F2]" />
               </Link>
             </Button>
              <Button variant="ghost" size="icon" asChild>
@@ -49,13 +66,18 @@ export default function Footer() {
                 </a>
             </Button>
             <Button variant="ghost" size="icon" asChild>
+                <a href="https://www.facebook.com/people/Faizyab-Al-Quran/61580511984639/" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+                    <FacebookIcon className="h-5 w-5" />
+                </a>
+            </Button>
+            <Button variant="ghost" size="icon" asChild>
               <Link href="https://github.com/FaizyabHussain07/studio" aria-label="GitHub" target="_blank">
                 <Github className="h-5 w-5 fill-current" />
               </Link>
             </Button>
             <Button variant="ghost" size="icon" asChild>
               <Link href="https://www.linkedin.com/company/faizyab-al-quran/" aria-label="LinkedIn" target="_blank">
-                <Linkedin className="h-5 w-5 text-[#0077B5]" />
+                <Linkedin className="h-5 w-5 text-[#0077B5] fill-[#0077B5]" />
               </Link>
             </Button>
           </div>
