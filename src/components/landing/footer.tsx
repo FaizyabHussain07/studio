@@ -1,4 +1,6 @@
 
+'use client';
+
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { Github, Twitter, Linkedin, Mail, Youtube } from "lucide-react";
@@ -30,7 +32,7 @@ const FacebookIcon = (props: React.SVGProps<SVGSVGElement>) => (
         strokeLinejoin="round"
         {...props}
     >
-        <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" fill="#1877F2" stroke="#1877F2" />
+        <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" fill="#1877F2" stroke="none" />
     </svg>
 );
 
@@ -52,7 +54,7 @@ export default function Footer() {
             </Button>
             <Button variant="ghost" size="icon" asChild>
               <Link href="https://x.com/FaizyabHus74391" aria-label="Twitter" target="_blank">
-                <Twitter className="h-5 w-5 fill-[#1DA1F2] text-[#1DA1F2]" />
+                <Twitter className="h-5 w-5 fill-[#1DA1F2] text-white" strokeWidth={0}/>
               </Link>
             </Button>
              <Button variant="ghost" size="icon" asChild>
