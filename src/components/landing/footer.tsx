@@ -10,10 +10,10 @@ const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
       width="24"
       height="24"
       viewBox="0 0 24 24"
-      fill="currentColor"
       {...props}
     >
-        <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.487 5.235 3.487 8.413.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.885-.002 2.024.63 3.891 1.697 5.661l.33 1.014-1.2 4.375 4.463-1.164.99-.311z"/>
+        <path fill="#25D366" d="M19.6,4.4c-1.9-1.9-4.4-2.9-7.1-2.9c-5.5,0-10,4.5-10,10c0,1.8,0.5,3.5,1.4,5.1L2.2,22l5.3-1.4c1.5,0.8,3.2,1.3,4.9,1.3h0c5.5,0,10-4.5,10-10C22.5,8.8,21.5,6.3,19.6,4.4z"/>
+        <path fill="#FFFFFF" d="M16.9,14.1c-0.1-0.1-0.4-0.2-0.7-0.4c-0.3-0.2-1.8-0.9-2-1c-0.3-0.1-0.5-0.1-0.7,0.1c-0.2,0.2-0.8,0.9-1,1.1c-0.2,0.2-0.3,0.2-0.6,0.1c-0.3-0.1-1.3-0.5-2.4-1.5c-0.9-0.8-1.5-1.7-1.6-2c-0.1-0.3,0-0.5,0.1-0.6c0.1-0.1,0.2-0.3,0.4-0.4c0.1-0.1,0.2-0.2,0.3-0.4c0.1-0.1,0.1-0.3,0-0.4c-0.1-0.1-0.7-1.7-0.9-2.2c-0.2-0.6-0.5-0.5-0.7-0.5c-0.2,0-0.4,0-0.6,0c-0.2,0-0.6,0.1-0.9,0.4c-0.3,0.3-1.1,1.1-1.1,2.7c0,1.6,1.2,3.1,1.3,3.3c0.1,0.2,2.3,3.5,5.5,4.9c0.8,0.3,1.4,0.5,1.9,0.6c0.8,0.2,1.5,0.1,2.1-0.1c0.6-0.2,1.8-0.8,2.1-1.5c0.3-0.7,0.3-1.4,0.2-1.5C17.3,14.3,17.1,14.2,16.9,14.1z"/>
     </svg>
 );
 
@@ -30,17 +30,17 @@ export default function Footer() {
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" asChild>
               <a href="mailto:faizyab.al.quran@gmail.com" aria-label="Email">
-                <Mail className="h-5 w-5" />
+                <Mail className="h-5 w-5 text-[#c71610]" />
               </a>
             </Button>
             <Button variant="ghost" size="icon" asChild>
               <Link href="https://x.com/FaizyabHus74391" aria-label="Twitter" target="_blank">
-                <Twitter className="h-5 w-5" />
+                <Twitter className="h-5 w-5 fill-current" />
               </Link>
             </Button>
              <Button variant="ghost" size="icon" asChild>
                 <a href="https://www.youtube.com/@FaizyabAlQuran" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
-                    <Youtube className="h-5 w-5" />
+                    <Youtube className="h-5 w-5 text-[#FF0000]" />
                 </a>
             </Button>
              <Button variant="ghost" size="icon" asChild>
@@ -50,12 +50,12 @@ export default function Footer() {
             </Button>
             <Button variant="ghost" size="icon" asChild>
               <Link href="https://github.com/FaizyabHussain07/studio" aria-label="GitHub" target="_blank">
-                <Github className="h-5 w-5" />
+                <Github className="h-5 w-5 fill-current" />
               </Link>
             </Button>
             <Button variant="ghost" size="icon" asChild>
               <Link href="https://www.linkedin.com/company/faizyab-al-quran/" aria-label="LinkedIn" target="_blank">
-                <Linkedin className="h-5 w-5" />
+                <Linkedin className="h-5 w-5 text-[#0077B5]" />
               </Link>
             </Button>
           </div>
