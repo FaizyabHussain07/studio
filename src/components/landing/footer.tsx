@@ -74,11 +74,6 @@ export default function Footer() {
                 <Linkedin className="text-blue-700" fill="currentColor"/>
               </a>
             </Button>
-            <Button variant="ghost" size="icon" asChild className="transition-transform hover:scale-125">
-              <a href="https://faizyab-hussain07.vercel.app/" target="_blank" rel="noopener noreferrer" aria-label="Portfolio">
-                <Briefcase />
-              </a>
-            </Button>
           </div>
           <p className="text-sm text-muted-foreground">
             © {new Date().getFullYear()} Faizyab Al-Quran. All rights reserved.
