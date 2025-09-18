@@ -15,7 +15,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { getResource, getResources } from "@/lib/services";
 import { Resource } from "@/lib/types";
 import type { Metadata, ResolvingMetadata } from 'next'
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 // This file is a Client Component, so we can't export generateMetadata directly.
 // To implement dynamic metadata, this page would need to be refactored.
@@ -49,6 +49,7 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
     const [loading, setLoading] = useState(true);
     const isMobile = useIsMobile();
     const [currentPage, setCurrentPage] = useState(0);
+    const [isTocOpen, setIsTocOpen] = useState(false);
 
     useEffect(() => {
         const fetchResource = async () => {
@@ -85,6 +86,7 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
             // In two-page view, we want to land on an even-numbered index to show pages correctly (e.g., 0, 2, 4...)
             const targetIndex = isMobile ? pageIndex : Math.floor(pageIndex / 2) * 2;
             setCurrentPage(targetIndex);
+            setIsTocOpen(false); // Close dialog on selection
         }
     };
     
@@ -137,29 +139,31 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
                             </div>
                             <div className="flex items-center gap-2">
                                 {resource.toc && resource.toc.length > 0 && (
-                                    <Popover>
-                                        <PopoverTrigger asChild>
+                                    <Dialog open={isTocOpen} onOpenChange={setIsTocOpen}>
+                                        <DialogTrigger asChild>
                                             <Button variant="outline">
                                                 <ListTree className="mr-2 h-4 w-4"/>
                                                 Table of Contents
                                             </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-80 p-0">
-                                            <div className="p-4">
-                                                <h4 className="font-medium leading-none">Chapters</h4>
+                                        </DialogTrigger>
+                                        <DialogContent className="sm:max-w-[425px]">
+                                            <DialogHeader>
+                                                <DialogTitle>Table of Contents</DialogTitle>
+                                            </DialogHeader>
+                                            <div className="max-h-96 overflow-y-auto">
+                                                 <ul className="divide-y">
+                                                    {resource.toc.sort((a, b) => a.startPage - b.startPage).map((item, index) => (
+                                                        <li key={index}>
+                                                            <button onClick={() => goToPage(item.startPage)} className="w-full text-left p-4 hover:bg-secondary/50 transition-colors flex justify-between items-center rounded-md">
+                                                                <span className="font-medium">{item.title}</span>
+                                                                <span className="text-muted-foreground text-sm">Page {item.startPage}</span>
+                                                            </button>
+                                                        </li>
+                                                    ))}
+                                                </ul>
                                             </div>
-                                            <ul className="divide-y max-h-96 overflow-y-auto">
-                                                {resource.toc.sort((a, b) => a.startPage - b.startPage).map((item, index) => (
-                                                    <li key={index}>
-                                                        <button onClick={() => goToPage(item.startPage)} className="w-full text-left p-4 hover:bg-secondary/50 transition-colors flex justify-between items-center">
-                                                            <span>{item.title}</span>
-                                                            <span className="text-muted-foreground text-sm">{item.startPage}</span>
-                                                        </button>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </PopoverContent>
-                                    </Popover>
+                                        </DialogContent>
+                                    </Dialog>
                                 )}
                                 {resource.pdfUrl && (
                                     <Button asChild>
