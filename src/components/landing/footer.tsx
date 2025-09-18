@@ -3,7 +3,7 @@
 
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
-import { Github, Twitter, Linkedin, Mail, Youtube } from "lucide-react";
+import { Github, Twitter, Linkedin, Mail, Youtube, Briefcase } from "lucide-react";
 import Link from "next/link";
 
 const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -78,8 +78,13 @@ export default function Footer() {
               </Link>
             </Button>
             <Button variant="ghost" size="icon" asChild className="transition-transform hover:scale-125">
-              <Link href="https://www.linkedin.com/company/faizyab-al-quran/" aria-label="LinkedIn" target="_blank">
+              <Link href="https://www.linkedin.com/in/faizyabhussain/" aria-label="LinkedIn" target="_blank">
                 <Linkedin className="h-5 w-5 text-[#0077B5] fill-[#0077B5]" />
+              </Link>
+            </Button>
+             <Button variant="ghost" size="icon" asChild className="transition-transform hover:scale-125">
+              <Link href="https://faizyab-hussain07.vercel.app/" aria-label="Portfolio" target="_blank">
+                <Briefcase className="h-5 w-5" />
               </Link>
             </Button>
           </div>
