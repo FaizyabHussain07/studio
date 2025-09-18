@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 export default function About() {
   return (
@@ -20,7 +21,9 @@ export default function About() {
           <p className="text-muted-foreground text-lg">
             With powerful tools for administrators and an intuitive interface for students, we aim to bridge the gap between traditional teaching and modern technology. Our goal is to foster a vibrant community of learners dedicated to knowledge, faith, and personal growth. Welcome to our community.
           </p>
-           <p className="font-semibold text-foreground text-lg pt-2">Syed Faizyab Hussain</p>
+           <Link href="https://www.linkedin.com/in/faizyabhussain/" target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground text-lg pt-2 block hover:underline">
+            Syed Faizyab Hussain
+           </Link>
            <p className="text-sm text-muted-foreground -mt-4">Founder, Faizyab Al-Quran</p>
         </div>
       </div>
