@@ -9,12 +9,13 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft, Download, ChevronLeft, ChevronRight, BookOpen, ListTree } from "lucide-react";
 import Image from "next/image";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { useState, useEffect } from 'react';
 import { useIsMobile } from "@/hooks/use-mobile";
 import { getResource, getResources } from "@/lib/services";
 import { Resource } from "@/lib/types";
 import type { Metadata, ResolvingMetadata } from 'next'
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 // This file is a Client Component, so we can't export generateMetadata directly.
 // To implement dynamic metadata, this page would need to be refactored.
@@ -123,115 +124,115 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
             <Header />
             <main className="flex-1 bg-secondary/40">
                 <div className="container py-12 md:py-16">
-                    <div className="mb-8">
-                         <Button variant="ghost" asChild className="mb-4">
+                    <div className="mb-8 space-y-4">
+                         <Button variant="ghost" asChild>
                             <Link href="/resources">
                                 <ArrowLeft className="mr-2 h-4 w-4"/> Back to Library
                             </Link>
                         </Button>
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                             <div>
                                 <h1 className="font-headline text-4xl font-bold">{resource.title}</h1>
                                 <p className="text-muted-foreground mt-1 max-w-2xl">{resource.description}</p>
                             </div>
-                            {resource.pdfUrl && (
-                                <Button asChild size="lg">
-                                    <a href={resource.pdfUrl} download={resource.pdfFileName}>
-                                        <Download className="mr-2 h-4 w-4" />
-                                        Download Full PDF
-                                    </a>
-                                </Button>
-                            )}
+                            <div className="flex items-center gap-2">
+                                {resource.toc && resource.toc.length > 0 && (
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="outline">
+                                                <ListTree className="mr-2 h-4 w-4"/>
+                                                Table of Contents
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-80 p-0">
+                                            <div className="p-4">
+                                                <h4 className="font-medium leading-none">Chapters</h4>
+                                            </div>
+                                            <ul className="divide-y max-h-96 overflow-y-auto">
+                                                {resource.toc.sort((a, b) => a.startPage - b.startPage).map((item, index) => (
+                                                    <li key={index}>
+                                                        <button onClick={() => goToPage(item.startPage)} className="w-full text-left p-4 hover:bg-secondary/50 transition-colors flex justify-between items-center">
+                                                            <span>{item.title}</span>
+                                                            <span className="text-muted-foreground text-sm">{item.startPage}</span>
+                                                        </button>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </PopoverContent>
+                                    </Popover>
+                                )}
+                                {resource.pdfUrl && (
+                                    <Button asChild>
+                                        <a href={resource.pdfUrl} download={resource.pdfFileName}>
+                                            <Download className="mr-2 h-4 w-4" />
+                                            Download PDF
+                                        </a>
+                                    </Button>
+                                )}
+                            </div>
                         </div>
                     </div>
 
-                    <div className="grid lg:grid-cols-4 gap-8">
-                         {resource.toc && resource.toc.length > 0 && (
-                            <div className="lg:col-span-1">
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="flex items-center gap-2">
-                                            <ListTree className="h-5 w-5"/>
-                                            Table of Contents
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="p-0">
-                                        <ul className="divide-y">
-                                            {resource.toc.sort((a, b) => a.startPage - b.startPage).map((item, index) => (
-                                                <li key={index}>
-                                                    <button onClick={() => goToPage(item.startPage)} className="w-full text-left p-4 hover:bg-secondary/50 transition-colors flex justify-between items-center">
-                                                        <span>{item.title}</span>
-                                                        <span className="text-muted-foreground text-sm">{item.startPage}</span>
-                                                    </button>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </CardContent>
-                                </Card>
-                            </div>
-                        )}
-                        
-                        <div className={resource.toc && resource.toc.length > 0 ? 'lg:col-span-3' : 'lg:col-span-4'}>
-                             {totalPages > 0 ? (
-                                <div className="flex flex-col items-center gap-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-                                      {isMobile ? (
-                                        sortedPages[currentPage] && (
-                                          <Card className="overflow-hidden shadow-lg w-full md:col-span-2 relative">
-                                            <div className="relative aspect-[8/11] w-full">
-                                              <Image
-                                                src={sortedPages[currentPage].imageUrl}
-                                                alt={`Page ${sortedPages[currentPage].pageNumber} of ${resource.title}`}
-                                                fill
-                                                className="object-contain"
-                                                sizes="100vw"
-                                                priority
-                                              />
-                                              <Watermark />
-                                            </div>
-                                          </Card>
-                                        )
-                                      ) : (
-                                        <>
-                                          {sortedPages.slice(currentPage, currentPage + 2).map((page) => (
-                                            <Card key={page.pageNumber} className="overflow-hidden shadow-lg w-full relative">
-                                              <div className="relative aspect-[8/11] w-full">
-                                                <Image
-                                                  src={page.imageUrl}
-                                                  alt={`Page ${page.pageNumber} of ${resource.title}`}
-                                                  fill
-                                                  className="object-contain"
-                                                  sizes="50vw"
-                                                  priority={page.pageNumber <= 2}
-                                                />
-                                                <Watermark />
-                                              </div>
-                                            </Card>
-                                          ))}
-                                        </>
-                                      )}
-                                    </div>
-                                    <div className="flex items-center justify-center gap-4 w-full">
-                                        <Button variant="outline" onClick={handlePrevPage} disabled={!canGoPrev}>
-                                            <ChevronLeft className="mr-2 h-4 w-4" /> Previous
-                                        </Button>
-                                        <div className="text-sm text-muted-foreground font-medium">
-                                            Page {sortedPages[currentPage]?.pageNumber || 0}
-                                            {!isMobile && sortedPages[currentPage + 1] ? ` - ${sortedPages[currentPage + 1]?.pageNumber}` : ''} of {totalPages}
+                    <div className="w-full">
+                         {totalPages > 0 ? (
+                            <div className="flex flex-col items-center gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+                                  {isMobile ? (
+                                    sortedPages[currentPage] && (
+                                      <Card className="overflow-hidden shadow-lg w-full md:col-span-2 relative">
+                                        <div className="relative aspect-[8/11] w-full">
+                                          <Image
+                                            src={sortedPages[currentPage].imageUrl}
+                                            alt={`Page ${sortedPages[currentPage].pageNumber} of ${resource.title}`}
+                                            fill
+                                            className="object-contain"
+                                            sizes="100vw"
+                                            priority
+                                          />
+                                          <Watermark />
                                         </div>
-                                        <Button variant="outline" onClick={handleNextPage} disabled={!canGoNext}>
-                                            Next <ChevronRight className="ml-2 h-4 w-4" />
-                                        </Button>
-                                    </div>
+                                      </Card>
+                                    )
+                                  ) : (
+                                    <>
+                                      {sortedPages.slice(currentPage, currentPage + 2).map((page) => (
+                                        <Card key={page.pageNumber} className="overflow-hidden shadow-lg w-full relative">
+                                          <div className="relative aspect-[8/11] w-full">
+                                            <Image
+                                              src={page.imageUrl}
+                                              alt={`Page ${page.pageNumber} of ${resource.title}`}
+                                              fill
+                                              className="object-contain"
+                                              sizes="50vw"
+                                              priority={page.pageNumber <= 2}
+                                            />
+                                            <Watermark />
+                                          </div>
+                                        </Card>
+                                      ))}
+                                    </>
+                                  )}
                                 </div>
-                             ) : (
-                                <Card className="text-center p-12 flex flex-col items-center">
-                                    <BookOpen className="h-16 w-16 text-muted-foreground mb-4" />
-                                    <h3 className="text-xl font-semibold">No Pages Available</h3>
-                                    <p className="text-muted-foreground mt-2">The pages for this book have not been uploaded yet.</p>
-                                </Card>
-                             )}
-                        </div>
+                                <div className="flex items-center justify-center gap-4 w-full">
+                                    <Button variant="outline" onClick={handlePrevPage} disabled={!canGoPrev}>
+                                        <ChevronLeft className="mr-2 h-4 w-4" /> Previous
+                                    </Button>
+                                    <div className="text-sm text-muted-foreground font-medium">
+                                        Page {sortedPages[currentPage]?.pageNumber || 0}
+                                        {!isMobile && sortedPages[currentPage + 1] ? ` - ${sortedPages[currentPage + 1]?.pageNumber}` : ''} of {totalPages}
+                                    </div>
+                                    <Button variant="outline" onClick={handleNextPage} disabled={!canGoNext}>
+                                        Next <ChevronRight className="ml-2 h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                         ) : (
+                            <Card className="text-center p-12 flex flex-col items-center">
+                                <BookOpen className="h-16 w-16 text-muted-foreground mb-4" />
+                                <h3 className="text-xl font-semibold">No Pages Available</h3>
+                                <p className="text-muted-foreground mt-2">The pages for this book have not been uploaded yet.</p>
+                            </Card>
+                         )}
                     </div>
                 </div>
             </main>
