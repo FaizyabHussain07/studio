@@ -7,49 +7,27 @@ import Header from "@/components/landing/header";
 import Footer from "@/components/landing/footer";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowLeft, Download, ChevronLeft, ChevronRight, BookOpen, ListTree } from "lucide-react";
+import { ArrowLeft, Download, ChevronLeft, ChevronRight, BookOpen, ListTree, X, ZoomIn, ZoomOut } from "lucide-react";
 import Image from "next/image";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useIsMobile } from "@/hooks/use-mobile";
-import { getResource, getResources } from "@/lib/services";
+import { getResource } from "@/lib/services";
 import { Resource } from "@/lib/types";
-import type { Metadata, ResolvingMetadata } from 'next'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-
-// This file is a Client Component, so we can't export generateMetadata directly.
-// To implement dynamic metadata, this page would need to be refactored.
-// For now, a static placeholder or manual update is needed for SEO.
-//
-// Example of how it would work in a Server Component:
-//
-// type Props = {
-//   params: { id: string }
-// }
-//
-// export async function generateMetadata({ params }: Props): Promise<Metadata> {
-//   const id = params.id
-//   const resource = await getResource(id)
-// 
-//   if (!resource) {
-//     return {
-//       title: 'Book Not Found',
-//       description: 'The book you are looking for could not be found.',
-//     }
-//   }
-// 
-//   return {
-//     title: resource.title,
-//     description: resource.description,
-//   }
-// }
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
 export default function BookViewerPage({ params }: { params: { id: string } }) {
     const [resource, setResource] = useState<Resource | null>(null);
     const [loading, setLoading] = useState(true);
     const isMobile = useIsMobile();
-    const [currentPage, setCurrentPage] = useState(0);
+    const [currentPageIndex, setCurrentPageIndex] = useState(0);
     const [isTocOpen, setIsTocOpen] = useState(false);
+    
+    // State for lightbox/modal
+    const [isViewerOpen, setIsViewerOpen] = useState(false);
+    const [viewerPageIndex, setViewerPageIndex] = useState(0);
+    const [isZoomed, setIsZoomed] = useState(false);
 
     useEffect(() => {
         const fetchResource = async () => {
@@ -72,26 +50,64 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
     const totalPages = sortedPages.length;
 
     const handleNextPage = () => {
-        setCurrentPage((prev) => Math.min(prev + pagesToShow, totalPages - pagesToShow + (isMobile ? 0 : 1)));
+        setCurrentPageIndex((prev) => Math.min(prev + pagesToShow, totalPages - pagesToShow + (isMobile ? 0 : 1)));
     };
 
     const handlePrevPage = () => {
-        setCurrentPage((prev) => Math.max(prev - pagesToShow, 0));
+        setCurrentPageIndex((prev) => Math.max(prev - pagesToShow, 0));
     };
 
     const goToPage = (pageNumber: number) => {
-        // Find the index of the page with the given page number
         const pageIndex = sortedPages.findIndex(p => p.pageNumber === pageNumber);
         if(pageIndex !== -1) {
-            // In two-page view, we want to land on an even-numbered index to show pages correctly (e.g., 0, 2, 4...)
             const targetIndex = isMobile ? pageIndex : Math.floor(pageIndex / 2) * 2;
-            setCurrentPage(targetIndex);
-            setIsTocOpen(false); // Close dialog on selection
+            setCurrentPageIndex(targetIndex);
+            setIsTocOpen(false);
         }
     };
     
-    const canGoNext = currentPage + pagesToShow < totalPages;
-    const canGoPrev = currentPage > 0;
+    const canGoNext = currentPageIndex + pagesToShow < totalPages;
+    const canGoPrev = currentPageIndex > 0;
+
+    // Lightbox functions
+    const openViewer = (index: number) => {
+        setViewerPageIndex(index);
+        setIsViewerOpen(true);
+    }
+
+    const closeViewer = () => {
+        setIsViewerOpen(false);
+        setIsZoomed(false); // Reset zoom on close
+    }
+
+    const goToNextViewerPage = useCallback(() => {
+        if (viewerPageIndex < totalPages - 1) {
+            setViewerPageIndex(prev => prev + 1);
+            setIsZoomed(false);
+        }
+    }, [viewerPageIndex, totalPages]);
+
+    const goToPrevViewerPage = useCallback(() => {
+        if (viewerPageIndex > 0) {
+            setViewerPageIndex(prev => prev - 1);
+            setIsZoomed(false);
+        }
+    }, [viewerPageIndex]);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (!isViewerOpen) return;
+            if (e.key === 'ArrowRight') {
+                goToNextViewerPage();
+            } else if (e.key === 'ArrowLeft') {
+                goToPrevViewerPage();
+            } else if (e.key === 'Escape') {
+                closeViewer();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isViewerOpen, goToNextViewerPage, goToPrevViewerPage]);
     
     const Watermark = () => (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
@@ -182,30 +198,30 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
                             <div className="flex flex-col items-center gap-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                                   {isMobile ? (
-                                    sortedPages[currentPage] && (
-                                      <Card className="overflow-hidden shadow-lg w-full md:col-span-2 flex flex-col">
+                                    sortedPages[currentPageIndex] && (
+                                      <Card className="overflow-hidden shadow-lg w-full md:col-span-2 flex flex-col cursor-pointer" onClick={() => openViewer(currentPageIndex)}>
                                         <CardContent className="p-0 relative flex-grow">
                                             <div className="relative aspect-[8/11] w-full">
-                                            <Image
-                                                src={sortedPages[currentPage].imageUrl}
-                                                alt={`Page ${sortedPages[currentPage].pageNumber} of ${resource.title}`}
-                                                fill
-                                                className="object-contain"
-                                                sizes="100vw"
-                                                priority
-                                            />
-                                            <Watermark />
+                                                <Image
+                                                    src={sortedPages[currentPageIndex].imageUrl}
+                                                    alt={`Page ${sortedPages[currentPageIndex].pageNumber} of ${resource.title}`}
+                                                    fill
+                                                    className="object-contain"
+                                                    sizes="100vw"
+                                                    priority
+                                                />
+                                                <Watermark />
                                             </div>
                                         </CardContent>
                                         <CardFooter className="p-2 justify-center text-sm text-muted-foreground bg-secondary/50 border-t">
-                                            Page {sortedPages[currentPage].pageNumber}
+                                            Page {sortedPages[currentPageIndex].pageNumber}
                                         </CardFooter>
                                       </Card>
                                     )
                                   ) : (
                                     <>
-                                      {sortedPages.slice(currentPage, currentPage + 2).map((page) => (
-                                        <Card key={page.pageNumber} className="overflow-hidden shadow-lg w-full flex flex-col">
+                                      {sortedPages.slice(currentPageIndex, currentPageIndex + 2).map((page, index) => (
+                                        <Card key={page.pageNumber} className="overflow-hidden shadow-lg w-full flex flex-col cursor-pointer" onClick={() => openViewer(currentPageIndex + index)}>
                                            <CardContent className="p-0 relative flex-grow">
                                                 <div className="relative aspect-[8/11] w-full">
                                                     <Image
@@ -246,6 +262,45 @@ export default function BookViewerPage({ params }: { params: { id: string } }) {
                     </div>
                 </div>
             </main>
+            
+            {/* Fullscreen Viewer Dialog */}
+            <Dialog open={isViewerOpen} onOpenChange={setIsViewerOpen}>
+                <DialogContent className="max-w-none w-screen h-screen p-0 border-0 bg-black/80 backdrop-blur-sm flex items-center justify-center" closeButtonClass="top-4 right-4 text-white bg-black/50 hover:bg-black/75 hover:text-white">
+                    {/* Previous Button */}
+                    <Button variant="ghost" size="icon" className="absolute left-4 top-1/2 -translate-y-1/2 z-50 text-white bg-black/50 hover:bg-black/75 hover:text-white disabled:opacity-50 disabled:hover:bg-black/50" onClick={goToPrevViewerPage} disabled={viewerPageIndex <= 0}>
+                        <ChevronLeft className="h-8 w-8" />
+                    </Button>
+                    
+                    {/* Image Viewer */}
+                    <div className="relative w-full h-full flex items-center justify-center" onClick={() => setIsZoomed(!isZoomed)}>
+                        {sortedPages[viewerPageIndex] && (
+                             <div className={cn("relative transition-transform duration-300 cursor-zoom-in", isZoomed ? 'scale-150 cursor-zoom-out' : 'scale-100')}>
+                                <Image
+                                    src={sortedPages[viewerPageIndex].imageUrl}
+                                    alt={`Page ${sortedPages[viewerPageIndex].pageNumber}`}
+                                    width={1200}
+                                    height={1600}
+                                    className="max-w-[80vw] max-h-[85vh] object-contain shadow-2xl"
+                                    priority
+                                />
+                                <Watermark />
+                             </div>
+                        )}
+                         <p className="absolute bottom-4 text-white bg-black/50 px-3 py-1 rounded-full text-sm">
+                            Page {sortedPages[viewerPageIndex]?.pageNumber} of {totalPages}
+                        </p>
+                         <Button variant="ghost" size="icon" className="absolute top-4 right-16 z-50 text-white bg-black/50 hover:bg-black/75 hover:text-white" onClick={(e) => { e.stopPropagation(); setIsZoomed(!isZoomed); }}>
+                             {isZoomed ? <ZoomOut className="h-6 w-6"/> : <ZoomIn className="h-6 w-6"/>}
+                         </Button>
+                    </div>
+
+                    {/* Next Button */}
+                     <Button variant="ghost" size="icon" className="absolute right-4 top-1/2 -translate-y-1/2 z-50 text-white bg-black/50 hover:bg-black/75 hover:text-white disabled:opacity-50 disabled:hover:bg-black/50" onClick={goToNextViewerPage} disabled={viewerPageIndex >= totalPages - 1}>
+                        <ChevronRight className="h-8 w-8" />
+                    </Button>
+                </DialogContent>
+            </Dialog>
+
             <Footer />
         </div>
     )
