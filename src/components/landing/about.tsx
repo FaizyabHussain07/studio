@@ -8,7 +8,7 @@ export default function About() {
         <div className="relative aspect-square md:aspect-[4/5] rounded-xl overflow-hidden shadow-lg">
           <Link href="https://www.linkedin.com/in/faizyabhussain/" target="_blank" rel="noopener noreferrer">
             <Image
-              src="/ChatGPT Image Apr 5, 2025, 07_56_20 PM (1).png"
+              src="https://i.ibb.co/XrvLDkcg/Generated-Image-September-27-2025-9-05-AM-min.png"
               alt="Founder of Faizyab Al-Quran"
               fill
               className="object-cover"
