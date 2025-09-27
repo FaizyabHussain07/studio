@@ -18,10 +18,10 @@ export default function About() {
         <div className="space-y-4">
           <h2 className="font-headline text-3xl md:text-4xl font-bold">A Message from the Founder</h2>
           <p className="text-muted-foreground text-lg">
-            "I started Faizyab Al-Quran with a simple mission: to create a modern, accessible, and engaging platform for both sacred and secular knowledge. Inspired by the structure of Google Classroom, we've built a dedicated online environment where students can deepen their understanding of the Quran and excel in their academic subjects."
+            "I saw students and teachers struggling to manage two different worlds of education—academic and religious—with scattered, inefficient tools. I created Faizyab Al-Quran to solve that problem. My mission was to build a single, modern, and engaging platform to unite both sacred and secular knowledge."
           </p>
           <p className="text-muted-foreground text-lg">
-            With powerful tools for administrators and an intuitive interface for students, we aim to bridge the gap between traditional teaching and modern technology. Our goal is to foster a vibrant community of learners dedicated to knowledge, faith, and personal growth. Welcome to our community.
+            By providing powerful tools for administrators and an intuitive interface for students, we bridge the gap between traditional teaching and modern technology. Our goal is to foster a vibrant community of learners dedicated to knowledge, faith, and personal growth. Welcome to our community.
           </p>
            <Link href="https://www.linkedin.com/in/faizyabhussain/" target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground text-lg pt-2 block hover:underline">
             Syed Faizyab Hussain

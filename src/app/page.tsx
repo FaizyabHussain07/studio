@@ -14,7 +14,7 @@ import Footer from '@/components/landing/footer';
 
 export const metadata: Metadata = {
     title: 'Faizyab Al-Quran - Modern Learning Platform for Knowledge & Faith',
-    description: 'Welcome to Faizyab Al-Quran, a comprehensive online learning management system (LMS). We offer an interactive platform for both Quranic and academic studies, inspired by the best of online education.',
+    description: 'Welcome to Faizyab Al-Quran. We solve the challenges of online education by providing a single, powerful Learning Management System (LMS) for both Quranic and academic studies.',
 }
 
 export default function Home() {

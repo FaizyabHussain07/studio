@@ -11,7 +11,7 @@ export default function Hero() {
           Faizyab Al-Quran: A Modern Platform for Knowledge & Faith
         </h1>
         <p className="text-lg text-muted-foreground max-w-xl">
-          Welcome to Faizyab Al-Quran, a comprehensive online learning management system (LMS). We offer an interactive platform for both Quranic and academic studies, inspired by the best of online education.
+          Tired of juggling different apps for religious and academic studies? Faizyab Al-Quran unifies your learning into one seamless, powerful Learning Management System (LMS).
         </p>
         <div className="flex flex-col sm:flex-row gap-4">
           <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90" asChild>

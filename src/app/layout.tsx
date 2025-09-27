@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     default: 'Faizyab Al-Quran - Modern Learning Platform',
     template: `%s | Faizyab Al-Quran`,
   },
-  description: 'Faizyab Al-Quran is a comprehensive online learning platform (LMS) designed for Quranic and academic studies. Inspired by Google Classroom, we provide role-based dashboards for students and admins to manage courses, assignments, and progress with ease.',
+  description: 'Faizyab Al-Quran solves the challenge of disorganized online learning by offering a single, powerful platform for both Quranic and academic studies. Our integrated system empowers students and admins to manage courses, assignments, and progress with unparalleled ease.',
   keywords: ['Faizyab Al-Quran', 'Quran learning', 'online education', 'LMS', 'e-learning', 'academic studies', 'student management', 'Islamic education'],
   icons: {
     icon: '/WhatsApp_Image_2025-07-07_at_16.40.56_083d1ca9-removebg-preview.png'

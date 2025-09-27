@@ -1,6 +1,8 @@
 # Faizyab Al-Quran - Modern Learning Platform
 
-Faizyab Al-Quran is a comprehensive, Google Classroom-style web application designed for both Quranic and academic learning. It provides role-based dashboards for Students and Admins to create an organized and engaging educational experience.
+For many educational institutions, managing both Quranic and academic studies means juggling multiple, disconnected tools, leading to confusion for students and heavy administrative work. Faizyab Al-Quran was built to solve this problem. We provide a single, unified, and powerful Learning Management System (LMS) that seamlessly integrates both streams of education.
+
+Our platform provides intuitive, role-based dashboards for Students and Admins, creating an organized, engaging, and streamlined educational experience from day one.
 
 ## ✨ Key Features
 
