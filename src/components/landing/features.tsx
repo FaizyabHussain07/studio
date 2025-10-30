@@ -1,3 +1,4 @@
+
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Users, BookCopy, ClipboardCheck, LayoutDashboard, Bell, PenSquare } from "lucide-react";
 
@@ -38,7 +39,7 @@ export default function Features() {
   return (
     <section id="features" className="container py-20 md:py-32">
       <div className="text-center space-y-4 mb-12">
-        <h2 className="font-headline text-3xl md:text-4xl font-bold">Everything You Need to Succeed</h2>
+        <h2 className="font-headline text-3xl md:text-4xl font-bold">Why Choose Us?</h2>
         <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
           Our platform is packed with features designed to create a seamless and effective learning experience for everyone involved.
         </p>
