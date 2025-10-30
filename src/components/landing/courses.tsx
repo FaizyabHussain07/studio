@@ -60,16 +60,16 @@ export default function Courses() {
             Explore a range of Qur’anic and Islamic courses tailored to every level.
           </p>
         </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-8">
+        <div className="grid md:grid-cols-2 gap-8">
           {sampleCourses.map((course) => (
             <Card key={course.id} className="flex flex-col hover:shadow-xl transition-shadow duration-300 overflow-hidden">
                <CardHeader className="p-0">
-                  <div className="relative aspect-video">
+                  <div className="relative aspect-video bg-muted">
                     <Image 
                       src={course.imageUrl}
                       alt={course.title}
                       fill
-                      className="object-cover"
+                      className="object-contain"
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                       data-ai-hint={course.dataAiHint}
                       quality={100}
@@ -86,8 +86,8 @@ export default function Courses() {
                         ))}
                     </div>
                     <span>({course.students} students)</span>
+                    <Badge className="mt-0" variant="secondary">{course.duration}</Badge>
                  </div>
-                 <Badge className="mt-2" variant="secondary">{course.duration}</Badge>
               </CardContent>
               <CardFooter className="p-6 pt-0">
                 <Button asChild className="w-full">
