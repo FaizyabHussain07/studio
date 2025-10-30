@@ -60,7 +60,7 @@ export default function Courses() {
             Explore a range of Qur’anic and Islamic courses tailored to every level.
           </p>
         </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {sampleCourses.map((course) => (
             <Card key={course.id} className="flex flex-col hover:shadow-xl transition-shadow duration-300 overflow-hidden">
                <CardHeader className="p-0">
