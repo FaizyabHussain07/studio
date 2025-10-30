@@ -4,7 +4,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, BookUser, BrainCircuit } from "lucide-react";
+import { ArrowRight, BookUser, BrainCircuit, Clock, Star, Users } from "lucide-react";
+import { Badge } from "../ui/badge";
 
 const sampleCourses = [
     {
@@ -13,6 +14,9 @@ const sampleCourses = [
         description: "Learn the foundation of Qur’anic reading.",
         imageUrl: "https://i.ibb.co/Hfc2SKFN/close-up-islamic-new-year-with-quran-book.jpg",
         dataAiHint: "child reading",
+        duration: "3 Months",
+        rating: 5,
+        students: 120,
     },
     {
         id: "quran-with-tajweed",
@@ -20,6 +24,9 @@ const sampleCourses = [
         description: "Perfect your recitation with correct pronunciation.",
         imageUrl: "https://i.ibb.co/FN7JFYq/close-up-islamic-new-year-with-quran-book-1.jpg",
         dataAiHint: "quran reading",
+        duration: "6 Months",
+        rating: 5,
+        students: 250,
     },
     {
         id: "hifz-ul-quran",
@@ -27,6 +34,9 @@ const sampleCourses = [
         description: "Memorize the Quran with expert guidance.",
         imageUrl: "https://i.ibb.co/s9Vbg65H/close-up-islamic-new-year-with-quran-book-3.jpg",
         dataAiHint: "memorization",
+        duration: "3 Years",
+        rating: 5,
+        students: 80,
     },
     {
         id: "diniyat-courses",
@@ -34,6 +44,9 @@ const sampleCourses = [
         description: "Build your fundamental Islamic knowledge step-by-step.",
         imageUrl: "https://i.ibb.co/Y4YxfvD9/close-up-islamic-new-year-with-quran-book-4.jpg",
         dataAiHint: "learning class",
+        duration: "1 Year",
+        rating: 5,
+        students: 150,
     },
 ];
 
@@ -60,16 +73,25 @@ export default function Courses() {
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                       data-ai-hint={course.dataAiHint}
                     />
+                     <Badge className="absolute top-2 right-2" variant="secondary">{course.duration}</Badge>
                   </div>
                 </CardHeader>
               <CardContent className="p-6 flex-grow">
+                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                    <div className="flex items-center">
+                        {[...Array(5)].map((_, i) => (
+                            <Star key={i} className="w-4 h-4 text-amber-400 fill-amber-400" />
+                        ))}
+                    </div>
+                    <span>({course.students} students)</span>
+                 </div>
                 <CardTitle className="font-headline text-xl mb-2">{course.title}</CardTitle>
                 <CardDescription>{course.description}</CardDescription>
               </CardContent>
               <CardFooter className="p-6 pt-0">
                 <Button asChild className="w-full">
                   <Link href={`/signup?courseId=${course.id}&courseName=${encodeURIComponent(course.title)}`}>
-                    Enroll Now <ArrowRight className="ml-2 h-4 w-4" />
+                    Start Free Trial <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
               </CardFooter>
