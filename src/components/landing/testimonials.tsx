@@ -2,8 +2,7 @@
 'use client';
 
 import { Card, CardContent } from "@/components/ui/card";
-import { Star } from "lucide-react";
-
+import Script from "next/script";
 
 export default function Testimonials() {
   return (
@@ -14,21 +13,11 @@ export default function Testimonials() {
           Hear from members of our community about their learning experience.
         </p>
       </div>
-      <Card className="p-6 md:p-12 bg-secondary/50 border-2 border-dashed">
-         <div className="text-center">
-            <h3 className="text-2xl font-semibold">Google Reviews Coming Soon!</h3>
-            <p className="text-muted-foreground mt-2">
-                This section is ready for your live Google Reviews. Please follow the instructions to get your embed code from a third-party widget provider.
-            </p>
-            <div className="flex justify-center gap-1 text-amber-400 mt-4">
-                <Star/>
-                <Star/>
-                <Star/>
-                <Star/>
-                <Star/>
-            </div>
-         </div>
-      </Card>
+      
+      <div data-romw-token="sO6LKNNBZmC0Ug7N8kuhb1Y2KhTgb0w8OvpywPiO2fOPTCWpsS" data-romw-lazy></div>
+    
+      <Script src="https://reviewsonmywebsite.com/js/v2/embed.js?id=4a24b3ba631386ba5f4ec3ef018ac9ca" type="text/javascript" defer></Script>
+      
     </section>
   );
 }
