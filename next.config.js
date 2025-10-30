@@ -36,6 +36,14 @@ const nextConfig = {
         protocol: 'https'
         ,
         hostname: 'picsum.photos',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.paypalobjects.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'js.stripe.com',
       }
     ],
   },
