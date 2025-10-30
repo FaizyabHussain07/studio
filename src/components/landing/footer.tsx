@@ -95,11 +95,6 @@ export default function Footer() {
              <p className="text-sm text-muted-foreground text-center sm:text-left">
                 © {new Date().getFullYear()} Faizyab Al-Quran. All rights reserved.
              </p>
-             <div className="flex items-center gap-4">
-                <Image src="https://js.stripe.com/v3/fingerprinted/img/visa-d7260f9a2f7f5235d6c596e059ea3866.svg" alt="Visa" width={38} height={24} />
-                <Image src="https://js.stripe.com/v3/fingerprinted/img/mastercard-4d8844094130711885b5e41b28c9848f.svg" alt="Mastercard" width={38} height={24} />
-                <Image src="https://www.paypalobjects.com/webstatic/mktg/logo-center/PP_Acceptance_Marks_for_LogoCenter_114x29.png" alt="Paypal" width={80} height={24} />
-             </div>
           </div>
         </div>
     </footer>
