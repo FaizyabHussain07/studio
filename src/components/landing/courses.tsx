@@ -72,6 +72,7 @@ export default function Courses() {
                       className="object-cover"
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                       data-ai-hint={course.dataAiHint}
+                      quality={100}
                     />
                   </div>
                 </CardHeader>
