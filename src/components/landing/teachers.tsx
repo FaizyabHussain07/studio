@@ -1,7 +1,8 @@
+
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 
 const teachers = [
   {
@@ -43,12 +44,12 @@ export default function Teachers() {
                 <div className="mt-4 space-y-2">
                     {teacher.certifications.map(cert => (
                         <div key={cert} className="flex items-center gap-2">
-                            <CheckCircle className="h-4 w-4 text-green-500" />
+                            <CheckCircle2 className="h-4 w-4 text-green-500" />
                             <span className="text-sm text-muted-foreground">{cert}</span>
                         </div>
                     ))}
                      <div className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
                         <span className="text-sm text-muted-foreground">{teacher.experience}</span>
                     </div>
                 </div>
