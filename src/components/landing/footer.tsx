@@ -3,8 +3,10 @@
 
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
-import { Github, Twitter, Linkedin, Mail, Youtube, Briefcase } from "lucide-react";
+import { Github, Twitter, Linkedin, Mail, Youtube, Instagram, Facebook } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
+
 
 const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg
@@ -19,15 +21,16 @@ const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
-const FacebookIcon = (props: React.SVGProps<SVGSVGElement>) => (
+const TelegramIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg 
-        xmlns="http://www.w3.org/2000/svg" 
-        width="24" 
-        height="24" 
-        viewBox="0 0 24 24" 
-        {...props}
+     xmlns="http://www.w3.org/2000/svg" 
+     width="24"
+     height="24"
+     viewBox="0 0 24 24" 
+     {...props}
     >
-        <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" fill="#1877F2" />
+        <path fill="#2AABEE" d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2z"/>
+        <path fill="#FFFFFF" d="M9.5,16.7c-0.2,0-0.4-0.1-0.6-0.2l-2.4-1.8c-0.4-0.3-0.5-0.9-0.2-1.3c0.3-0.4,0.9-0.5,1.3-0.2l1.6,1.2l4.8-3.1c0.4-0.3,1-0.1,1.3,0.3c0.3,0.4,0.1,1-0.3,1.3L10.3,16.4C10.1,16.6,9.8,16.7,9.5,16.7z M15,8.4c-0.5,0-1,0.2-1.4,0.6l-3.3,2.4c-0.2,0.1-0.4,0.1-0.6,0l-3.3-2.4C6,8.6,5.5,8.4,5,8.4C4.4,8.4,4,8.8,4,9.3c0,0.2,0.1,0.4,0.2,0.6l3.5,2.5c0.7,0.5,1.6,0.5,2.3,0l3.5-2.5c0.1-0.1,0.2-0.3,0.2-0.6C16,8.8,15.6,8.4,15,8.4z"/>
     </svg>
 );
 
@@ -36,48 +39,64 @@ export default function Footer() {
   return (
     <footer className="bg-background border-t">
       <div className="container py-8">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <Logo showText={true} />
-           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" asChild className="transition-transform hover:scale-125">
-              <a href="mailto:faizyab.al.quran@gmail.com" aria-label="Email">
-                <Mail className="text-red-600" />
-              </a>
-            </Button>
-            <Button variant="ghost" size="icon" asChild className="transition-transform hover:scale-125">
-              <a href="https://x.com/FaizyabHus74391" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
-                <Twitter className="text-sky-500" fill="currentColor" />
-              </a>
-            </Button>
-             <Button variant="ghost" size="icon" asChild className="transition-transform hover:scale-125">
-              <a href="https://www.youtube.com/@FaizyabAlQuran" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
-                 <Youtube className="text-red-600" />
-              </a>
-            </Button>
-             <Button variant="ghost" size="icon" asChild className="transition-transform hover:scale-125">
-               <a href="https://whatsapp.com/channel/0029Vb1JCt9CBtxIbIs9FJ3p" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
-                <WhatsAppIcon />
-              </a>
-            </Button>
-            <Button variant="ghost" size="icon" asChild className="transition-transform hover:scale-125">
-              <a href="https://www.facebook.com/people/Faizyab-Al-Quran/61580511984639/" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
-                <FacebookIcon />
-              </a>
-            </Button>
-            <Button variant="ghost" size="icon" asChild className="transition-transform hover:scale-125">
-              <a href="https://github.com/FaizyabHussain07/studio" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
-                <Github />
-              </a>
-            </Button>
-             <Button variant="ghost" size="icon" asChild className="transition-transform hover:scale-125">
-              <a href="https://www.linkedin.com/company/faizyab-al-quran/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
-                <Linkedin className="text-blue-700" fill="currentColor"/>
-              </a>
-            </Button>
+        <div className="space-y-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex flex-col items-center md:items-start">
+              <Logo showText={true} />
+              <p className="text-sm text-muted-foreground mt-2">Learning with Faith & Purpose</p>
+            </div>
+            <div className="flex flex-col items-center md:items-start">
+               <h4 className="font-semibold mb-2">Quick Links</h4>
+               <div className="flex flex-col md:flex-row gap-x-4 gap-y-2 text-sm text-muted-foreground items-center">
+                    <Link href="#about" className="hover:text-primary">About</Link>
+                    <Link href="#courses" className="hover:text-primary">Courses</Link>
+                    <Link href="#pricing" className="hover:text-primary">Pricing</Link>
+                    <Link href="#faq" className="hover:text-primary">FAQ</Link>
+                    <Link href="#contact" className="hover:text-primary">Contact</Link>
+               </div>
+            </div>
+            <div className="flex flex-col items-center md:items-end">
+               <h4 className="font-semibold mb-2">Follow Us</h4>
+               <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon" asChild className="transition-transform hover:scale-125">
+                  <a href="https://www.youtube.com/@FaizyabAlQuran" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
+                     <Youtube className="text-red-600" />
+                  </a>
+                </Button>
+                <Button variant="ghost" size="icon" asChild className="transition-transform hover:scale-125">
+                  <a href="https://www.instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                     <Instagram className="text-pink-600" />
+                  </a>
+                </Button>
+                <Button variant="ghost" size="icon" asChild className="transition-transform hover:scale-125">
+                  <a href="https://www.facebook.com/people/Faizyab-Al-Quran/61580511984639/" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+                     <Facebook className="text-blue-600" />
+                  </a>
+                </Button>
+                <Button variant="ghost" size="icon" asChild className="transition-transform hover:scale-125">
+                   <a href="https://whatsapp.com/channel/0029Vb1JCt9CBtxIbIs9FJ3p" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+                    <WhatsAppIcon />
+                  </a>
+                </Button>
+                 <Button variant="ghost" size="icon" asChild className="transition-transform hover:scale-125">
+                   <a href="https://t.me/yourchannel" target="_blank" rel="noopener noreferrer" aria-label="Telegram">
+                    <TelegramIcon />
+                  </a>
+                </Button>
+              </div>
+            </div>
           </div>
-          <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Faizyab Al-Quran. All rights reserved.
-          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t pt-6">
+             <p className="text-sm text-muted-foreground">
+                © {new Date().getFullYear()} Faizyab Al-Quran. All rights reserved.
+             </p>
+             <div className="flex items-center gap-4">
+                <Image src="https://js.stripe.com/v3/fingerprinted/img/visa-d7260f9a2f7f5235d6c596e059ea3866.svg" alt="Visa" width={38} height={24} />
+                <Image src="https://js.stripe.com/v3/fingerprinted/img/mastercard-4d8844094130711885b5e41b28c9848f.svg" alt="Mastercard" width={38} height={24} />
+                <Image src="https://www.paypalobjects.com/webstatic/mktg/logo-center/PP_Acceptance_Marks_for_LogoCenter_114x29.png" alt="Paypal" width={80} height={24} />
+             </div>
+          </div>
         </div>
       </div>
     </footer>

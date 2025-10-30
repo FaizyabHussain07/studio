@@ -18,9 +18,11 @@ import { Skeleton } from '../ui/skeleton';
 const navLinks = [
   { name: 'About', href: '#about' },
   { name: 'Features', href: '#features' },
-  { name: 'Resources', href: '#resources' },
   { name: 'Courses', href: '#courses' },
+  { name: 'Resources', href: '#resources' },
+  { name: 'Teachers', href: '#teachers' },
   { name: 'Testimonials', href: '#testimonials' },
+  { name: 'Pricing', href: '#pricing' },
   { name: 'FAQ', href: '#faq' },
   { name: 'Contact', href: '#contact' },
 ];
@@ -105,7 +107,7 @@ export default function Header() {
                 <Link href="/login">Sign In</Link>
             </Button>
             <Button className="bg-primary text-primary-foreground hover:bg-primary/90" asChild>
-                <Link href="/signup">Sign Up</Link>
+                <Link href="/signup">Get Started</Link>
             </Button>
         </div>
       )
@@ -148,7 +150,7 @@ export default function Header() {
                         <Link href="/login">Sign In</Link>
                     </Button>
                     <Button className="bg-primary text-primary-foreground hover:bg-primary/90" asChild>
-                        <Link href="/signup">Sign Up</Link>
+                        <Link href="/signup">Get Started</Link>
                     </Button>
                  </div>
                )}

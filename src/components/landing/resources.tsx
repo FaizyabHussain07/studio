@@ -35,9 +35,9 @@ export default function Resources() {
     <section id="resources" className="bg-background py-20 md:py-32">
       <div className="container">
         <div className="text-center space-y-4 mb-12">
-          <h2 className="font-headline text-3xl md:text-4xl font-bold">Digital Library & Resources</h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Access essential Islamic texts and learning materials. Read online or download PDFs to study anytime, anywhere.
+          <h2 className="font-headline text-3xl md:text-4xl font-bold">Islamic Resources & E-Library</h2>
+          <p className="text-muted-foreground text-lg max-w-3xl mx-auto">
+            Read or download essential Islamic texts — from Yassarnal Quran to Tafseer and Hadith compilations. Learn at your own pace with organized and authentic materials.
           </p>
         </div>
 
@@ -88,7 +88,7 @@ export default function Resources() {
                   </CardHeader>
                 <CardContent className="p-6 flex-grow">
                   <CardTitle className="font-headline text-xl mb-2">{resource.title}</CardTitle>
-                  <CardDescription>{resource.description}</CardDescription>
+                  <CardDescription className="line-clamp-2">{resource.description || 'Essential guide for Quranic studies.'}</CardDescription>
                 </CardContent>
                 <CardFooter className="p-6 pt-0">
                   <Button asChild className="w-full">

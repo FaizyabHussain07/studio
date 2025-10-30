@@ -8,23 +8,19 @@ import {
 const faqs = [
   {
     question: "How do I enroll in a course?",
-    answer: "You can browse available courses on our homepage. To enroll, click the 'Enroll Now' button on any course card. This will take you to the sign-up page where you can create your student account. Once your account is created, an enrollment request will be automatically sent to the administrator for approval.",
+    answer: "Simply register for an account and then browse the available courses in your student dashboard. From there, you can send an enrollment request to the administrator.",
   },
   {
-    question: "Is the platform mobile-responsive?",
-    answer: "Yes, Faizyab Al-Quran is designed to be fully responsive, providing a seamless experience on desktops, tablets, and smartphones.",
+    question: "Is the platform mobile-friendly?",
+    answer: "Yes, Faizyab Al-Quran is fully responsive and designed to work seamlessly on desktops, tablets, and smartphones, so you can learn on any device.",
   },
   {
-    question: "What kind of assignments can be created?",
-    answer: "Admins can create assignments that include descriptions, attached files (like PDFs and images), and external links. Students can submit their work through file uploads or by providing links.",
-  },
-  {
-    question: "How are quizzes handled?",
-    answer: "Quizzes can be launched via external links (e.g., Google Forms) or built directly within the platform in future updates. This provides flexibility in how assessments are conducted.",
+    question: "Can I track my progress?",
+    answer: "Absolutely. The student dashboard provides a clear overview of your course progress and assignment submission statuses in real-time, helping you stay organized and motivated.",
   },
    {
-    question: "Can students track their progress?",
-    answer: "Absolutely. The student dashboard provides a clear overview of course progress, assignment submission statuses, and upcoming deadlines to help students stay organized and on track.",
+    question: "What kind of support is available?",
+    answer: "We offer dedicated support to all our users. Depending on your plan, you can access email, WhatsApp, or even direct teacher support for any questions you may have.",
   },
 ];
 

@@ -11,10 +11,11 @@ import Faq from '@/components/landing/faq';
 import Contact from '@/components/landing/contact';
 import { Metadata } from 'next';
 import Footer from '@/components/landing/footer';
+import Teachers from '@/components/landing/teachers';
 
 export const metadata: Metadata = {
     title: 'Faizyab Al-Quran - Modern Learning Platform for Knowledge & Faith',
-    description: 'Faizyab Al-Quran solves the challenge of disorganized online learning by offering a single, powerful platform for both Quranic and academic studies. Our integrated system empowers students and admins to manage courses, assignments, and progress with unparalleled ease.',
+    description: 'Faizyab Al-Quran offers a single, powerful platform for both Quranic and academic studies. Our integrated system empowers students and admins to manage courses, assignments, and progress with unparalleled ease.',
 }
 
 export default function Home() {
@@ -28,6 +29,7 @@ export default function Home() {
         <Courses />
         <HowItWorks />
         <Resources />
+        <Teachers />
         <Testimonials />
         <Faq />
         <Contact />
