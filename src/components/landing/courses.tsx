@@ -73,11 +73,12 @@ export default function Courses() {
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                       data-ai-hint={course.dataAiHint}
                     />
-                     <Badge className="absolute top-2 right-2" variant="secondary">{course.duration}</Badge>
                   </div>
                 </CardHeader>
               <CardContent className="p-6 flex-grow">
-                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                <CardTitle className="font-headline text-xl mb-2">{course.title}</CardTitle>
+                <CardDescription>{course.description}</CardDescription>
+                 <div className="flex items-center gap-4 text-sm text-muted-foreground mt-4">
                     <div className="flex items-center">
                         {[...Array(5)].map((_, i) => (
                             <Star key={i} className="w-4 h-4 text-amber-400 fill-amber-400" />
@@ -85,8 +86,7 @@ export default function Courses() {
                     </div>
                     <span>({course.students} students)</span>
                  </div>
-                <CardTitle className="font-headline text-xl mb-2">{course.title}</CardTitle>
-                <CardDescription>{course.description}</CardDescription>
+                 <Badge className="mt-2" variant="secondary">{course.duration}</Badge>
               </CardContent>
               <CardFooter className="p-6 pt-0">
                 <Button asChild className="w-full">
