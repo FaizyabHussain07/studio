@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -8,26 +9,34 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from 'next/navigation';
 import { auth } from '@/lib/firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { createUser, addPendingEnrollment } from '@/lib/services';
+import { createUser, addPendingEnrollment, getCourses } from '@/lib/services';
 import { useToast } from "@/hooks/use-toast";
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import { Logo } from "@/components/logo";
-
-// This is a client component, so we can't export metadata directly.
-// But for completeness, if this were a server component, you would add:
-// export const metadata: Metadata = {
-//   title: 'Sign Up',
-//   description: 'Create a new student account to join the Faizyab Al-Quran learning community.',
-// }
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Course } from "@/lib/types";
 
 function SignUpComponent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const courseId = searchParams.get('courseId');
+  const courseIdFromQuery = searchParams.get('courseId');
   const courseName = searchParams.get('courseName');
 
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [allCourses, setAllCourses] = useState<Course[]>([]);
+  const [selectedCourseId, setSelectedCourseId] = useState('');
+
+  useEffect(() => {
+    // Only fetch courses if the user is signing up without a pre-selected course
+    if (!courseIdFromQuery) {
+        const fetchCourses = async () => {
+            const coursesData = await getCourses();
+            setAllCourses(coursesData);
+        };
+        fetchCourses();
+    }
+  }, [courseIdFromQuery]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -36,6 +45,17 @@ function SignUpComponent() {
     const name = formData.get('name') as string;
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
+    const courseIdToEnroll = courseIdFromQuery || selectedCourseId;
+    
+    if (!courseIdToEnroll) {
+        toast({
+            title: "Course Selection Required",
+            description: "Please select a course to enroll in.",
+            variant: "destructive"
+        });
+        setLoading(false);
+        return;
+    }
     
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -57,11 +77,14 @@ function SignUpComponent() {
         photoURL: user.photoURL
       });
       
-      if (role === 'student' && courseId) {
-          await addPendingEnrollment(user.uid, courseId, joinedDate);
+      if (role === 'student' && courseIdToEnroll) {
+          await addPendingEnrollment(user.uid, courseIdToEnroll, joinedDate);
+          
+          const enrolledCourseName = courseName || allCourses.find(c => c.id === courseIdToEnroll)?.name;
+
           toast({
               title: "Request Sent!",
-              description: `Your request to enroll in "${courseName}" has been sent for approval.`
+              description: `Your request to enroll in "${enrolledCourseName}" has been sent for approval.`
           })
       } else {
          toast({
@@ -117,8 +140,23 @@ function SignUpComponent() {
                 <Label htmlFor="password">Password</Label>
                 <Input id="password" name="password" type="password" required minLength={6} disabled={loading}/>
               </div>
+               {!courseIdFromQuery && (
+                  <div className="space-y-2">
+                    <Label htmlFor="course">Select a Course</Label>
+                     <Select onValueChange={setSelectedCourseId} value={selectedCourseId} disabled={loading}>
+                        <SelectTrigger id="course">
+                            <SelectValue placeholder="Choose a course to enroll in" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {allCourses.map(course => (
+                                <SelectItem key={course.id} value={course.id}>{course.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                     </Select>
+                  </div>
+                )}
               <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={loading}>
-                {loading ? 'Creating Account...' : 'Sign Up'}
+                {loading ? 'Creating Account...' : 'Sign Up & Enroll'}
               </Button>
             </form>
           </CardContent>

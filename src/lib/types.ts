@@ -7,6 +7,7 @@ export type Assignment = {
     dueDate: string;
     instructions: string;
     attachments?: { name: string; url: string }[];
+    status?: 'Graded' | 'Submitted' | 'Missing' | 'Pending';
 };
 
 export type Course = {
@@ -18,6 +19,7 @@ export type Course = {
     enrolledStudentIds?: string[];
     completedStudentIds?: string[];
     pendingStudentIds?: string[];
+    status?: 'enrolled' | 'pending' | 'completed';
 };
 
 export type User = {
@@ -26,7 +28,7 @@ export type User = {
     name: string;
     email: string;
     role: 'student' | 'admin';
-    courses: { courseId: string, status: 'enrolled' | 'pending' | 'completed' }[];
+    courses: { courseId: string, status: 'enrolled' | 'pending' | 'completed', requestDate?: string }[];
     joined?: string;
     photoURL?: string;
 }
@@ -69,3 +71,10 @@ export type Resource = {
     pages: ResourcePage[];
     toc?: ResourceTOCItem[];
 }
+
+export type Quiz = {
+    id: string;
+    title: string;
+    courseName: string;
+    externalUrl: string;
+};

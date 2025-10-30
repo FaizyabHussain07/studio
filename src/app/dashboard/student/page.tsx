@@ -1,43 +1,18 @@
 
-
 'use client';
 
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowRight, FileText, HelpCircle } from "lucide-react";
+import { ArrowRight, FileText, CheckCircle, Clock, BadgeCheck, Sparkles, ShieldCheck } from "lucide-react";
 import { useState, useEffect } from "react";
-import { getStudentCoursesWithProgress, getStudentAssignmentsWithStatus, getStudentQuizzes } from "@/lib/services";
+import { getStudentCoursesWithProgress, getStudentAssignmentsWithStatus, getStudentQuizzes, getUser } from "@/lib/services";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import Image from "next/image";
 import { onSnapshot, collection, query, where, doc } from "firebase/firestore";
 import { Badge } from "@/components/ui/badge";
-
-type Course = {
-  id: string;
-  name: string;
-  description: string;
-  imageUrl?: string;
-  status: 'enrolled' | 'pending' | 'completed';
-};
-
-type Assignment = {
-    id: string;
-    title: string;
-    courseName: string;
-    dueDate: string;
-    status: 'Graded' | 'Submitted' | 'Missing' | 'Pending';
-};
-
-type Quiz = {
-    id: string;
-    title: string;
-    courseName: string;
-    externalUrl: string;
-};
-
+import { User as UserType, Course as CourseType, Assignment, Quiz } from "@/lib/types";
 
 // Helper to check for valid image URLs
 const isValidImageUrl = (url: string | undefined | null): url is string => {
@@ -47,17 +22,22 @@ const isValidImageUrl = (url: string | undefined | null): url is string => {
 
 
 export default function StudentDashboardPage() {
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [courses, setCourses] = useState<CourseType[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
+  const [dbUser, setDbUser] = useState<UserType | null>(null);
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (!currentUser) {
         setLoading(false);
+      } else {
+          // Fetch DB user initially to check enrollment status
+          const userDoc = await getUser(currentUser.uid);
+          setDbUser(userDoc);
       }
     });
     return () => unsubscribeAuth();
@@ -70,13 +50,15 @@ export default function StudentDashboardPage() {
 
     const fetchData = async () => {
       try {
-        const [studentCourses, studentAssignments, studentQuizzes] = await Promise.all([
+        const [userDoc, studentCourses, studentAssignments, studentQuizzes] = await Promise.all([
+          getUser(user.uid),
           getStudentCoursesWithProgress(user.uid),
           getStudentAssignmentsWithStatus(user.uid),
           getStudentQuizzes(user.uid)
         ]);
         
-        setCourses(studentCourses as Course[]);
+        setDbUser(userDoc);
+        setCourses(studentCourses as CourseType[]);
         setAssignments(studentAssignments as Assignment[]);
         setQuizzes(studentQuizzes as Quiz[]);
       } catch (error) {
@@ -109,9 +91,63 @@ export default function StudentDashboardPage() {
     .slice(0, 3);
   
   const topCourses = courses.filter(c => c.status === 'enrolled').slice(0, 3);
+  
+  const isPending = dbUser && (!dbUser.courses || dbUser.courses.every(c => c.status === 'pending'));
 
   if (loading) {
     return <div className="text-center p-8">Loading dashboard...</div>;
+  }
+  
+  if (isPending) {
+    return (
+        <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
+            <Card className="w-full max-w-2xl text-center shadow-lg">
+                <CardHeader>
+                    <div className="mx-auto bg-green-100 dark:bg-green-900/50 p-3 rounded-full w-fit">
+                        <CheckCircle className="h-12 w-12 text-green-500" />
+                    </div>
+                    <CardTitle className="font-headline text-3xl mt-4">Thank You for Enrolling!</CardTitle>
+                    <CardDescription className="text-lg">
+                        Your enrollment request has been sent. You will gain access to your dashboard as soon as an administrator approves it.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="text-left bg-secondary p-6 rounded-lg">
+                        <h3 className="font-semibold text-lg flex items-center gap-2"><Clock className="h-5 w-5"/> What Happens Next?</h3>
+                        <ol className="list-decimal list-inside text-muted-foreground mt-2 space-y-1">
+                            <li>Your request is now pending admin approval.</li>
+                            <li>You will receive a notification once approved.</li>
+                            <li>Your **3-day free trial** will begin automatically.</li>
+                        </ol>
+                    </div>
+                     <div className="text-left bg-secondary p-6 rounded-lg">
+                        <h3 className="font-semibold text-lg flex items-center gap-2"><Sparkles className="h-5 w-5"/> Our Plans</h3>
+                        <p className="text-muted-foreground mt-2">After your trial, you can choose a plan that suits you. We offer flexible options:</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                            <div className="border p-4 rounded-md">
+                                <h4 className="font-bold flex items-center gap-2"><BadgeCheck className="h-5 w-5 text-primary"/> One-Time Payment</h4>
+                                <p className="text-sm text-muted-foreground">Pay for your course once and get lifetime access.</p>
+                            </div>
+                            <div className="border p-4 rounded-md">
+                               <h4 className="font-bold flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-primary"/> Monthly Subscription</h4>
+                                <p className="text-sm text-muted-foreground">Enjoy continuous learning with a flexible monthly plan.</p>
+                            </div>
+                        </div>
+                    </div>
+                </CardContent>
+                 <CardFooter className="flex-col gap-4">
+                     <p className="text-sm text-muted-foreground">
+                        While you wait, feel free to browse our courses.
+                    </p>
+                    <Button asChild variant="outline">
+                        <Link href="/dashboard/student/browse-courses">
+                            Browse All Courses
+                        </Link>
+                    </Button>
+                </CardFooter>
+            </Card>
+        </div>
+    );
   }
 
   return (
@@ -168,14 +204,10 @@ export default function StudentDashboardPage() {
         )}
       </section>
 
-      <section>
-        <Tabs defaultValue="assignments" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="assignments">Upcoming Assignments</TabsTrigger>
-            <TabsTrigger value="quizzes">Quizzes</TabsTrigger>
-          </TabsList>
-          <TabsContent value="assignments">
-            <Card>
+      <section className="grid md:grid-cols-2 gap-8">
+         <div>
+             <h2 className="text-2xl font-bold font-headline mb-4">Upcoming Assignments</h2>
+             <Card>
               <CardContent className="p-0">
                 <ul className="divide-y">
                   {upcomingAssignments.length > 0 ? upcomingAssignments.map(assignment => (
@@ -197,15 +229,16 @@ export default function StudentDashboardPage() {
                 </ul>
               </CardContent>
             </Card>
-          </TabsContent>
-          <TabsContent value="quizzes">
+         </div>
+         <div>
+            <h2 className="text-2xl font-bold font-headline mb-4">Quizzes</h2>
             <Card>
               <CardContent className="p-0">
                  <ul className="divide-y">
-                  {quizzes.length > 0 ? quizzes.map(quiz => (
+                  {quizzes.slice(0, 3).map(quiz => (
                     <li key={quiz.id} className="flex items-center justify-between p-4 hover:bg-secondary/50">
                       <div className="flex items-center gap-4">
-                        <HelpCircle className="h-6 w-6 text-primary" />
+                        <FileText className="h-6 w-6 text-primary" />
                         <div>
                           <h3 className="font-semibold">{quiz.title}</h3>
                           <p className="text-sm text-muted-foreground">Course: {quiz.courseName}</p>
@@ -215,14 +248,14 @@ export default function StudentDashboardPage() {
                          <a href={quiz.externalUrl} target="_blank" rel="noopener noreferrer">Take Quiz</a>
                       </Button>
                     </li>
-                  )) : (
-                    <p className="text-center text-muted-foreground p-6">No quizzes available yet.</p>
-                  )}
+                  ))}
+                   {quizzes.length === 0 && (
+                     <p className="text-center text-muted-foreground p-6">No quizzes available yet.</p>
+                   )}
                 </ul>
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
+         </div>
       </section>
     </div>
   );
