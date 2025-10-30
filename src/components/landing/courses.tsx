@@ -64,12 +64,12 @@ export default function Courses() {
           {sampleCourses.map((course) => (
             <Card key={course.id} className="flex flex-col hover:shadow-xl transition-shadow duration-300 overflow-hidden">
                <CardHeader className="p-0">
-                  <div className="relative aspect-video">
+                  <div className="relative aspect-video bg-secondary">
                     <Image 
                       src={course.imageUrl}
                       alt={course.title}
                       fill
-                      className="object-cover"
+                      className="object-contain"
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                       data-ai-hint={course.dataAiHint}
                     />
