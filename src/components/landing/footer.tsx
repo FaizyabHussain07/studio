@@ -38,26 +38,12 @@ const TelegramIcon = (props: React.SVGProps<SVGSVGElement>) => (
 export default function Footer() {
   return (
     <footer className="bg-background border-t">
-      <div className="container py-8">
-        <div className="space-y-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+      <div className="container py-12 md:py-16">
+        <div className="grid gap-8 md:grid-cols-3">
             <div className="flex flex-col items-center md:items-start">
               <Logo showText={true} />
-              <p className="text-sm text-muted-foreground mt-2">Learning with Faith & Purpose</p>
-            </div>
-            <div className="flex flex-col items-center md:items-start">
-               <h4 className="font-semibold mb-2">Quick Links</h4>
-               <div className="flex flex-col md:flex-row gap-x-4 gap-y-2 text-sm text-muted-foreground items-center">
-                    <Link href="#about" className="hover:text-primary">About</Link>
-                    <Link href="#courses" className="hover:text-primary">Courses</Link>
-                    <Link href="#pricing" className="hover:text-primary">Pricing</Link>
-                    <Link href="#faq" className="hover:text-primary">FAQ</Link>
-                    <Link href="#contact" className="hover:text-primary">Contact</Link>
-               </div>
-            </div>
-            <div className="flex flex-col items-center md:items-end">
-               <h4 className="font-semibold mb-2">Follow Us</h4>
-               <div className="flex items-center gap-2">
+              <p className="text-sm text-muted-foreground mt-2 text-center md:text-left">Learning with Faith & Purpose</p>
+               <div className="flex items-center gap-2 mt-4">
                 <Button variant="ghost" size="icon" asChild className="transition-transform hover:scale-125">
                   <a href="https://www.youtube.com/@FaizyabAlQuran" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
                      <Youtube className="text-red-600" />
@@ -85,10 +71,28 @@ export default function Footer() {
                 </Button>
               </div>
             </div>
+            <div className="grid grid-cols-2 md:col-span-2 gap-8 text-center md:text-left">
+                <div>
+                   <h4 className="font-semibold mb-2">Quick Links</h4>
+                   <div className="flex flex-col gap-2 text-sm text-muted-foreground">
+                        <Link href="#about" className="hover:text-primary">About</Link>
+                        <Link href="#courses" className="hover:text-primary">Courses</Link>
+                        <Link href="#pricing" className="hover:text-primary">Pricing</Link>
+                   </div>
+                </div>
+                 <div>
+                   <h4 className="font-semibold mb-2">Support</h4>
+                   <div className="flex flex-col gap-2 text-sm text-muted-foreground">
+                        <Link href="#faq" className="hover:text-primary">FAQ</Link>
+                        <Link href="#contact" className="hover:text-primary">Contact</Link>
+                        <Link href="/privacy-policy" className="hover:text-primary">Privacy Policy</Link>
+                   </div>
+                </div>
+            </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t pt-6">
-             <p className="text-sm text-muted-foreground">
+          <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-4 border-t pt-6 mt-8">
+             <p className="text-sm text-muted-foreground text-center sm:text-left">
                 © {new Date().getFullYear()} Faizyab Al-Quran. All rights reserved.
              </p>
              <div className="flex items-center gap-4">
@@ -98,7 +102,6 @@ export default function Footer() {
              </div>
           </div>
         </div>
-      </div>
     </footer>
   );
 }

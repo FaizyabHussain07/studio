@@ -1,10 +1,11 @@
+
 import Image from "next/image";
 import Link from "next/link";
 
 export default function About() {
   return (
     <section id="about" className="bg-secondary/50 py-20 md:py-32">
-      <div className="container grid md:grid-cols-2 gap-12 items-center">
+      <div className="container grid md:grid-cols-2 gap-8 md:gap-12 items-center">
         <div className="relative aspect-square md:aspect-[4/5] rounded-xl overflow-hidden shadow-lg">
           <Link href="https://www.linkedin.com/in/faizyabhussain/" target="_blank" rel="noopener noreferrer">
             <Image
@@ -12,6 +13,7 @@ export default function About() {
               alt="Founder of Faizyab Al-Quran"
               fill
               className="object-cover"
+              sizes="(max-width: 768px) 100vw, 50vw"
             />
           </Link>
         </div>
