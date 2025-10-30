@@ -1,5 +1,4 @@
 
-
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
@@ -79,7 +78,8 @@ export default function Courses() {
               <CardContent className="p-6 flex-grow">
                 <CardTitle className="font-headline text-xl mb-2">{course.title}</CardTitle>
                 <CardDescription>{course.description}</CardDescription>
-                 <div className="flex items-center gap-4 text-sm text-muted-foreground mt-4">
+                <Badge className="mt-4" variant="secondary">{course.duration}</Badge>
+                 <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
                     <div className="flex items-center">
                         {[...Array(5)].map((_, i) => (
                             <Star key={i} className="w-4 h-4 text-amber-400 fill-amber-400" />
@@ -87,7 +87,6 @@ export default function Courses() {
                     </div>
                     <span>({course.students} students)</span>
                  </div>
-                 <Badge className="mt-2" variant="secondary">{course.duration}</Badge>
               </CardContent>
               <CardFooter className="p-6 pt-0">
                 <Button asChild className="w-full">
@@ -98,13 +97,6 @@ export default function Courses() {
               </CardFooter>
             </Card>
           ))}
-        </div>
-         <div className="text-center mt-12">
-            <Button asChild size="lg" variant="outline">
-                <Link href="/courses">
-                    View All Courses <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-            </Button>
         </div>
       </div>
     </section>

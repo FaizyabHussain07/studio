@@ -72,7 +72,7 @@ export default function Resources() {
                   <Link href={`/resources/${resource.id}`} className="relative aspect-video bg-secondary">
                       {resource.coverImageUrl ? (
                         <Image 
-                          src={resource.coverImageUrl}
+                          src="https://i.ibb.co/ZpFzmSSN/Untitled-design-38.png"
                           alt={resource.title}
                           fill
                           className="object-cover"
