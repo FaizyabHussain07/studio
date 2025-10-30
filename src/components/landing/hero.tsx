@@ -26,7 +26,7 @@ export default function Hero() {
                 className="object-cover"
                 priority
                 />
-                 <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center p-4">
+                 <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center p-4">
                     <h2 className="font-headline text-2xl md:text-3xl font-bold">Learn Quran with Tajweed & Understanding</h2>
                  </div>
             </CarouselItem>
@@ -37,7 +37,7 @@ export default function Hero() {
                 fill
                 className="object-cover"
                 />
-                 <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center p-4">
+                 <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center p-4">
                     <h2 className="font-headline text-2xl md:text-3xl font-bold">Interactive Learning Management System</h2>
                  </div>
             </CarouselItem>
@@ -48,7 +48,7 @@ export default function Hero() {
                 fill
                 className="object-cover"
                 />
-                 <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center p-4">
+                 <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center p-4">
                     <h2 className="font-headline text-2xl md:text-3xl font-bold">Bridging Traditional Knowledge & Modern Tools</h2>
                  </div>
             </CarouselItem>
@@ -59,7 +59,7 @@ export default function Hero() {
                 fill
                 className="object-cover"
                 />
-                 <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center p-4">
+                 <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center p-4">
                     <h2 className="font-headline text-2xl md:text-3xl font-bold">Memorize the Quran with Expert Guidance</h2>
                  </div>
             </CarouselItem>
