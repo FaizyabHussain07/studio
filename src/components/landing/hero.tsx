@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -49,6 +50,17 @@ export default function Hero() {
                 />
                  <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center p-4">
                     <h2 className="font-headline text-2xl md:text-3xl font-bold">Bridging Traditional Knowledge & Modern Tools</h2>
+                 </div>
+            </CarouselItem>
+             <CarouselItem className="relative w-full h-full">
+                <Image
+                src="https://i.ibb.co/s9Vbg65H/close-up-islamic-new-year-with-quran-book-3.jpg"
+                alt="Hifz ul Quran"
+                fill
+                className="object-cover"
+                />
+                 <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center p-4">
+                    <h2 className="font-headline text-2xl md:text-3xl font-bold">Memorize the Quran with Expert Guidance</h2>
                  </div>
             </CarouselItem>
         </CarouselContent>
