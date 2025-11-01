@@ -1,8 +1,15 @@
 
+'use client';
+
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Send } from "lucide-react";
+import { Button } from "../ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
+import { Label } from "../ui/label";
+import { Input } from "../ui/input";
+import { Textarea } from "../ui/textarea";
 
 const teachers = [
   {
@@ -17,7 +24,7 @@ const teachers = [
     title: "Expert in Quran & Tarjuma",
     experience: "3+ Years Experience",
     certifications: ["Tarjuma Specialist", "Advanced Tajweed Expert", "Islamic Studies"],
-    avatar: "https://i.ibb.co/tphx4tF/Whats-App-Image-2025-11-01-at-5-23-09-AM.jpg",
+    avatar: "https://i.ibb.co/PGY9Nn0Y/Whats-App-Image-2025-11-01-at-5-23-09-AM.jpg",
   },
 ];
 
@@ -57,6 +64,54 @@ export default function Teachers() {
             </Card>
           ))}
         </div>
+        
+        <div className="text-center mt-16">
+            <Dialog>
+                <DialogTrigger asChild>
+                    <Button size="lg">Become a Tutor</Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle>Apply to be a Tutor</DialogTitle>
+                        <DialogDescription>
+                            If you are a qualified teacher, we'd love to hear from you. Fill out the form below to apply.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form 
+                        action="https://formsubmit.co/faizyab.al.quran@gmail.com" 
+                        method="POST" 
+                        encType="multipart/form-data"
+                        className="space-y-4 py-4"
+                    >
+                        <div className="space-y-2">
+                            <Label htmlFor="name">Full Name</Label>
+                            <Input id="name" name="name" placeholder="Enter your full name" required />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="email">Email Address</Label>
+                            <Input id="email" name="email" type="email" placeholder="Enter your email" required />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="qualifications">Qualifications & Experience</Label>
+                            <Textarea id="qualifications" name="qualifications" placeholder="Briefly describe your teaching background..." required />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="cv">Upload CV/Resume</Label>
+                            <Input id="cv" name="attachment" type="file" required accept=".pdf,.doc,.docx" />
+                        </div>
+                        
+                        {/* formsubmit.co settings */}
+                        <input type="hidden" name="_subject" value="New Tutor Application!" />
+                        <input type="hidden" name="_next" value="https://faizyab-al-quran.vercel.app/" />
+
+                        <Button type="submit" className="w-full">
+                           <Send className="mr-2 h-4 w-4" /> Submit Application
+                        </Button>
+                    </form>
+                </DialogContent>
+            </Dialog>
+        </div>
+
       </div>
     </section>
   );
