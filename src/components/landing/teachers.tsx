@@ -17,7 +17,7 @@ const teachers = [
     title: "Expert in Quran & Tarjuma",
     experience: "3+ Years Experience",
     certifications: ["Tarjuma Specialist", "Advanced Tajweed Expert", "Islamic Studies"],
-    avatar: "https://i.ibb.co/68gMS0m/user-image.png",
+    avatar: "https://i.ibb.co/tphx4tF/Whats-App-Image-2025-11-01-at-5-23-09-AM.jpg",
   },
 ];
 
