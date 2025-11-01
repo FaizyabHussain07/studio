@@ -1,12 +1,13 @@
 
 'use client';
 
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 
-export default function Hero() {
+const Hero = React.memo(function Hero() {
   return (
     <section id="hero" className="relative h-[80vh] min-h-[500px] md:min-h-[600px] w-full flex items-center justify-center text-center text-white overflow-hidden">
         <Image
@@ -15,6 +16,7 @@ export default function Hero() {
             fill
             className="object-cover"
             priority
+            quality={100}
         />
         <div className="absolute inset-0 bg-black/50" />
 
@@ -36,4 +38,5 @@ export default function Hero() {
         </div>
     </section>
   );
-}
+});
+export default Hero;

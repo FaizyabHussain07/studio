@@ -1,7 +1,9 @@
+
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { UserPlus, LogIn, GraduationCap } from "lucide-react";
 import { Button } from "../ui/button";
 import Link from "next/link";
+import React from 'react';
 
 const steps = [
   {
@@ -21,7 +23,7 @@ const steps = [
   },
 ];
 
-export default function HowItWorks() {
+const HowItWorks = React.memo(function HowItWorks() {
   return (
     <section id="how-it-works" className="bg-secondary/50 py-20 md:py-32">
       <div className="container">
@@ -53,4 +55,6 @@ export default function HowItWorks() {
       </div>
     </section>
   );
-}
+});
+
+export default HowItWorks;

@@ -1,9 +1,10 @@
 
+import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
-export function Logo({ showText = true }: { showText?: boolean }) {
+const LogoComponent = ({ showText = true }: { showText?: boolean }) => {
   return (
     <Link href="/" className="flex items-center gap-2" prefetch={false}>
       <Image 
@@ -18,3 +19,5 @@ export function Logo({ showText = true }: { showText?: boolean }) {
     </Link>
   );
 }
+
+export const Logo = React.memo(LogoComponent);

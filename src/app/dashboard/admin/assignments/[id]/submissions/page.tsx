@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft, Download, MessageSquare } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { getAssignment, getCourse, updateSubmissionStatus } from "@/lib/services";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
@@ -32,24 +32,25 @@ export default function ViewSubmissionsPage() {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
+  const fetchStaticData = useCallback(async () => {
     if (!id) return;
-    const fetchStaticData = async () => {
-      setLoading(true);
-      try {
-        const assignmentData = await getAssignment(id) as Assignment | null;
-        setAssignment(assignmentData);
+    setLoading(true);
+    try {
+      const assignmentData = await getAssignment(id) as Assignment | null;
+      setAssignment(assignmentData);
 
-        if (assignmentData) {
-            const courseData = await getCourse(assignmentData.courseId);
-            setCourse(courseData);
-        }
-      } catch (error) {
-        console.error("Error fetching static data:", error);
+      if (assignmentData) {
+          const courseData = await getCourse(assignmentData.courseId);
+          setCourse(courseData);
       }
-    };
-    fetchStaticData();
+    } catch (error) {
+      console.error("Error fetching static data:", error);
+    }
   }, [id]);
+
+  useEffect(() => {
+    fetchStaticData();
+  }, [fetchStaticData]);
 
   useEffect(() => {
     if (!id) return;

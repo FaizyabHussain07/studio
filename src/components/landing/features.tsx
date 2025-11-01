@@ -1,6 +1,7 @@
 
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Users, BookCopy, ClipboardCheck, LayoutDashboard, Bell, PenSquare, ShieldCheck, UserCheck, Accessibility, Globe } from "lucide-react";
+import React from 'react';
 
 const features = [
   {
@@ -35,7 +36,7 @@ const features = [
   },
 ];
 
-export default function Features() {
+const Features = React.memo(function Features() {
   return (
     <section id="features" className="container py-20 md:py-32">
       <div className="text-center space-y-4 mb-12">
@@ -61,4 +62,6 @@ export default function Features() {
       </div>
     </section>
   );
-}
+});
+
+export default Features;

@@ -1,6 +1,7 @@
 
 'use client';
 
+import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -24,11 +25,11 @@ const teachers = [
     title: "Expert in Quran & Tarjuma",
     experience: "3+ Years Experience",
     certifications: ["Tarjuma Specialist", "Advanced Tajweed Expert", "Islamic Studies"],
-    avatar: "https://i.ibb.co/PGY9Nn0Y/Whats-App-Image-2025-11-01-at-5-23-09-AM.jpg",
+    avatar: "https://i.ibb.co/PGY9Nn0/Whats-App-Image-2025-11-01-at-5-23-09-AM.jpg",
   },
 ];
 
-export default function Teachers() {
+const Teachers = React.memo(function Teachers() {
   return (
     <section id="teachers" className="bg-secondary/50 py-20 md:py-32">
       <div className="container">
@@ -115,4 +116,6 @@ export default function Teachers() {
       </div>
     </section>
   );
-}
+});
+
+export default Teachers;

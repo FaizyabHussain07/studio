@@ -1,8 +1,9 @@
 
 import Link from "next/link";
 import { BookText, Goal, Eye } from "lucide-react";
+import React from 'react';
 
-export default function About() {
+const About = React.memo(function About() {
   return (
     <section id="about" className="bg-secondary/50 py-20 md:py-32">
       <div className="container max-w-4xl mx-auto space-y-12">
@@ -42,4 +43,6 @@ export default function About() {
       </div>
     </section>
   );
-}
+});
+
+export default About;

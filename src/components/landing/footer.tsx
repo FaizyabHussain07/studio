@@ -1,6 +1,7 @@
 
 'use client';
 
+import React from 'react';
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { Github, Twitter, Linkedin, Mail, Youtube, Instagram, Facebook } from "lucide-react";
@@ -35,7 +36,7 @@ const TelegramIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 
-export default function Footer() {
+const Footer = React.memo(function Footer() {
   return (
     <footer className="bg-background border-t">
       <div className="container py-12 md:py-16">
@@ -99,4 +100,5 @@ export default function Footer() {
         </div>
     </footer>
   );
-}
+});
+export default Footer;

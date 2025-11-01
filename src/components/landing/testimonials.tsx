@@ -1,10 +1,11 @@
 
 'use client';
 
+import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import Script from "next/script";
 
-export default function Testimonials() {
+const Testimonials = React.memo(function Testimonials() {
   return (
     <section id="testimonials" className="container py-20 md:py-32">
       <div className="text-center space-y-4 mb-12">
@@ -20,4 +21,6 @@ export default function Testimonials() {
       
     </section>
   );
-}
+});
+
+export default Testimonials;
