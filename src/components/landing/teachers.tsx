@@ -7,16 +7,16 @@ import { CheckCircle2 } from "lucide-react";
 const teachers = [
   {
     name: "Hafiz Faizyab Hussain",
-    title: "Quran & Diniyat Specialist",
+    title: "Expert in Quran & Islamic Studies Specialist",
     experience: "5+ years experience",
-    certifications: ["Quran e Hafiz", "Diniyat Specialist"],
+    certifications: ["Tajweed Expert", "Expert Quran Memorization", "Advanced Islamic Studies Specialist"],
     avatar: "https://i.ibb.co/XrvLDkcg/Generated-Image-September-27-2025-9-05-AM-min.png",
   },
   {
     name: "Hafiz Adeeb Kazmi",
-    title: "Expert in Quran & Tafseer",
-    experience: "3+ years experience",
-    certifications: ["Expert in Tafseer", "Advanced Tajweed"],
+    title: "Expert in Quran & Tarjuma",
+    experience: "3+ Years Experience",
+    certifications: ["Tarjuma Specialist", "Advanced Tajweed Expert", "Islamic Studies"],
     avatar: "https://media.istockphoto.com/id/1477583639/vector/user-profile-icon-vector-avatar-or-person-icon-profile-picture-portrait-symbol-vector.jpg?s=612x612&w=0&k=20&c=OWGIPPkZIWLPvnQS14ZSyHMoGtVTn1zS8cAgLy1Uh24=",
   },
 ];
